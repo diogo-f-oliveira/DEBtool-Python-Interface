@@ -1,12 +1,12 @@
 from DEBtoolPyIF.code_generator import TrainingCodeGenerator, TestingCodeGenerator
-# from matlab_wrapper import run_estimation, EstimationRunner
 from DEBtoolPyIF.data_sources import *
-# from cross_validation import HoldoutCV
-from itertools import combinations, product
-# from monte_carlo import MonteCarloEstimation
 from DEBtoolPyIF.two_step import TwoStepEstimator, compile_results
+# from matlab_wrapper import run_estimation, EstimationRunner
+# from cross_validation import HoldoutCV
+# from monte_carlo import MonteCarloEstimation
 
 import matplotlib.pyplot as plt
+from itertools import combinations, product
 import os
 import pandas as pd
 import numpy as np
@@ -557,24 +557,24 @@ if __name__ == '__main__':
     params += group_pars
     group_step_template_folder = "../Angus/Templates/GreenBeef Trial 1/Group Step JXGrp CO2 CH4"
     ind_step_template_folder = "../Angus/Templates/GreenBeef Trial 1/Individual Step tW JXGrp CO2 CH4"
-    main_output_folder = "../Angus/GreenBeef Trial 1/Two-step pseudo p_Am kap_X xi_C kap_P psd 001"
+    main_output_folder = "../Angus/GreenBeef Trial 1/Two-step pseudo p_Am kap_X xi_C kap_P psd 020"
     bibkey = 'GreenBeefTrial1'
     comment = 'Data from GreenBeef trial'
 
     # Data sources
-    twds = TimeWeightDataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_weights.csv",
+    twds = TimeWeightDataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_weights.csv",
                                 id_col='sia', weight_col='weight', date_col='date',
                                 bibkey=bibkey, comment=comment)
 
-    gtfds = TimeFeedGroupDataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_feed_intake_pen.csv",
+    gtfds = TimeFeedGroupDataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_feed_intake_pen.csv",
                                    group_col='pen', feed_col='dry_intake', date_col='date', weight_data_source=twds,
                                    bibkey=bibkey, comment=comment)
 
-    tmds = TimeCH4DataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_emissions.csv",
+    tmds = TimeCH4DataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_emissions.csv",
                              id_col='sia', methane_col='CH4', date_col='date', weight_data_source=twds,
                              bibkey=bibkey, comment=comment)
 
-    tco2ds = TimeCO2DataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_emissions.csv",
+    tco2ds = TimeCO2DataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_emissions.csv",
                                id_col='sia', co2_col='CO2', date_col='date', weight_data_source=twds,
                                bibkey=bibkey, comment=comment)
 
@@ -604,7 +604,9 @@ if __name__ == '__main__':
     n_inds = len(twds.individuals)
 
     n_ind_pars_list = (1, 2, 3, 4)
-    pars_to_free = ['p_Am', 'kap_X', 'xi_C', 'kap_P', 'p_M', 'v']
+    pars_to_free = ['p_Am', 'kap_X', 'xi_C', 'kap_P']
+    # n_ind_pars_list = (1, 2, 3, 4, 5, 6)
+    # pars_to_free = ['p_Am', 'kap_X', 'xi_C', 'kap_P', 'p_M', 'v']
     for nip in n_ind_pars_list:
         for p_list in combinations(pars_to_free, nip):
             # p_list = ('p_M', 'E_G')
@@ -624,7 +626,7 @@ if __name__ == '__main__':
                                           # use_pseudo_data=False, species_data_types=species_data_types)
 
                                           # Estimate with pseudo data
-                                          use_pseudo_data=True, pseudo_data_weight=0.01)
+                                          use_pseudo_data=True, pseudo_data_weight=0.2)
     # estimator.runner.close()
 
     compile_results(estimator, pars_to_get_stats=pars_to_free)

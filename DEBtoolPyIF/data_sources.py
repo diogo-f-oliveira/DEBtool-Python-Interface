@@ -67,7 +67,7 @@ class GroupDataSourceBase:
 
     def get_group_data(self, group_id):
         if group_id not in self.groups:
-            raise Exception('Invalid ind_id, individual not found in the dataset')
+            raise Exception('Invalid group_id, group not found in the dataset')
         return self.groupbys.get_group(group_id)
 
     def generate_code(self, ind_list=None):
@@ -344,75 +344,6 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
             my_data_code += '\n\n'
 
         return my_data_code
-
-
-class GroupTimeFeedDataSouce(DataSourceBase):
-    TYPE = 'tJX_grp'
-    UNITS = "{'d', 'kg'}"
-    LABELS = "{'Time since start', 'Daily food consumption of group during test'}"
-    AUX_DATA_UNITS = "{'kg', '-'}"
-    AUX_DATA_LABELS = "{'Initial weights', 'Individuals in group'}"
-
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, bibkey='', comment=''):
-        super().__init__(csv_filename, id_col, name=name)
-        self.feed_col = feed_col
-        self.date_col = date_col
-        self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
-        self.bibkey = bibkey
-        self.comment = comment
-        self.weight_data = weight_data_source
-        self.weight_data.df[self.id_col] = self.weight_data.df[self.id_col].astype('str')
-        self.get_inds_in_group()
-
-    def get_inds_in_group(self):
-        self.inds_in_group = {i: [] for i in self.weight_data.df[self.id_col].unique()}
-        for ind_id in list(self.weight_data.individuals):
-            group_id = self.weight_data.get_ind_data(ind_id)[self.id_col].iloc[0]
-            self.inds_in_group[group_id].append(ind_id)
-
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
-            ind_list = list(self.individuals)
-
-        my_data_code = f'%% Time vs Group daily feed consumption data\n\n'
-        for group_id in ind_list:
-            if group_id not in self.individuals:
-                continue
-            # Get initial weights, assumes all weight measurements were taken on the same day for the individuals in the
-            # group
-            group_data = self.get_ind_data(group_id).sort_values(by=self.date_col)
-            initial_dates = []
-            initial_weights = []
-            for ind_id in self.inds_in_group[group_id]:
-                ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
-                ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] -
-                                           group_data.iloc[0][self.date_col]).apply(lambda d: d.days - 1)
-                ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-                initial_weights.append(ind_weight_data.iloc[0][self.weight_data.weight_col])
-                initial_dates.append(ind_weight_data.iloc[0][self.weight_data.date_col])
-
-            t_JX_group_data = f'data.{self.TYPE}_{group_id} = ['
-            for i in group_data.index.values:
-                t_JX_group_data += f"{(group_data.loc[i, self.date_col] - initial_dates[0]).days} " \
-                                   f"{group_data.loc[i, self.feed_col]}; "
-            my_data_code += t_JX_group_data[:-2] + '];\n'
-            inds_in_group = '{' + str(self.inds_in_group[group_id])[1:-1] + '}'
-            my_data_code += f"extra.{self.TYPE}_{group_id} = {{ {initial_weights}, {inds_in_group} }}; " \
-                            f"units.extra.{self.TYPE}_{group_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{group_id} = {self.AUX_DATA_LABELS};\n"
-
-            my_data_code += f"units.{self.TYPE}_{group_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{group_id} = {self.LABELS}; " \
-                            + f"txtData.title.{self.TYPE}_{group_id} = 'Daily feed consumption of pen {group_id}'; "
-            if self.comment:
-                my_data_code += f"comment.{self.TYPE}_{group_id} = '{self.comment}, pen {group_id}'; "
-            if self.bibkey:
-                my_data_code += f"bibkey.{self.TYPE}_{group_id} = '{self.bibkey}';"
-            my_data_code += '\n\n'
-
-        return my_data_code
-
 
 class TimeCH4DataSource(DataSourceBase):
     TYPE = 'tCH4'

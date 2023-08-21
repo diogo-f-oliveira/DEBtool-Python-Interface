@@ -26,16 +26,16 @@ class TwoStepEstimator:
         # MATLAB wrapper to run estimations
         # TODO: Option to not start MATLAB
         print('Starting MATLAB...')
-        self.runner = EstimationRunner()
+        # self.runner = EstimationRunner()
 
     def group_step_estimation(self, estimation_settings: dict, output_folder=None, ind_list=None, ind_data_weight=None,
-                              save_pars=True, **wrapper_settings):
+                              save_pars=True, extra_info=None, **wrapper_settings):
         # Create files of estimation
         if output_folder is None:
             output_folder = f"{self.main_output_folder}/Group Step"
         self.group_step_code_generator.set_estimation_settings(**estimation_settings)
         self.group_step_code_generator.generate_code(output_folder=output_folder, ind_list=ind_list,
-                                                     ind_data_weight=ind_data_weight)
+                                                     ind_data_weight=ind_data_weight, extra_info=extra_info)
 
         # Run estimation
         print('Running group step...')

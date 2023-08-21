@@ -69,25 +69,27 @@ class TrainingCodeGenerator(CodeGeneratorBase):
     def __init__(self, template_folder: str, individual_params: list, species_name: str, data: DataCollection):
         super().__init__(template_folder, individual_params, species_name, data)
 
-    def create_mydata_file(self, output_folder, ind_list, ind_data_weight=None):
+    def create_mydata_file(self, output_folder, ind_list, ind_data_weight=None, extra_info=None):
         self.mydata_code = self.data_sources.get_mydata_code(ind_list=ind_list)
         mydata_template = open(f'{self.template_folder}/mydata_{self.species_name}.m', 'r', encoding="utf8")
         mydata_out = open(f'{output_folder}/mydata_{self.species_name}.m', 'w', encoding="utf-8")
         src = Template(mydata_template.read())
         if ind_data_weight is None:
             ind_data_weight = f"1 / {len(ind_list)}"
-
+        if extra_info is None:
+            extra_info = {}
         result = src.substitute(ind_pars=str(self.individual_params)[1:-1],
                                 individual_data='\n'.join(self.mydata_code),
                                 ind_list=str(ind_list)[1:-1],
                                 ind_data_weight=ind_data_weight,
                                 univar_types=self.data_sources.data_types.__repr__()[1:-1],
-                                )
+                                **extra_info)
+
         print(result, file=mydata_out)
         mydata_out.close()
         mydata_template.close()
 
-    def generate_code(self, output_folder, ind_list=None, ind_data_weight=None):
+    def generate_code(self, output_folder, ind_list=None, ind_data_weight=None, extra_info=None):
         # Create folder if it doesn't exist
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -96,7 +98,7 @@ class TrainingCodeGenerator(CodeGeneratorBase):
             ind_list = list(self.data_sources.individuals)
 
         # Generate files
-        self.create_mydata_file(output_folder, ind_list, ind_data_weight=ind_data_weight)
+        self.create_mydata_file(output_folder, ind_list, ind_data_weight=ind_data_weight, extra_info=extra_info)
         self.create_pars_init_file(output_folder)
         self.create_predict_file(output_folder)
         self.create_run_file(output_folder)

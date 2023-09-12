@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from .code_generator import TrainingCodeGenerator, TestingCodeGenerator
+from .code_generator import GroupStepCodeGenerator, IndividualStepCodeGenerator
 from .data_sources import DataCollection
 from .matlab_wrapper import EstimationRunner
 
@@ -20,8 +20,8 @@ class TwoStepEstimator:
 
         # Code generators
         self.data = data
-        self.group_step_code_generator = TrainingCodeGenerator(group_step_template_folder, [], species_name, data)
-        self.ind_step_code_generator = TestingCodeGenerator(ind_step_template_folder, [], species_name, data)
+        self.group_step_code_generator = GroupStepCodeGenerator(group_step_template_folder, [], species_name, data)
+        self.ind_step_code_generator = IndividualStepCodeGenerator(ind_step_template_folder, [], species_name, data)
 
         # MATLAB wrapper to run estimations
         # TODO: Option to not start MATLAB

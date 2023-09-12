@@ -75,7 +75,7 @@ def training_and_testing_code_generation():
     #                 f"DEB Parameter Estimation/Mertolenga/test"
     # pars = {'p_Am': 1758, 'kap_X': 0.1881, 'v': 0.2445, 'kap': 0.9532, 'p_M': 23.52, 'E_G': 8881, 'E_Hb': 6.008e+06,
     #         'E_Hx': 4.441e+07, 'E_Hp': 1.462e+08, 't_0': 230.6}
-    # gen = TestingCodeGenerator(template_folder=template_folder, individual_params=individual_params,
+    # gen = IndividualStepCodeGenerator(template_folder=template_folder, individual_params=individual_params,
     #                            species_name=species_name, default_pars=pars)
 
     # Add data
@@ -541,7 +541,7 @@ if __name__ == '__main__':
     #                             bibkey=bibkey, comment=comment)
     # data = DataCollection([twds, tfds])
     #
-    # code_generator = TrainingCodeGenerator(group_step_template_folder, [], species_name, data)
+    # code_generator = GroupStepCodeGenerator(group_step_template_folder, [], species_name, data)
     #
     # estimation_settings = dict(n_runs=500, results_output_mode=3, pars_init_method=2, n_steps=500, tol_simplex=1e-4)
     # code_generator.set_estimation_settings(**estimation_settings)
@@ -631,7 +631,7 @@ if __name__ == '__main__':
 
     compile_results(estimator, pars_to_get_stats=pars_to_free)
 
-    # group_step_code_generator = TrainingCodeGenerator(group_step_template_folder, [], species_name, data)
+    # group_step_code_generator = GroupStepCodeGenerator(group_step_template_folder, [], species_name, data)
     # estimation_settings = dict(n_runs=500, results_output_mode=3, pars_init_method=2, n_steps=500, tol_simplex=1e-5)
     # group_step_code_generator.set_estimation_settings(**estimation_settings)
     # group_step_code_generator.generate_code(output_folder="../Angus/GreenBeef Trial/Group Step")

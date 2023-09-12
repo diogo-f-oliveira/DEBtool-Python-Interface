@@ -4,14 +4,18 @@ import pandas as pd
 class DataSourceBase:
     TYPE = ''
 
-    def __init__(self, csv_filename, id_col, name=None):
+    def __init__(self, csv_filename, id_col, name=None, prefix=''):
+        # TODO: Add bibkey and comment to base class
         self.csv_filename = csv_filename
         self.id_col = id_col
 
         # Load dataframe
         self.df = pd.read_csv(self.csv_filename)
-        # Set ids as string
-        self.df[id_col] = self.df[id_col].astype(str)
+        # Set ids as string and add prefix
+        self.df[self.id_col] = self.df[self.id_col].astype(str)
+        self.prefix = prefix
+        if self.prefix:
+            self.df[self.id_col] = f"{self.prefix}_" + self.df[self.id_col]
         # Set the name of the datasource
         if name is None:
             name = csv_filename.split('/')[-1][:-4]
@@ -33,14 +37,18 @@ class DataSourceBase:
 class GroupDataSourceBase:
     TYPE = ''
 
-    def __init__(self, csv_filename, group_col, name=None):
+    def __init__(self, csv_filename, group_col, name=None, prefix=''):
+        # TODO: Add bibkey and comment to base class
         self.csv_filename = csv_filename
         self.group_col = group_col
 
         # Load dataframe
         self.df = pd.read_csv(self.csv_filename)
-        # Set ids as string
+        # Set ids as string and add prefix
         self.df[self.group_col] = self.df[self.group_col].astype(str)
+        self.prefix = prefix
+        if self.prefix:
+            self.df[self.group_col] = f"{self.prefix}_" + self.df[self.group_col]
         # Find the ids of all groups
         self.groups = {str(ci).replace(' ', '_') for ci in self.df[self.group_col].unique()}
         self.inds_in_group = {g: [] for g in self.groups}
@@ -59,11 +67,8 @@ class GroupDataSourceBase:
             self.group_of_ind[ind_id] = group_id
 
     def get_groups_in_ind_list(self, ind_list):
-        # groups = set()
-        # for ind in ind_list:
-        #     groups.add(self.inds_in_group[ind])
-        # # return sorted(groups)
-        return sorted({self.group_of_ind[ind_id] for ind_id in ind_list})
+        # Only returns groups of individuals that exist in the data
+        return sorted({self.group_of_ind[ind_id] for ind_id in ind_list if ind_id in self.group_of_ind})
 
     def get_group_data(self, group_id):
         if group_id not in self.groups:
@@ -81,8 +86,9 @@ class TimeWeightDataSource(DataSourceBase):
     AUX_DATA_UNITS = "'kg'"
     AUX_DATA_LABELS = "'Initial weight'"
 
-    def __init__(self, csv_filename, id_col, weight_col, date_col, name=None, bibkey='', comment=''):
-        super().__init__(csv_filename, id_col, name=name)
+    def __init__(self, csv_filename, id_col, weight_col, date_col,
+                 name=None, prefix='', bibkey='', comment=''):
+        super().__init__(csv_filename, id_col, name=name, prefix=prefix)
         self.weight_col = weight_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -90,6 +96,7 @@ class TimeWeightDataSource(DataSourceBase):
         self.comment = comment
 
     def generate_code(self, ind_list=None):
+        # TODO: Check if this is needed
         if ind_list is None:
             ind_list = list(self.individuals)
 
@@ -124,7 +131,8 @@ class TimeWeightDataSource(DataSourceBase):
 class FinalWeightDataSource(DataSourceBase):
     TYPE = 'Wf'
 
-    def __init__(self, csv_filename, id_col, weight_col, age_col, date_col, name=None, bibkey='', comment=''):
+    def __init__(self, csv_filename, id_col, weight_col, age_col, date_col,
+                 name=None, bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name=name)
         self.weight_col = weight_col
         self.age_col = age_col
@@ -291,8 +299,8 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
     AUX_DATA_LABELS = "{'Initial weights', 'Individuals in group'}"
 
     def __init__(self, csv_filename, group_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, bibkey='', comment=''):
-        super().__init__(csv_filename, group_col, name=name)
+                 name=None, prefix='', bibkey='', comment=''):
+        super().__init__(csv_filename, group_col, name=name, prefix=prefix)
         self.feed_col = feed_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -300,6 +308,8 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
         self.comment = comment
         self.weight_data = weight_data_source
         self.weight_data.df[self.group_col] = self.weight_data.df[self.group_col].astype('str')
+        if self.prefix:
+            self.weight_data.df[self.group_col] = f"{self.prefix}_" + self.weight_data.df[self.group_col]
         self.get_inds_in_group(self.weight_data)
 
     def generate_code(self, ind_list=None):
@@ -345,6 +355,7 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
 
         return my_data_code
 
+
 class TimeCH4DataSource(DataSourceBase):
     TYPE = 'tCH4'
     UNITS = "{'d', 'g/d'}"
@@ -353,8 +364,8 @@ class TimeCH4DataSource(DataSourceBase):
     AUX_DATA_LABELS = "'Initial weight'"
 
     def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, bibkey='', comment=''):
-        super().__init__(csv_filename, id_col, name=name)
+                 name=None, prefix='', bibkey='', comment=''):
+        super().__init__(csv_filename, id_col, name=name, prefix=prefix)
         self.methane_col = methane_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -380,8 +391,8 @@ class TimeCH4DataSource(DataSourceBase):
 
             tCH4_data = f'data.{self.TYPE}_{ind_id} = ['
             for i in ind_data.index.values:
-                tCH4_data += f"{(ind_data.loc[i, self.date_col] - initial_date).days} " \
-                             f"{ind_data.loc[i, self.methane_col]}; "
+                tCH4_data += f"{(ind_data.loc[i, self.date_col] - initial_date).total_seconds() / (60 * 60 * 24):.2f}" \
+                             f" {ind_data.loc[i, self.methane_col]}; "
             my_data_code += tCH4_data[:-2] + '];\n'
             my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
                             f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
@@ -407,9 +418,8 @@ class TimeCO2DataSource(DataSourceBase):
     AUX_DATA_LABELS = "'Initial weight'"
 
     def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None,
-                 bibkey='', comment=''):
-        super().__init__(csv_filename, id_col, name=name)
+                 name=None, prefix='', bibkey='', comment=''):
+        super().__init__(csv_filename, id_col, name=name, prefix=prefix)
         self.co2_col = co2_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -436,8 +446,8 @@ class TimeCO2DataSource(DataSourceBase):
 
             tCO2_data = f'data.{self.TYPE}_{ind_id} = ['
             for i in ind_data.index.values:
-                tCO2_data += f"{(ind_data.loc[i, self.date_col] - initial_date).days} " \
-                             f"{ind_data.loc[i, self.co2_col]}; "
+                tCO2_data += f"{(ind_data.loc[i, self.date_col] - initial_date).total_seconds() / (60 * 60 * 24):.2f}" \
+                             f" {ind_data.loc[i, self.co2_col]}; "
             my_data_code += tCO2_data[:-2] + '];\n'
             my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
                             f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
@@ -459,8 +469,8 @@ class WeightFeedDataSource(DataSourceBase):
     # TODO: Update with last changes
     TYPE = 'WCX'
 
-    def __init__(self, csv_filename, id_col, weight_col, feed_col, date_col, name=None, bibkey='', comment=''):
-
+    def __init__(self, csv_filename, id_col, weight_col, feed_col, date_col,
+                 name=None, bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name)
         self.bibkey = bibkey
         self.comment = comment
@@ -553,6 +563,90 @@ class TotalFeedIntakeDataSource(DataSourceBase):
 
         return my_data_code
 
+class TimeMilkDataSource(DataSourceBase):
+    TYPE = 'tJL'
+    UNITS = "{'d', 'L/d'}"
+    LABELS = "{'Time since start', 'Milk production per day'}"
+
+    def __init__(self, csv_filename, id_col, milk_col, day_col,
+                 name=None, prefix='', bibkey='', comment=''):
+        super().__init__(csv_filename, id_col, name=name, prefix=prefix)
+        self.milk_col = milk_col
+        self.day_col = day_col
+        self.bibkey = bibkey
+        self.comment = comment
+
+    def generate_code(self, ind_list=None):
+        if ind_list is None:
+            ind_list = list(self.individuals)
+
+        my_data_code = f'%% Time vs Milk production data \n\n'
+        for ind_id in ind_list:
+            if ind_id not in self.individuals:
+                continue
+            ind_data = self.get_ind_data(ind_id).sort_values(by=self.day_col)
+            tmilk_data = f'data.{self.TYPE}_{ind_id} = ['
+            for i in ind_data.index.values:
+                tmilk_data += f"{ind_data.loc[i, self.day_col]} " \
+                           f"{ind_data.loc[i, self.milk_col]}; "
+            my_data_code += tmilk_data[:-2] + '];\n'
+
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+                            + f"txtData.title.{self.TYPE}_{ind_id} = 'Milk production curve of individual {ind_id}'; "
+            if self.comment:
+                my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
+            if self.bibkey:
+                my_data_code += f"bibkey.{self.TYPE}_{ind_id} = '{self.bibkey}';"
+            my_data_code += '\n\n'
+
+        return my_data_code
+
+class AgeWeightDataSource(DataSourceBase):
+    TYPE = "aW"
+    UNITS = "{'d', 'kg'}"
+    LABELS = "{'Age since birth', 'Wet weight'}"
+    AUX_DATA_UNITS = "'-'"
+    AUX_DATA_LABELS = "'Number of twins'"
+
+    def __init__(self, csv_filename, id_col, weight_col, age_col, n_twins_col,
+                 name=None, prefix='', bibkey='', comment=''):
+        super().__init__(csv_filename, id_col, name=name, prefix=prefix)
+        self.weight_col = weight_col
+        self.age_col = age_col
+        self.n_twins_col = n_twins_col
+        self.bibkey = bibkey
+        self.comment = comment
+
+    def generate_code(self, ind_list=None):
+        if ind_list is None:
+            ind_list = list(self.individuals)
+
+        my_data_code = f'%% Age vs Weight data \n\n'
+        for ind_id in ind_list:
+            if ind_id not in self.individuals:
+                continue
+            ind_data = self.get_ind_data(ind_id).sort_values(by=self.age_col)
+            n_twins = ind_data.iloc[0][self.n_twins_col]
+            aw_data = f'data.{self.TYPE}_{ind_id} = ['
+            for i in ind_data.index.values:
+                aw_data += f"{ind_data.loc[i, self.age_col]} " \
+                           f"{ind_data.loc[i, self.weight_col]}; "
+            my_data_code += aw_data[:-2] + '];\n'
+            my_data_code += f"extra.{self.TYPE}_{ind_id} = {n_twins}; " \
+                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+                            + f"txtData.title.{self.TYPE}_{ind_id} = 'Age weight curve of individual {ind_id}'; "
+            if self.comment:
+                my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
+            if self.bibkey:
+                my_data_code += f"bibkey.{self.TYPE}_{ind_id} = '{self.bibkey}';"
+            my_data_code += '\n\n'
+
+        return my_data_code
 
 class DataCollection:
     # TODO: Redo based on list

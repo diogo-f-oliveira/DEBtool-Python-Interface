@@ -2,7 +2,7 @@ from string import Template
 import os
 import shutil
 
-from .data_sources import DataCollection
+from .data_sources import DataCollection, DataSourceBase
 from .utils import check_files_exist_in_folder
 
 
@@ -11,7 +11,7 @@ class CodeGeneratorBase:
     FILES_NEEDED = ['mydata', 'pars_init', 'predict', 'run']
 
     def __init__(self, template_folder: str, individual_params: list, species_name: str, data: DataCollection):
-        self.data_sources = data
+        self.data = data
         self.mydata_code = []
         self.estimation_settings = {}
 
@@ -33,7 +33,7 @@ class CodeGeneratorBase:
         self.estimation_settings['tol_simplex'] = tol_simplex
 
     def create_mydata_file(self, output_folder, ind_list):
-        self.mydata_code = self.data_sources.get_mydata_code(ind_list=ind_list)
+        self.mydata_code = self.data.get_mydata_code(ind_list=ind_list)
         # replaced self.get_mydata_code(ind_list=ind_list)
         mydata_template = open(f'{self.template_folder}/mydata_{self.species_name}.m', 'r')
         mydata_out = open(f'{output_folder}/mydata_{self.species_name}.m', 'w')
@@ -41,7 +41,7 @@ class CodeGeneratorBase:
         result = src.substitute(ind_pars=str(self.individual_params)[1:-1],
                                 individual_data='\n'.join(self.mydata_code),
                                 ind_list=str(ind_list)[1:-1],
-                                univar_types=self.data_sources.data_types.__repr__()[1:-1])
+                                univar_types=self.data.data_types.__repr__()[1:-1])
         print(result, file=mydata_out)
         mydata_out.close()
         mydata_template.close()
@@ -65,24 +65,28 @@ class CodeGeneratorBase:
         return
 
 
-class TrainingCodeGenerator(CodeGeneratorBase):
+class GroupStepCodeGenerator(CodeGeneratorBase):
     def __init__(self, template_folder: str, individual_params: list, species_name: str, data: DataCollection):
         super().__init__(template_folder, individual_params, species_name, data)
 
     def create_mydata_file(self, output_folder, ind_list, ind_data_weight=None, extra_info=None):
-        self.mydata_code = self.data_sources.get_mydata_code(ind_list=ind_list)
+        self.mydata_code = self.data.get_mydata_code(ind_list=ind_list)
         mydata_template = open(f'{self.template_folder}/mydata_{self.species_name}.m', 'r', encoding="utf8")
         mydata_out = open(f'{output_folder}/mydata_{self.species_name}.m', 'w', encoding="utf-8")
         src = Template(mydata_template.read())
         if ind_data_weight is None:
-            ind_data_weight = f"1 / {len(ind_list)}"
+            ind_data_weight = "struct("
+            for ds in self.data.data_sources:
+                n = len(ds.individuals) if isinstance(ds, DataSourceBase) else len(ds.groups)
+                ind_data_weight += f"'{ds.TYPE}', 1/{n}, "
+            ind_data_weight = ind_data_weight[:-2] + ");"
         if extra_info is None:
             extra_info = {}
         result = src.substitute(ind_pars=str(self.individual_params)[1:-1],
                                 individual_data='\n'.join(self.mydata_code),
                                 ind_list=str(ind_list)[1:-1],
                                 ind_data_weight=ind_data_weight,
-                                univar_types=self.data_sources.data_types.__repr__()[1:-1],
+                                univar_types=self.data.data_types.__repr__()[1:-1],
                                 **extra_info)
 
         print(result, file=mydata_out)
@@ -95,7 +99,7 @@ class TrainingCodeGenerator(CodeGeneratorBase):
             os.makedirs(output_folder)
         # If no ind list is provided then all individuals from all data sources are used
         if ind_list is None:
-            ind_list = list(self.data_sources.individuals)
+            ind_list = list(self.data.individuals)
 
         # Generate files
         self.create_mydata_file(output_folder, ind_list, ind_data_weight=ind_data_weight, extra_info=extra_info)
@@ -110,7 +114,7 @@ class TrainingCodeGenerator(CodeGeneratorBase):
             raise Exception(f"An error occurred whilst creating file {missing_file}.")
 
 
-class TestingCodeGenerator(CodeGeneratorBase):
+class IndividualStepCodeGenerator(CodeGeneratorBase):
     def __init__(self, template_folder: str, individual_params: list, species_name: str, data: DataCollection):
         super().__init__(template_folder, individual_params, species_name, data)
         # TODO: Set output folder as an attribute
@@ -140,7 +144,7 @@ class TestingCodeGenerator(CodeGeneratorBase):
 
     def create_mydata_file(self, output_folder, ind_list, group_list, species_data_weight=1, ind_data_weight=None,
                            pseudo_data: dict = None, pseudo_data_weight=0.1):
-        self.mydata_code = self.data_sources.get_mydata_code(ind_list=ind_list)
+        self.mydata_code = self.data.get_mydata_code(ind_list=ind_list)
         mydata_template = open(f'{self.template_folder}/mydata_{self.species_name}.m', 'r', encoding="utf8")
         mydata_out = open(f'{output_folder}/mydata_{self.species_name}.m', 'w', encoding="utf-8")
         src = Template(mydata_template.read())
@@ -157,7 +161,7 @@ class TestingCodeGenerator(CodeGeneratorBase):
                                 group_list=str(group_list)[1:-1],
                                 species_data_weight=species_data_weight,
                                 ind_data_weight=ind_data_weight,
-                                univar_types=self.data_sources.data_types.__repr__()[1:-1],
+                                univar_types=self.data.data_types.__repr__()[1:-1],
                                 pseudo_data_values=pseudo_data_code,
                                 pseudo_data_weight=pseudo_data_weight)
         print(result, file=mydata_out)
@@ -171,9 +175,9 @@ class TestingCodeGenerator(CodeGeneratorBase):
             os.makedirs(output_folder)
         # If no ind list is provided then all individuals from all data sources are used
         if ind_list is None:
-            ind_list = self.data_sources.individuals
+            ind_list = self.data.individuals
         if group_list is None:
-            group_list = self.data_sources.groups
+            group_list = self.data.groups
 
         # Generate files
         self.create_mydata_file(output_folder, ind_list, group_list, **mydata_options)

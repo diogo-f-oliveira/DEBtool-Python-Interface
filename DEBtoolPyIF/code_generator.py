@@ -121,10 +121,15 @@ class IndividualStepCodeGenerator(CodeGeneratorBase):
         self.pars_dict = {}
 
     # TODO: read pars from file
-    def read_default_pars_file(self, pars):
-        return
+    def read_default_pars_file(self, pars_file):
+        default_pars = {}
+        with open(pars_file, 'r') as f:
+            for line in f:
+                p, v = line.split()
+                default_pars[p] = float(v)
+        return default_pars
 
-    def create_pars_init_file(self, output_folder, default_pars, estimate_group_pars=0):
+    def create_pars_init_file(self, output_folder, default_pars, estimate_group_pars=0, extra_par_values=''):
         # Get default values for parameters
         self.pars_dict = {}
         # TODO: Check if it is a path, otherwise raise Exception
@@ -137,13 +142,14 @@ class IndividualStepCodeGenerator(CodeGeneratorBase):
         pars_init_template = open(f'{self.template_folder}/pars_init_{self.species_name}.m', 'r')
         pars_init_out = open(f'{output_folder}/pars_init_{self.species_name}.m', 'w')
         src = Template(pars_init_template.read())
-        result = src.substitute(estimate_group_pars=int(estimate_group_pars), **self.pars_dict)
+        result = src.substitute(estimate_group_pars=int(estimate_group_pars), extra_par_values=extra_par_values,
+                                **self.pars_dict)
         print(result, file=pars_init_out)
         pars_init_out.close()
         pars_init_template.close()
 
     def create_mydata_file(self, output_folder, ind_list, group_list, species_data_weight=1, ind_data_weight=None,
-                           pseudo_data: dict = None, pseudo_data_weight=0.1):
+                           pseudo_data: dict = None, pseudo_data_weight=0.1, extra_info=None):
         self.mydata_code = self.data.get_mydata_code(ind_list=ind_list)
         mydata_template = open(f'{self.template_folder}/mydata_{self.species_name}.m', 'r', encoding="utf8")
         mydata_out = open(f'{output_folder}/mydata_{self.species_name}.m', 'w', encoding="utf-8")
@@ -154,6 +160,8 @@ class IndividualStepCodeGenerator(CodeGeneratorBase):
             pseudo_data_code = ''
         else:
             pseudo_data_code = '\n'.join([f"pseudo_data_values.{p} = {val};" for p, val in pseudo_data.items()])
+        if extra_info is None:
+            extra_info = {}
 
         result = src.substitute(ind_pars=str(self.individual_params)[1:-1],
                                 individual_data='\n'.join(self.mydata_code),
@@ -163,13 +171,14 @@ class IndividualStepCodeGenerator(CodeGeneratorBase):
                                 ind_data_weight=ind_data_weight,
                                 univar_types=self.data.data_types.__repr__()[1:-1],
                                 pseudo_data_values=pseudo_data_code,
-                                pseudo_data_weight=pseudo_data_weight)
+                                pseudo_data_weight=pseudo_data_weight,
+                                **extra_info)
         print(result, file=mydata_out)
         mydata_out.close()
         mydata_template.close()
 
     def generate_code(self, output_folder, default_pars, ind_list=None, group_list=None, estimate_group_pars=0,
-                      **mydata_options):
+                      extra_info=None, extra_par_values='', **mydata_options):
         # Create folder if it doesn't exist
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -180,8 +189,9 @@ class IndividualStepCodeGenerator(CodeGeneratorBase):
             group_list = self.data.groups
 
         # Generate files
-        self.create_mydata_file(output_folder, ind_list, group_list, **mydata_options)
-        self.create_pars_init_file(output_folder, default_pars, estimate_group_pars=estimate_group_pars)
+        self.create_mydata_file(output_folder, ind_list, group_list, extra_info=extra_info, **mydata_options)
+        self.create_pars_init_file(output_folder, default_pars, estimate_group_pars=estimate_group_pars,
+                                   extra_par_values=extra_par_values)
         self.create_predict_file(output_folder)
         self.create_run_file(output_folder)
 
@@ -190,3 +200,17 @@ class IndividualStepCodeGenerator(CodeGeneratorBase):
         complete, missing_file = check_files_exist_in_folder(output_folder, files)
         if not complete:
             raise Exception(f"A mistake occurred whilst creating file {missing_file}.")
+
+
+def format_extra_info(var_name, data, label, comment='-', units='-', bibkey='-', pars_init_access=False):
+    s = f"data.{var_name} = 10; " \
+        f"units.{var_name} = '-'; " \
+        f"label.{var_name} = 'Dummy variable'; " \
+        f"comment.{var_name} = '{comment}'; " \
+        f"bibkey.{var_name} = '{bibkey}'; \n"
+    s += f"extra.{var_name} = {data}; " \
+         f"units.extra.{var_name} = '{units}'; " \
+         f"label.extra.{var_name} = '{label}'; \n"
+    if pars_init_access:
+        s += f"metaData.{var_name} = extra.{var_name}; % Save in metaData to use in pars_init.m"
+    return s

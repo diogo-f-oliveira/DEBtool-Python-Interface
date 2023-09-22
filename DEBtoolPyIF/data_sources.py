@@ -677,15 +677,15 @@ class DataCollection:
 
     @property
     def data_types(self):
-        return [ds.TYPE for ds in self.data_sources]
+        return list(set([ds.TYPE for ds in self.data_sources]))
 
     @property
     def ind_data_types(self):
-        return [ds.TYPE for ds in self.ind_data_sources]
+        return list(set([ds.TYPE for ds in self.ind_data_sources]))
 
     @property
     def group_data_types(self):
-        return [ds.TYPE for ds in self.group_data_sources]
+        return list(set([ds.TYPE for ds in self.group_data_sources]))
 
     @property
     def individuals(self):
@@ -696,13 +696,33 @@ class DataCollection:
         return sorted(self._groups)
 
     @property
-    def ind_groups(self):
-        ind_groups = {}
+    def inds_in_group(self):
+        inds_in_group = {}
         if len(self.group_data_sources):
             for gds in self.group_data_sources:
                 for g_id in gds.groups:
-                    ind_groups[g_id] = gds.inds_in_group[g_id]
+                    inds_in_group[g_id] = gds.inds_in_group[g_id]
         else:
             for i, ind_id in enumerate(self.individuals):
-                ind_groups[i] = [ind_id]
-        return ind_groups
+                inds_in_group[i] = [ind_id]
+        return inds_in_group
+
+    def get_ind_data(self, ind_id, data_type):
+        ind_data = []
+        for ds in self.ind_data_sources:
+            if data_type == ds.TYPE and ind_id in ds.individuals:
+                ind_data.append(ds.get_ind_data(ind_id))
+        if len(ind_data):
+            return pd.concat(ind_data)
+        else:
+            return None
+
+    def get_group_data(self, group_id, data_type):
+        group_data = []
+        for ds in self.group_data_sources:
+            if data_type == ds.TYPE and group_id in ds.groups:
+                group_data.append(ds.get_group_data(group_id))
+        if len(group_data):
+            return pd.concat(group_data)
+        else:
+            return None

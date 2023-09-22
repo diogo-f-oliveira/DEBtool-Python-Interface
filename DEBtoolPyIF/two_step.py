@@ -26,7 +26,7 @@ class TwoStepEstimator:
         # MATLAB wrapper to run estimations
         # TODO: Option to not start MATLAB
         print('Starting MATLAB...')
-        # self.runner = EstimationRunner()
+        self.runner = EstimationRunner()
 
     def group_step_estimation(self, estimation_settings: dict, output_folder=None, ind_list=None, ind_data_weight=None,
                               save_pars=True, extra_info=None, **wrapper_settings):
@@ -53,21 +53,15 @@ class TwoStepEstimator:
         return {p: all_pars[p] for p in self.pars}
 
     def ind_step_estimation(self, default_pars: dict, ind_pars: list, estimation_settings: dict, output_folder=None,
-                            ind_groups_list=None, use_pseudo_data=False, pseudo_data_weight=0.1,
-                            species_data_types=None,
-                            species_data_weight="1 / numel(metaData.data_0)", **wrapper_settings):
+                            ind_groups_list=None, use_pseudo_data=True, pseudo_data_weight=0.1,
+                            species_data_types=None, species_data_weight="1 / numel(metaData.data_0)",
+                            extra_info=None, extra_par_values='', **wrapper_settings):
         # Check both ind_pars and default_pars are properly defined
         if species_data_types is None:
             species_data_types = []
         if not len(ind_pars):
             raise Exception("Individual parameters were not set in ind_pars.")
-        # if not all([p in self.pars for p in ind_pars]):
-        #     raise Exception("One or more individual parameters in ind_pars are not defined in class.")
-        # if not all([p in self.pars for p in default_pars.keys()]):
-        #     raise Exception("One or more parameters in default_pars are not defined in class.")
-        # if not all([p in default_pars for p in ind_pars]):
-        #     raise Exception("One or more individual parameters in ind_pars do not have a default value defined in "
-        #                     "default_pars.")
+
         self.ind_step_code_generator.individual_params = ind_pars
 
         # Create files for estimation
@@ -75,6 +69,7 @@ class TwoStepEstimator:
             output_folder = f"{self.main_output_folder}/{' '.join(ind_pars)}"
         if use_pseudo_data:
             pseudo_data = {}
+            # Find pseudo-data value for parameters that are ind_pars, including default parameters that have a suffix
             for p, v in default_pars.items():
                 if any([i in p for i in ind_pars]):
                     pseudo_data[p] = v
@@ -84,6 +79,7 @@ class TwoStepEstimator:
         my_data_options = dict(pseudo_data=pseudo_data, species_data_weight=species_data_weight, ind_data_weight=1,
                                pseudo_data_weight=pseudo_data_weight)
         self.ind_step_code_generator.generate_code(output_folder=output_folder, default_pars=default_pars, ind_list=[],
+                                                   extra_info=extra_info, extra_par_values=extra_par_values,
                                                    **my_data_options)
 
         # Create files to save parameters and errors
@@ -106,11 +102,12 @@ class TwoStepEstimator:
 
         # Estimate for each individual
         if ind_groups_list is None:
-            ind_groups_list = self.data.ind_groups
+            ind_groups_list = self.data.inds_in_group
         for group_id, ind_list in ind_groups_list.items():
             # Create my_data.m file
             self.ind_step_code_generator.create_mydata_file(output_folder=output_folder, ind_list=ind_list,
-                                                            group_list=[group_id], **my_data_options)
+                                                            group_list=[group_id], extra_info=extra_info,
+                                                            **my_data_options)
 
             # Run estimation
             results = self.runner.run_estimation(run_files_dir=output_folder, species_name=self.species_name,
@@ -118,10 +115,10 @@ class TwoStepEstimator:
             if not results['success']:
                 print('BUG!!! BIG BUG!!!')
 
-            group_data_errors = [results['estimation_errors']['final']['sb_1']]
+            group_data_errors = [f"{results['estimation_errors']['final']['sb_1']:.5f}"]
             for ds in self.data.group_data_sources:
                 if group_id in ds.groups:
-                    group_data_errors.append(results['estimation_errors']['re'][f'{ds.TYPE}_{group_id}'])
+                    group_data_errors.append(f"{results['estimation_errors']['re'][f'{ds.TYPE}_{group_id}']:.5f}")
             # TODO: Save group_id in estimation
             for i, ind in enumerate(ind_list):
                 # Get parameter values for the individual
@@ -133,18 +130,20 @@ class TwoStepEstimator:
                 # Get errors measures for the individual
                 ind_data_errors = []
                 for data_type in self.data.ind_data_types:
-                    ind_data_errors.append(results['estimation_errors']['re'][f'{data_type}_{ind}'])
+                    if f'{data_type}_{ind}' in results['estimation_errors']['re']:
+                        ind_data_errors.append(f"{results['estimation_errors']['re'][f'{data_type}_{ind}']:.5f}")
+                    else:
+                        ind_data_errors.append("-------")
 
-                print(f"{ind},{','.join([f'{e:.5f}' for e in group_data_errors])},"
-                      f"{','.join([f'{e:.5f}' for e in ind_data_errors])}", file=errors_file)
+                print(f"{ind},{','.join(group_data_errors)},{','.join(ind_data_errors)}", file=errors_file)
 
                 # Print errors and individual parameter values
                 if i == 0:
-                    group_print_str = ' '.join([f"{e:.5f}" for e in group_data_errors])
+                    group_print_str = ' '.join(group_data_errors)
                 else:
                     group_print_str = ' ' * len(group_print_str)
                 ind_info = f"{ind}".ljust(max_len_id) + " | " + group_print_str + " " \
-                           + ' '.join([f"{e:.5f}" for e in ind_data_errors]) + \
+                           + ' '.join(ind_data_errors) + \
                            ' | ' + ' '.join([f"{p:.4e}" for p in ind_par_values])
                 print(ind_info)
 
@@ -155,6 +154,7 @@ class TwoStepEstimator:
                                                         group_list=list(ind_groups_list.keys()),
                                                         ind_list=[ind_id for ind_list in ind_groups_list.values() for
                                                                   ind_id in ind_list],
+                                                        extra_info=extra_info,
                                                         **my_data_options)
         # Save all individual pars in the results.mat file
         self.runner.eng.initialize_ind_pars_from_csv('ind_pars.csv', self.species_name, nargout=0)
@@ -188,9 +188,10 @@ def compile_results(estimator: TwoStepEstimator, pars_to_get_stats):
             continue
 
         # Compute error stats
-        error_df = pd.read_csv(f"{estim_folder}/errors.csv", index_col='id')
+        error_df = pd.read_csv(f"{estim_folder}/errors.csv", index_col='id', na_values='-------')
         group_size = max(
-            [len(ind_list) for ind_list in estimator.data.ind_groups.values()])  # Assumes all groups have the same size
+            [len(ind_list) for ind_list in
+             estimator.data.inds_in_group.values()])  # Assumes all groups have the same size
         line = f"{estim} ,{n_ind_pars},{error_df['loss'].sum() / group_size:.5f}"
         for ds in estimator.data.data_types:
             line += f",{error_df[ds].min():.5f},{error_df[ds].mean():.5f},{error_df[ds].max():.5f}"

@@ -161,8 +161,10 @@ class TwoStepEstimator:
 
 
 # TODO: Make compatible with breed data
-def compile_results(estimator: TwoStepEstimator, pars_to_get_stats):
+def compile_results(estimator: TwoStepEstimator, pars_to_get_stats, ind_step_estimations_folder=None):
     print(f"Compiling results for estimations with parameters", *pars_to_get_stats, "...", end=' ', sep=' ')
+    if ind_step_estimations_folder is None:
+        ind_step_estimations_folder = estimator.main_output_folder
     stats_folder = f"{estimator.main_output_folder}/Stats"
     if not os.path.exists(stats_folder):
         os.makedirs(stats_folder)
@@ -176,8 +178,8 @@ def compile_results(estimator: TwoStepEstimator, pars_to_get_stats):
     print(header, file=error_summary)
 
     # Iterate through estimation folders
-    for estim in os.listdir(estimator.main_output_folder):
-        estim_folder = f"{estimator.main_output_folder}/{estim}"
+    for estim in os.listdir(ind_step_estimations_folder):
+        estim_folder = f"{ind_step_estimations_folder}/{estim}"
         if estim == 'Group Step' or estim == 'Analysis' or not os.path.isdir(estim_folder):
             continue
         ind_pars = estim.split()

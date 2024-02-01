@@ -99,11 +99,39 @@ class EstimationRunner:
 
         self.eng.eval(f"load('{os.path.abspath(run_files_dir)}/results_{species_name}.mat')", nargout=0)
 
+        pars = self.eng.workspace['par']
+
         # Shut down engine
         if close_after:
             self.close()
 
-        return self.eng.workspace['par']
+        return pars
+
+    def fetch_errors_from_mat_file(self, run_files_dir: str, species_name: str, error_type='RE', window=False,
+                                   clear_before=True, close_after=False):
+
+        if error_type not in ('RE', 'SAE', 'SSE'):
+            raise Exception(f"Invalid error_type {error_type}. Error type must be either 'RE', 'SAE' or 'SSE'.")
+        if window:
+            self.eng.desktop(nargout=0)
+        if clear_before:
+            self.eng.eval("clear", nargout=0)
+
+        # Change MATLAB working directory
+        self.cd(workspace_dir=run_files_dir)
+
+        self.eng.eval(f"load('{os.path.abspath(run_files_dir)}/results_{species_name}.mat')", nargout=0)
+
+        errors = {d: e[0] for d, e in zip(
+            self.eng.workspace['metaData']['data_0'] + self.eng.workspace['metaData']['data_1'],
+            self.eng.workspace['metaPar'][error_type])
+                  }
+
+        # Shut down engine
+        if close_after:
+            self.close()
+
+        return errors
 
     def cd(self, workspace_dir):
         self.eng.cd(os.path.abspath(workspace_dir), nargout=0)

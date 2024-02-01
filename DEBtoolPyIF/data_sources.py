@@ -79,6 +79,86 @@ class GroupDataSourceBase:
         return
 
 
+class DataCollection:
+    # TODO: Redo based on list
+    def __init__(self, data_sources: list):
+        self._individuals = set()
+        self._groups = set()
+        self.group_data_sources = []
+        self.ind_data_sources = []
+        for ds in data_sources:
+            if isinstance(ds, GroupDataSourceBase):
+                self._groups = self._groups.union(ds.groups)
+                self.group_data_sources.append(ds)
+            elif isinstance(ds, DataSourceBase):
+                self._individuals = self._individuals.union(ds.individuals)
+                self.ind_data_sources.append(ds)
+            else:
+                raise Exception('Data sources must based on DataSourceBase or GroupDataSourceBase class')
+
+        self.data_sources = data_sources
+
+    def add_data_source(self, data_source):
+        self.data_sources.append(data_source)
+        if isinstance(data_source, DataSourceBase):
+            self._individuals = self._individuals.union(data_source.individuals)
+
+    def get_mydata_code(self, ind_list=None):
+        return [ds.generate_code(ind_list=ind_list) for ds in self.data_sources]
+
+    @property
+    def data_types(self):
+        return list(set([ds.TYPE for ds in self.data_sources]))
+
+    @property
+    def ind_data_types(self):
+        return list(set([ds.TYPE for ds in self.ind_data_sources]))
+
+    @property
+    def group_data_types(self):
+        return list(set([ds.TYPE for ds in self.group_data_sources]))
+
+    @property
+    def individuals(self):
+        return sorted(self._individuals)
+
+    @property
+    def groups(self):
+        return sorted(self._groups)
+
+    @property
+    def inds_in_group(self):
+        inds_in_group = {}
+        if len(self.group_data_sources):
+            for gds in self.group_data_sources:
+                for g_id in gds.groups:
+                    inds_in_group[g_id] = gds.inds_in_group[g_id]
+        else:
+            for i, ind_id in enumerate(self.individuals):
+                inds_in_group[i] = [ind_id]
+        return inds_in_group
+
+    def get_ind_data(self, ind_id, data_type):
+        ind_data = []
+        for ds in self.ind_data_sources:
+            if data_type == ds.TYPE and ind_id in ds.individuals:
+                ind_data.append(ds.get_ind_data(ind_id))
+        if len(ind_data):
+            return pd.concat(ind_data)
+        else:
+            return None
+
+    def get_group_data(self, group_id, data_type):
+        group_data = []
+        for ds in self.group_data_sources:
+            if data_type == ds.TYPE and group_id in ds.groups:
+                group_data.append(ds.get_group_data(group_id))
+        if len(group_data):
+            return pd.concat(group_data)
+        else:
+            return None
+
+
 class TimeWeightDataSource(DataSourceBase):
     TYPE = "tW"
     UNITS = "{'d', 'kg'}"
@@ -563,6 +643,7 @@ class TotalFeedIntakeDataSource(DataSourceBase):
 
         return my_data_code
 
+
 class TimeMilkDataSource(DataSourceBase):
     TYPE = 'tJL'
     UNITS = "{'d', 'L/d'}"
@@ -588,7 +669,7 @@ class TimeMilkDataSource(DataSourceBase):
             tmilk_data = f'data.{self.TYPE}_{ind_id} = ['
             for i in ind_data.index.values:
                 tmilk_data += f"{ind_data.loc[i, self.day_col]} " \
-                           f"{ind_data.loc[i, self.milk_col]}; "
+                              f"{ind_data.loc[i, self.milk_col]}; "
             my_data_code += tmilk_data[:-2] + '];\n'
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
@@ -601,6 +682,7 @@ class TimeMilkDataSource(DataSourceBase):
             my_data_code += '\n\n'
 
         return my_data_code
+
 
 class AgeWeightDataSource(DataSourceBase):
     TYPE = "aW"
@@ -647,82 +729,3 @@ class AgeWeightDataSource(DataSourceBase):
             my_data_code += '\n\n'
 
         return my_data_code
-
-class DataCollection:
-    # TODO: Redo based on list
-    def __init__(self, data_sources: list):
-        self._individuals = set()
-        self._groups = set()
-        self.group_data_sources = []
-        self.ind_data_sources = []
-        for ds in data_sources:
-            if isinstance(ds, GroupDataSourceBase):
-                self._groups = self._groups.union(ds.groups)
-                self.group_data_sources.append(ds)
-            elif isinstance(ds, DataSourceBase):
-                self._individuals = self._individuals.union(ds.individuals)
-                self.ind_data_sources.append(ds)
-            else:
-                raise Exception('Data sources must based on DataSourceBase or GroupDataSourceBase class')
-
-        self.data_sources = data_sources
-
-    def add_data_source(self, data_source):
-        self.data_sources.append(data_source)
-        if isinstance(data_source, DataSourceBase):
-            self._individuals = self._individuals.union(data_source.individuals)
-
-    def get_mydata_code(self, ind_list=None):
-        return [ds.generate_code(ind_list=ind_list) for ds in self.data_sources]
-
-    @property
-    def data_types(self):
-        return list(set([ds.TYPE for ds in self.data_sources]))
-
-    @property
-    def ind_data_types(self):
-        return list(set([ds.TYPE for ds in self.ind_data_sources]))
-
-    @property
-    def group_data_types(self):
-        return list(set([ds.TYPE for ds in self.group_data_sources]))
-
-    @property
-    def individuals(self):
-        return sorted(self._individuals)
-
-    @property
-    def groups(self):
-        return sorted(self._groups)
-
-    @property
-    def inds_in_group(self):
-        inds_in_group = {}
-        if len(self.group_data_sources):
-            for gds in self.group_data_sources:
-                for g_id in gds.groups:
-                    inds_in_group[g_id] = gds.inds_in_group[g_id]
-        else:
-            for i, ind_id in enumerate(self.individuals):
-                inds_in_group[i] = [ind_id]
-        return inds_in_group
-
-    def get_ind_data(self, ind_id, data_type):
-        ind_data = []
-        for ds in self.ind_data_sources:
-            if data_type == ds.TYPE and ind_id in ds.individuals:
-                ind_data.append(ds.get_ind_data(ind_id))
-        if len(ind_data):
-            return pd.concat(ind_data)
-        else:
-            return None
-
-    def get_group_data(self, group_id, data_type):
-        group_data = []
-        for ds in self.group_data_sources:
-            if data_type == ds.TYPE and group_id in ds.groups:
-                group_data.append(ds.get_group_data(group_id))
-        if len(group_data):
-            return pd.concat(group_data)
-        else:
-            return None

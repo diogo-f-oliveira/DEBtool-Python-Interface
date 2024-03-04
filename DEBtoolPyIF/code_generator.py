@@ -6,8 +6,9 @@ from .data_sources import DataCollection, DataSourceBase
 from .utils import check_files_exist_in_folder
 
 
+
+
 class CodeGeneratorBase:
-    # TODO: Create functions to write each file type
     FILES_NEEDED = ['mydata', 'pars_init', 'predict', 'run']
 
     def __init__(self, template_folder: str, individual_params: list, species_name: str, data: DataCollection):

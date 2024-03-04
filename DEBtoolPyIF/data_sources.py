@@ -1,5 +1,5 @@
 import pandas as pd
-
+from .utils import format_dict_data
 
 class DataSourceBase:
     TYPE = ''
@@ -25,7 +25,7 @@ class DataSourceBase:
         # Save groupby structure for faster processing
         self.groupbys = self.df.groupby(self.id_col)
 
-    def generate_code(self, ind_list=None):
+    def generate_code(self, ind_list='all'):
         return
 
     def get_ind_data(self, ind_id):
@@ -75,11 +75,12 @@ class GroupDataSourceBase:
             raise Exception('Invalid group_id, group not found in the dataset')
         return self.groupbys.get_group(group_id)
 
-    def generate_code(self, ind_list=None):
+    def generate_code(self, ind_list='all'):
         return
 
 
 class DataCollection:
+    # TODO: Method to fetch a datasource
     # TODO: Redo based on list
     def __init__(self, data_sources: list):
         self._individuals = set()
@@ -99,24 +100,31 @@ class DataCollection:
         self.data_sources = data_sources
 
     def add_data_source(self, data_source):
+        # TODO: Functionality to add a GroupDataSourceBase class
         self.data_sources.append(data_source)
         if isinstance(data_source, DataSourceBase):
             self._individuals = self._individuals.union(data_source.individuals)
 
-    def get_mydata_code(self, ind_list=None):
+    def get_mydata_code(self, ind_list='all'):
         return [ds.generate_code(ind_list=ind_list) for ds in self.data_sources]
+
+    def get_ind_data_code(self, ind_list='all'):
+        return [ds.generate_code(ind_list=ind_list) for ds in self.ind_data_sources]
+
+    def get_group_data_code(self, ind_list='all'):
+        return [ds.generate_code(ind_list=ind_list) for ds in self.group_data_sources]
 
     @property
     def data_types(self):
-        return list(set([ds.TYPE for ds in self.data_sources]))
+        return sorted(set([ds.TYPE for ds in self.data_sources]))
 
     @property
     def ind_data_types(self):
-        return list(set([ds.TYPE for ds in self.ind_data_sources]))
+        return sorted(set([ds.TYPE for ds in self.ind_data_sources]))
 
     @property
     def group_data_types(self):
-        return list(set([ds.TYPE for ds in self.group_data_sources]))
+        return sorted(set([ds.TYPE for ds in self.group_data_sources]))
 
     @property
     def individuals(self):
@@ -137,6 +145,20 @@ class DataCollection:
             for i, ind_id in enumerate(self.individuals):
                 inds_in_group[i] = [ind_id]
         return inds_in_group
+
+    def get_groups_of_ind_list(self, ind_list='all'):
+        if ind_list == 'all':
+            ind_list = self.individuals
+        groups_of_ind = {ind_id: [] for ind_id in ind_list if ind_id in self._individuals}
+        for gds in self.group_data_sources:
+            for ind_id in ind_list:
+                if ind_id in gds.group_of_ind:
+                    groups_of_ind[ind_id].append(gds.group_of_ind[ind_id])
+        return groups_of_ind
+
+    def get_group_list_from_ind_list(self, ind_list='all'):
+        groups_of_ind = self.get_groups_of_ind_list(ind_list)
+        return sorted({g for g_list in groups_of_ind.values() for g in g_list})
 
     def get_ind_data(self, ind_id, data_type):
         ind_data = []
@@ -175,9 +197,9 @@ class TimeWeightDataSource(DataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
 
-    def generate_code(self, ind_list=None):
+    def generate_code(self, ind_list='all'):
         # TODO: Check if this is needed
-        if ind_list is None:
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Time vs Weight data \n\n'
@@ -192,9 +214,9 @@ class TimeWeightDataSource(DataSourceBase):
                 tw_data += f"{(ind_data.loc[i, self.date_col] - initial_date).days} " \
                            f"{ind_data.loc[i, self.weight_col]}; "
             my_data_code += tw_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+            my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
+                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
@@ -220,8 +242,8 @@ class FinalWeightDataSource(DataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         units = "{'d', 'kg'}"
@@ -236,9 +258,9 @@ class FinalWeightDataSource(DataSourceBase):
             duration = animal_data.iloc[-1][self.age_col] - animal_data.iloc[0][self.age_col]
 
             my_data_code += f'data.{self.TYPE}_{animal_id} = {final_weight}; '
-            my_data_code += f"extra.{self.TYPE}_{animal_id} = [{duration} ,{initial_weight}]; " \
-                            f"units.extra.{self.TYPE}_{animal_id} = {units}; " \
-                            f"label.extra.{self.TYPE}_{animal_id} = 'Time elapsed and initial weight';\n"
+            my_data_code += f"init.{self.TYPE}_{animal_id} = [{duration} ,{initial_weight}]; " \
+                            f"units.init.{self.TYPE}_{animal_id} = {units}; " \
+                            f"label.init.{self.TYPE}_{animal_id} = 'Time elapsed and initial weight';\n"
 
             my_data_code += f"units.{self.TYPE}_{animal_id} = 'kg'; " \
                             + f"label.{self.TYPE}_{animal_id} = {labels}; " \
@@ -270,8 +292,8 @@ class TimeFeedDataSource(DataSourceBase):
         self.comment = comment
         self.weight_data = weight_data_source
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Time vs Daily feed consumption data\n\n'
@@ -291,9 +313,9 @@ class TimeFeedDataSource(DataSourceBase):
                 t_JX_data += f"{(ind_data.loc[i, self.date_col] - initial_date).days} " \
                              f"{ind_data.loc[i, self.feed_col]}; "
             my_data_code += t_JX_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+            my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
+                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
@@ -324,8 +346,8 @@ class TimeCumulativeFeedDataSource(DataSourceBase):
         self.comment = comment
         self.weight_data = weight_data_source
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Time vs Cumulative Feed Consumption data\n\n'
@@ -355,9 +377,9 @@ class TimeCumulativeFeedDataSource(DataSourceBase):
                 tCX_data += f"{(ind_data.loc[i, self.date_col] - initial_date).days + 1} " \
                             f"{ind_data.loc[i, self.feed_col]}; "
             my_data_code += tCX_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+            my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
+                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
@@ -375,9 +397,10 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
     TYPE = 'tJX_grp'
     UNITS = "{'d', 'kg'}"
     LABELS = "{'Time since start', 'Daily food consumption of group during test'}"
-    AUX_DATA_UNITS = "{'kg', '-'}"
-    AUX_DATA_LABELS = "{'Initial weights', 'Individuals in group'}"
+    AUX_DATA_UNITS = "{'kg'}"
+    AUX_DATA_LABELS = "{'Initial weights for the individuals in the group'}"
 
+    # TODO: Remove list of inds in group from auxData
     def __init__(self, csv_filename, group_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
                  name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename, group_col, name=name, prefix=prefix)
@@ -392,8 +415,8 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
             self.weight_data.df[self.group_col] = f"{self.prefix}_" + self.weight_data.df[self.group_col]
         self.get_inds_in_group(self.weight_data)
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.weight_data.individuals)
         group_list = self.get_groups_in_ind_list(ind_list)
 
@@ -405,13 +428,13 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
             # group
             group_data = self.get_group_data(group_id).sort_values(by=self.date_col)
             initial_dates = []
-            initial_weights = []
+            initial_weights = {}
             for ind_id in self.inds_in_group[group_id]:
                 ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
                 ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] -
                                            group_data.iloc[0][self.date_col]).apply(lambda d: d.days - 1)
                 ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-                initial_weights.append(ind_weight_data.iloc[0][self.weight_data.weight_col])
+                initial_weights[ind_id] = ind_weight_data.iloc[0][self.weight_data.weight_col]
                 initial_dates.append(ind_weight_data.iloc[0][self.weight_data.date_col])
 
             t_JX_group_data = f'data.{self.TYPE}_{group_id} = ['
@@ -419,10 +442,10 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
                 t_JX_group_data += f"{(group_data.loc[i, self.date_col] - initial_dates[0]).days} " \
                                    f"{group_data.loc[i, self.feed_col]}; "
             my_data_code += t_JX_group_data[:-2] + '];\n'
-            inds_in_group = '{' + str(self.inds_in_group[group_id])[1:-1] + '}'
-            my_data_code += f"extra.{self.TYPE}_{group_id} = {{ {initial_weights}, {inds_in_group} }}; " \
-                            f"units.extra.{self.TYPE}_{group_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{group_id} = {self.AUX_DATA_LABELS};\n"
+            # inds_in_group = '{' + str(self.inds_in_group[group_id])[1:-1] + '}'
+            my_data_code += f"init.{self.TYPE}_{group_id} = {format_dict_data(initial_weights)}; " \
+                            f"units.init.{self.TYPE}_{group_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{group_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{group_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{group_id} = {self.LABELS}; " \
@@ -444,7 +467,7 @@ class TimeCH4DataSource(DataSourceBase):
     AUX_DATA_LABELS = "'Initial weight'"
 
     def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, prefix='', bibkey='', comment=''):
+                 start_at_first=False, name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name=name, prefix=prefix)
         self.methane_col = methane_col
         self.date_col = date_col
@@ -452,9 +475,10 @@ class TimeCH4DataSource(DataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
         self.weight_data = weight_data_source
+        self.start_at_first = start_at_first
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Time vs Daily methane (CH4) emissions data\n\n'
@@ -463,20 +487,27 @@ class TimeCH4DataSource(DataSourceBase):
                 continue
             ind_data = self.get_ind_data(ind_id).sort_values(by=self.date_col)
             ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
-            ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] - ind_data.iloc[0][self.date_col]) \
-                .apply(lambda d: d.days - 1)
-            ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-            initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
-            initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+
+            if self.start_at_first:
+                ind_weight_data = ind_weight_data.sort_values(by=self.weight_data.date_col)
+                initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
+                initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+            else:
+            # Get weight measurement closest to the first methane measurement
+                ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] - ind_data.iloc[0][self.date_col]) \
+                    .apply(lambda d: d.days - 1)
+                ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
+                initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
+                initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
 
             tCH4_data = f'data.{self.TYPE}_{ind_id} = ['
             for i in ind_data.index.values:
                 tCH4_data += f"{(ind_data.loc[i, self.date_col] - initial_date).total_seconds() / (60 * 60 * 24):.2f}" \
                              f" {ind_data.loc[i, self.methane_col]}; "
             my_data_code += tCH4_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+            my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
+                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
@@ -498,7 +529,7 @@ class TimeCO2DataSource(DataSourceBase):
     AUX_DATA_LABELS = "'Initial weight'"
 
     def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, prefix='', bibkey='', comment=''):
+                 start_at_first=False, name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name=name, prefix=prefix)
         self.co2_col = co2_col
         self.date_col = date_col
@@ -506,9 +537,10 @@ class TimeCO2DataSource(DataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
         self.weight_data = weight_data_source
+        self.start_at_first = start_at_first
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Time vs Daily carbon dioxide (CO2) emissions data\n\n'
@@ -518,20 +550,27 @@ class TimeCO2DataSource(DataSourceBase):
 
             ind_data = self.get_ind_data(ind_id).sort_values(by=self.date_col)
             ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
-            ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] - ind_data.iloc[0][self.date_col]) \
-                .apply(lambda d: d.days - 1)
-            ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-            initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
-            initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+
+            if self.start_at_first:
+                ind_weight_data = ind_weight_data.sort_values(by=self.weight_data.date_col)
+                initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
+                initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+            else:
+                # Get weight measurement closest to the first methane measurement
+                ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] - ind_data.iloc[0][self.date_col]) \
+                    .apply(lambda d: d.days - 1)
+                ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
+                initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
+                initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
 
             tCO2_data = f'data.{self.TYPE}_{ind_id} = ['
             for i in ind_data.index.values:
                 tCO2_data += f"{(ind_data.loc[i, self.date_col] - initial_date).total_seconds() / (60 * 60 * 24):.2f}" \
                              f" {ind_data.loc[i, self.co2_col]}; "
             my_data_code += tCO2_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+            my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
+                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
@@ -558,10 +597,10 @@ class WeightFeedDataSource(DataSourceBase):
         self.feed_col = feed_col
         self.date_col = date_col
 
-    def generate_code(self, ind_list=None):
+    def generate_code(self, ind_list='all'):
         # TODO: retry to check that the first value has zero food consumption
         # TODO: Add a fix for when the first value is not zero
-        if ind_list is None:
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         groups = self.df.groupby(self.id_col)
@@ -578,9 +617,9 @@ class WeightFeedDataSource(DataSourceBase):
             for i in animal_data.index.values:
                 WCX_data += f"{animal_data.loc[i, self.weight_col]} {animal_data.loc[i, self.feed_col]}; "
             my_data_code += WCX_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{animal_id} = {initial_weight}; " \
-                            f"units.extra.{self.TYPE}_{animal_id} = 'kg'; " \
-                            f"label.extra.{self.TYPE}_{animal_id} = 'Initial weight';\n"
+            my_data_code += f"init.{self.TYPE}_{animal_id} = {initial_weight}; " \
+                            f"units.init.{self.TYPE}_{animal_id} = 'kg'; " \
+                            f"label.init.{self.TYPE}_{animal_id} = 'Initial weight';\n"
             units = "{'kg', 'kg'}"
             labels = "{'Weight', 'Cumulative food consumption during test'}"
             my_data_code += f"units.{self.TYPE}_{animal_id} = {units}; " \
@@ -609,8 +648,8 @@ class TotalFeedIntakeDataSource(DataSourceBase):
         self.comment = comment
         self.weight_data = weight_data_source
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         extra_data_units = "{'d', 'kg'}"
@@ -627,9 +666,9 @@ class TotalFeedIntakeDataSource(DataSourceBase):
             initial_weight = animal_weights.iloc[0][self.weight_data.weight_col]
 
             my_data_code += f'data.{self.TYPE}_{animal_id} = {total_feed_intake}; '
-            my_data_code += f"extra.{self.TYPE}_{animal_id} = [{duration} ,{initial_weight}]; " \
-                            f"units.extra.{self.TYPE}_{animal_id} = {extra_data_units}; " \
-                            f"label.extra.{self.TYPE}_{animal_id} = 'Time elapsed and initial weight';\n"
+            my_data_code += f"init.{self.TYPE}_{animal_id} = [{duration} ,{initial_weight}]; " \
+                            f"units.init.{self.TYPE}_{animal_id} = {extra_data_units}; " \
+                            f"label.init.{self.TYPE}_{animal_id} = 'Time elapsed and initial weight';\n"
 
             my_data_code += f"units.{self.TYPE}_{animal_id} = 'kg'; " \
                             + f"label.{self.TYPE}_{animal_id} = {labels}; " \
@@ -657,8 +696,8 @@ class TimeMilkDataSource(DataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Time vs Milk production data \n\n'
@@ -700,8 +739,8 @@ class AgeWeightDataSource(DataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
 
-    def generate_code(self, ind_list=None):
-        if ind_list is None:
+    def generate_code(self, ind_list='all'):
+        if ind_list == 'all':
             ind_list = list(self.individuals)
 
         my_data_code = f'%% Age vs Weight data \n\n'
@@ -715,9 +754,9 @@ class AgeWeightDataSource(DataSourceBase):
                 aw_data += f"{ind_data.loc[i, self.age_col]} " \
                            f"{ind_data.loc[i, self.weight_col]}; "
             my_data_code += aw_data[:-2] + '];\n'
-            my_data_code += f"extra.{self.TYPE}_{ind_id} = {n_twins}; " \
-                            f"units.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.extra.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+            my_data_code += f"init.{self.TYPE}_{ind_id} = {n_twins}; " \
+                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
 
             my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
                             + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \

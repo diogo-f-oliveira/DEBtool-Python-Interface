@@ -2,7 +2,7 @@ from string import Template
 import os
 import shutil
 
-from .data_sources import DataCollection, DataSourceBase
+from .data_sources import DataCollection, IndDataSourceBase
 from .utils import check_files_exist_in_folder
 
 
@@ -78,7 +78,7 @@ class GroupStepCodeGenerator(CodeGeneratorBase):
         if ind_data_weight is None:
             ind_data_weight = "struct("
             for ds in self.data.data_sources:
-                n = len(ds.individuals) if isinstance(ds, DataSourceBase) else len(ds.groups)
+                n = len(ds.individuals) if isinstance(ds, IndDataSourceBase) else len(ds.groups)
                 ind_data_weight += f"'{ds.TYPE}', 1/{n}, "
             ind_data_weight = ind_data_weight[:-2] + ");"
         if extra_info is None:

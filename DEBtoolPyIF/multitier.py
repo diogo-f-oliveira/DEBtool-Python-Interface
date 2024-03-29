@@ -95,11 +95,11 @@ class MultiTierStructure:
 
         return init_par_values
 
-    def get_full_pars_dict(self, tier_name, tier_sample):
+    def get_full_pars_dict(self, tier_name, tier_sample, include_tier=False):
         pars_dict = self.pars.copy()
         ts_tiers = self.ind_tiers.groupby(tier_name).get_group(tier_sample).iloc[0]
         for t in self.tier_names:
-            if t == tier_name:
+            if not include_tier and t == tier_name:
                 break
             for par in self.tier_pars[t]:
                 pars_dict[par] = self.tiers[t].pars_df.loc[ts_tiers[t], par]
@@ -126,6 +126,8 @@ class TierEstimator:
         self.output_folder = output_folder
         self.estimation_settings = estimation_settings
         self.pseudo_data = extra_pseudo_data
+        # TODO: Extra info should be a dictionary with the data, and we should have a separate variable with the
+        #  formatted version
         self.extra_info = extra_info
 
         self.set_tier_parameters(tier_pars)
@@ -140,7 +142,7 @@ class TierEstimator:
         self.group_data_errors['tier_sample'] = ''
         self.group_data_errors.index.name = 'group_id'
         for g_id in self.group_data_errors.index:
-            inds_in_group = self.tier_structure.data.inds_in_group[g_id]
+            inds_in_group = self.tier_structure.data.group_of_ind_df[g_id].index.values
             # Assume all individuals in the group have the same tier sample
             self.group_data_errors.loc[g_id, 'tier_sample'] = self.tier_structure.ind_tiers[tier_name].loc[
                 inds_in_group[0]]
@@ -170,9 +172,10 @@ class TierEstimator:
         self.code_generator.generate_predict_file()
         self.code_generator.generate_run_file()
 
-        # Check if this is an individual name
+        # Check if this is an individual tier
         if len(self.tier_sample_list) == len(self.tier_structure.ind_tiers.index.values):
-            list_of_tier_sample_lists = [v for v in self.tier_structure.data.inds_in_group.values()]
+            list_of_tier_sample_lists = [self.tier_structure.data.get_ind_list_of_group(g_id) for g_id in
+                                         self.group_data_errors.index]
         else:
             list_of_tier_sample_lists = [[ts_id] for ts_id in self.tier_sample_list]
 
@@ -314,7 +317,7 @@ class TierCodeGenerator:
         group_list_code = format_aux_data(
             var_name='group_list',
             formatted_data=format_list_data(group_list, brackets=True),
-            label='List of individuals', comment='List of individuals',
+            label='List of groups ids', comment='List of group ids',
         )
         ind_list_code = format_aux_data(
             var_name='ind_list',

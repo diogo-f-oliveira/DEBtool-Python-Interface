@@ -30,6 +30,8 @@ def run_estimation(run_files_dir, species_name, window=False):
 
 
 class EstimationRunner:
+    # TODO: Store empty buffers for output as class attributes so that hide_output can be a method option
+
     def __init__(self, window=False, clear_before=True, species_name=None):
         self.window = window
         self.clear_before = clear_before

@@ -306,12 +306,12 @@ class FinalWeightIndDataSource(IndDataSourceBase):
 class TimeFeedIndDataSource(IndDataSourceBase):
     TYPE = "tJX"
     UNITS = "{'d', 'kg'}"
-    LABELS = "{'Time since start', 'Daily food consumption during test'}"
+    LABELS = "{'Time since start', 'Daily food consumption'}"
     AUX_DATA_UNITS = "'kg'"
     AUX_DATA_LABELS = "'Initial weight'"
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, bibkey='', comment=''):
+                 start_at_first=False, name=None, bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name=name)
         self.feed_col = feed_col
         self.date_col = date_col
@@ -319,6 +319,26 @@ class TimeFeedIndDataSource(IndDataSourceBase):
         self.bibkey = bibkey
         self.comment = comment
         self.weight_data = weight_data_source
+        self.start_at_first = start_at_first
+
+    def get_data(self, ind_id):
+        ind_data = self.get_ind_data(ind_id).sort_values(by=self.date_col)
+
+        ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
+
+        if self.start_at_first:
+            ind_weight_data = ind_weight_data.sort_values(by=self.weight_data.date_col)
+            initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
+            initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+        else:
+            # Get weight measurement closest to the first feed intake
+            ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] - ind_data.iloc[0][self.date_col]) \
+                .apply(lambda d: d.days - 1)
+            ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
+            initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
+            initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+
+        return ind_data, initial_date, initial_weight
 
     def generate_code(self, ind_list='all'):
         if ind_list == 'all':
@@ -328,13 +348,8 @@ class TimeFeedIndDataSource(IndDataSourceBase):
         for ind_id in ind_list:
             if ind_id not in self.individuals:
                 continue
-            ind_data = self.get_ind_data(ind_id).sort_values(by=self.date_col)
-            ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
-            ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] - ind_data.iloc[0][self.date_col]) \
-                .apply(lambda d: d.days - 1)
-            ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-            initial_date = ind_weight_data.iloc[0][self.weight_data.date_col]
-            initial_weight = ind_weight_data.iloc[0][self.weight_data.weight_col]
+
+            ind_data, initial_date, initial_weight = self.get_data(ind_id)
 
             t_JX_data = f'data.{self.TYPE}_{ind_id} = ['
             for i in ind_data.index.values:

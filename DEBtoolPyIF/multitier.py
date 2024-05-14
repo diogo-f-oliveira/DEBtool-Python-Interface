@@ -142,17 +142,20 @@ class TierEstimator:
         self.group_data_errors['tier_sample'] = ''
         self.group_data_errors.index.name = 'group_id'
         for g_id in self.group_data_errors.index:
-            inds_in_group = self.tier_structure.data.group_of_ind_df[g_id].index.values
+            inds_in_group = self.tier_structure.data.get_ind_list_of_group(g_id)
             # Assume all individuals in the group have the same tier sample
             self.group_data_errors.loc[g_id, 'tier_sample'] = self.tier_structure.ind_tiers[tier_name].loc[
                 inds_in_group[0]]
 
         self.tier_errors = pd.DataFrame(
-            columns=self.tier_structure.data.ind_data_types + self.tier_structure.data.group_data_types,
+            columns=[
+                        'estim_time'] + self.tier_structure.data.ind_data_types + self.tier_structure.data.group_data_types,
             index=self.tier_sample_list)
         self.tier_errors.index.name = 'tier_sample'
 
         self.code_generator = TierCodeGenerator(tier=self)
+        self.estim_start_time = None
+        self.estim_end_time = None
 
     @property
     def estimation_complete(self):
@@ -164,22 +167,27 @@ class TierEstimator:
                                     index=self.tier_structure.ind_tiers[self.name].unique())
         self.pars_df.index.name = 'tier_sample'
 
-    def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True):
+    def estimate(self, list_of_tier_sample_lists=None, pseudo_data_weight=0.1, save_results=True, print_results=True,
+                 hide_output=True):
         # TODO: Add options of estimation runner
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
+        self.estim_start_time = pd.Timestamp.now()
 
         # Create files of estimation
         self.code_generator.generate_predict_file()
         self.code_generator.generate_run_file()
 
-        # Check if this is an individual tier
-        if len(self.tier_sample_list) == len(self.tier_structure.ind_tiers.index.values):
-            list_of_tier_sample_lists = [self.tier_structure.data.get_ind_list_of_group(g_id) for g_id in
-                                         self.group_data_errors.index]
-        else:
-            list_of_tier_sample_lists = [[ts_id] for ts_id in self.tier_sample_list]
+        if list_of_tier_sample_lists is None:
+            # Check if this is an individual tier
+            if len(self.tier_sample_list) == len(self.tier_structure.ind_tiers.index.values) and \
+                    len(self.group_data_errors.index):
+                list_of_tier_sample_lists = [self.tier_structure.data.get_ind_list_of_group(g_id) for g_id in
+                                             self.group_data_errors.index]
+            else:
+                list_of_tier_sample_lists = [[ts_id] for ts_id in self.tier_sample_list]
 
         for ts_list in list_of_tier_sample_lists:
+            tier_estim_start_time = pd.Timestamp.now()
             self.code_generator.generate_mydata_file(tier_sample_list=ts_list, pseudo_data_weight=pseudo_data_weight)
             self.code_generator.generate_pars_init_file(tier_sample_list=ts_list)
 
@@ -194,6 +202,9 @@ class TierEstimator:
             self.fetch_pars(tier_sample_list=ts_list)
 
             self.fetch_errors(tier_sample_list=ts_list)
+
+            tier_estim_end_time = pd.Timestamp.now()
+            self.tier_errors.loc[ts_list, 'estim_time'] = (tier_estim_end_time - tier_estim_start_time).total_seconds()
 
         if print_results:
             self.print_results(tier_sample_list=self.tier_sample_list)
@@ -224,6 +235,9 @@ class TierEstimator:
                 varname = f'{dt}_{ind_id}'
                 if varname in estimation_errors:
                     self.ind_data_errors.loc[ind_id, dt] = estimation_errors[varname]
+            # TODO: When the tier sample list has more than one individual and the estimation tier is individual,
+            #  the tier errors are stored improperly. Need a check for whether the tier is an individual tier
+
             self.tier_errors.loc[tier_sample_list, dt] = self.ind_data_errors.loc[ind_list, dt].mean()
         # Store group data errors
         group_list = self.tier_structure.data.get_group_list_from_ind_list(ind_list=ind_list)

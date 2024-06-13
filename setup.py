@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='DEBtoolPyIF',
-    version='0.0.1',  # Increment this with new releases
+    version='0.0.2',  # Increment this with new releases
     description='A Python Interface for the MATLAB package DEBtool, a package with tools for Dynamic Energy Budget models.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',

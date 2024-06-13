@@ -4,9 +4,9 @@ import os
 import shutil
 from tabulate import tabulate
 
-from .data_sources import DataCollection
-from .matlab_wrapper import EstimationRunner
-from .utils import check_files_exist_in_folder, format_list_data, format_dict_data, format_aux_data
+from ..data_sources.collection import DataCollection
+from ..estimation.runner import EstimationRunner
+from ..utils.data_formatter import check_files_exist_in_folder, format_list_data, format_dict_data, format_aux_data
 
 
 class MultiTierStructure:

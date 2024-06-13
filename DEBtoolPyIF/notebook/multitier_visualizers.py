@@ -1,9 +1,8 @@
-import pandas as pd
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 
-from .multitier import MultiTierStructure
+from ..multitier.procedure import MultiTierStructure
 
 
 class TierVisualizer:
@@ -50,6 +49,7 @@ class TierVisualizer:
                             tier_sample=tier_sample,
                             ind_id=ind_id
                         )
+                    # TODO: axis labels should only be displayed on the outer axes
                 else:
                     group_ids_list = sorted(self.tier_structure.data.get_group_list_from_ind_list(ind_list))
                     # Create subplots, max 5 per row

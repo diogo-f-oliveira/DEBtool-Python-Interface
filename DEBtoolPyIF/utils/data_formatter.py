@@ -9,6 +9,7 @@ def check_files_exist_in_folder(folder_name, files):
             return False, f
     return True, "All good!"
 
+
 def format_list_data(list_data: list, brackets=False):
     formatted = list_data.__repr__()[1:-1]
     if brackets:

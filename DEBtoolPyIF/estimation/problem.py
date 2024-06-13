@@ -51,13 +51,13 @@ class DEBModelParametrizationProblem:
         Returns a dictionary with the parameters of the calibration problem and a 0 value.
         @return: a dictionary with the parameters of the problem
         """
-        return {p: 0 for p in self.pars}
+        return {p: 0.0 for p in self.pars}
 
     @property
     def get_par_bounds(self):
         """
         Returns a set of bounds for parameters values. All parameters must be greater than zero.
-        Efficiencies can not be greater than 1. All other parameters do not have a maximum value and the bounds are
+        Efficiencies cannot be greater than 1. All other parameters do not have a maximum value and the bounds are
         centered around the values in the pars_init.m file. These bounds can be increase if desired.
         @return: A dictionary with parameters as keys and a tuple of bounds (min, max) for each parameter
         """
@@ -137,30 +137,20 @@ class DEBModelParametrizationProblem:
 
 
 if __name__ == '__main__':
-    species_name = "Bos_taurus_Mertolenga"
-    species_folder = r"C:\Users\diogo\OneDrive - Universidade de Lisboa\Terraprima\Code\DEB Parameter Estimation\Mertolenga\Standard\t_0 pseudo data weight 0"
+    species_name = "Ovis_aries"
+    species_folder = r"C:\Users\diogo\Downloads\Ovis_aries_20230413\Ovis_aries"
 
-    problem = DEBModelParametrizationProblem(species_folder=species_folder, species_name=species_name, window=True)
+    problem = DEBModelParametrizationProblem(species_folder=species_folder, species_name=species_name, window=False)
 
     # Parameters are all zero, solution is infeasible
     pars_dict = problem.pars_dict
     print(problem.evaluate(pars_dict))
 
     # Randomly trying different parameter values
-    default_pars_dict = {'p_Am': 1689,
-                         'kap_X': 0.123,
-                         'v': 0.09545,
-                         'kap': 0.9174,
-                         'p_M': 26.26,
-                         'E_G': 8880,
-                         'E_Hb': 7716000.0,
-                         'E_Hx': 47650000.0,
-                         'E_Hp': 116700000.0,
-                         't_0': 96.5,
-                         'p_Am_f': 1689}
+    par_bounds = problem.get_par_bounds
     for i in range(100):
         pars_dict = problem.pars_dict
-        for p, v in default_pars_dict.items():
-            pars_dict[p] = v * (random.random() + 0.5)
+        for p, (lb, hb) in par_bounds.items():
+            pars_dict[p] = (hb - lb) * random.random() + lb
         loss = problem.evaluate(pars_dict)
         print(loss)

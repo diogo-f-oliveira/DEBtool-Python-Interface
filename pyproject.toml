@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "DEBtoolPyIF"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
     { name = "Diogo F. Oliveira", email = "diogo.miguel.oliveira@tecnico.ulisboa.pt" },
 ]

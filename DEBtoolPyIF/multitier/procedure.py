@@ -6,7 +6,8 @@ from tabulate import tabulate
 
 from ..data_sources.collection import DataCollection
 from ..estimation.runner import EstimationRunner
-from ..utils.data_formatter import check_files_exist_in_folder, format_list_data, format_dict_data, format_aux_data
+from ..utils.data_formatter import check_files_exist_in_folder, format_string_list_data, format_dict_data, \
+    format_aux_data, format_meta_data
 
 
 class MultiTierStructure:
@@ -281,6 +282,7 @@ class TierCodeGenerator:
         if not complete:
             raise Exception(f"Missing template file for {missing_file}.")
 
+    # TODO: Remove properties
     @property
     def name(self):
         return self.tier.name
@@ -326,58 +328,82 @@ class TierCodeGenerator:
         ind_list = self.tier_structure.ind_list_from_tier_sample_list(self.name, tier_sample_list)
         group_list = self.data.get_group_list_from_ind_list(ind_list=ind_list)
 
+        # Individual data
         ind_data_code = '\n'.join(self.data.get_ind_data_code(ind_list=ind_list))
+        # Group data
         group_data_code = '\n'.join(self.data.get_group_data_code(ind_list=ind_list))
+
+        # List of group ids
         group_list_code = format_aux_data(
             var_name='group_list',
-            formatted_data=format_list_data(group_list, brackets=True),
+            formatted_data=format_string_list_data(group_list),
             label='List of groups ids', comment='List of group ids',
         )
+        # List of individual ids
         ind_list_code = format_aux_data(
             var_name='ind_list',
-            formatted_data=format_list_data(ind_list, brackets=True),
+            formatted_data=format_string_list_data(ind_list),
             label='List of individuals', comment='List of individuals',
             pars_init_access=True)
-        ind_data_types = self.data.ind_data_types.__repr__()[1:-1]
-        group_data_types = self.data.group_data_types.__repr__()[1:-1]
+
+        # List of individual data types
+        ind_data_types_code = format_meta_data(var_name='ind_data_types',
+                                               formatted_data=format_string_list_data(self.data.ind_data_types))
+
+        # List of group data types
+        group_data_types_code = format_meta_data(var_name='ind_data_types',
+                                                 formatted_data=format_string_list_data(self.data.group_data_types))
+
+        # Groups each individual is part of
         groups_of_ind = self.data.get_groups_of_ind_list(ind_list)
         groups_of_ind_code = format_aux_data(
             var_name='groups_of_ind',
-            formatted_data=format_dict_data({ind_id: '{' + format_list_data(g_list, brackets=True) + '}'
+            formatted_data=format_dict_data({ind_id: '{' + format_string_list_data(g_list) + '}'
                                              for ind_id, g_list in groups_of_ind.items()}),
             label='Groups of individuals',
             comment='Groups of individuals',
         )
+
+        # List of tier samples
         tier_sample_list_code = format_aux_data(
             var_name='tier_sample_list',
-            formatted_data=format_list_data(list(tier_sample_inds.keys()), brackets=True),
+            formatted_data=format_string_list_data(list(tier_sample_inds.keys())),
             label='Tier sample list',
             comment='Tier sample list',
             pars_init_access=True)
+
+        # Individuals in each tier sample
         tier_sample_inds_code = format_aux_data(
             var_name='tier_sample_inds',
-            formatted_data=format_dict_data({ts_id: '{' + format_list_data(ids, brackets=True) + '}'
+            formatted_data=format_dict_data({ts_id: '{' + format_string_list_data(ids) + '}'
                                              for ts_id, ids in tier_sample_inds.items()}),
             label='List of individuals that belong to the name sample',
             comment='List of individuals that belong to the name sample',
         )
+
+        # Tier parameters
         tier_pars_code = format_aux_data(
             var_name='tier_pars',
-            formatted_data=format_list_data(self.tier_pars, brackets=True),
+            formatted_data=format_string_list_data(self.tier_pars),
             label='Tier parameters',
             comment='Tier parameters',
             pars_init_access=True)
+
+        # Initial values for tier parameters
         tier_par_init_values = self.tier_structure.get_init_par_values(self.name, tier_sample_list).to_dict()
-        tier_par_init_values_code = format_dict_data(
-            {p: format_dict_data(init_values) for p, init_values in tier_par_init_values.items()})
+        tier_par_init_values_code = format_meta_data(
+            var_name='tier_par_init_values',
+            formatted_data=format_dict_data(
+                {p: format_dict_data(init_values) for p, init_values in tier_par_init_values.items()})
+        )
 
         src = Template(mydata_template.read())
         result = src.substitute(
             group_data=group_data_code,
-            group_data_types=group_data_types,
+            group_data_types=group_data_types_code,
             group_list=group_list_code,
             individual_data=ind_data_code,
-            ind_data_types=ind_data_types,
+            ind_data_types=ind_data_types_code,
             ind_list=ind_list_code,
             groups_of_ind=groups_of_ind_code,
             tier_sample_list=tier_sample_list_code,

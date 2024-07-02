@@ -10,11 +10,8 @@ def check_files_exist_in_folder(folder_name, files):
     return True, "All good!"
 
 
-def format_list_data(list_data: list, brackets=False):
-    formatted = list_data.__repr__()[1:-1]
-    if brackets:
-        formatted = '{' + formatted + '}'
-    return formatted
+def format_string_list_data(list_data: list):
+    return '{' + list_data.__repr__()[1:-1] + '}'
 
 
 def format_dict_data(dict_data: dict):
@@ -37,3 +34,7 @@ def format_aux_data(var_name, formatted_data, label, comment='-', units='-', bib
     if pars_init_access:
         s += f"metaData.{var_name} = tiers.{var_name}; % Save in metaData to use in pars_init.m"
     return s
+
+
+def format_meta_data(var_name, formatted_data):
+    return f"metaData.{var_name} = {formatted_data}; \n"

@@ -10,13 +10,18 @@ def check_files_exist_in_folder(folder_name, files):
     return True, "All good!"
 
 
-def format_string_list_data(list_data: list):
-    return '{' + list_data.__repr__()[1:-1] + '}'
+def format_string_list_data(list_data: list, double_brackets: bool = False):
+    formatted_list = '{' + list_data.__repr__()[1:-1] + '}'
+    if double_brackets:
+        formatted_list = '{' + formatted_list + '}'
+    return formatted_list
 
 
-def format_dict_data(dict_data: dict):
+def format_dict_data(dict_data: dict, is_string_data=False):
     formatted = 'struct('
     for k, v in dict_data.items():
+        if is_string_data:
+            v = "'" + str(v) + "'"
         formatted += f"'{k}', {v}, "
     formatted = formatted[:-2] + ')'
     return formatted

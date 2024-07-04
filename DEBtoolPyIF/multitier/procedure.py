@@ -50,6 +50,7 @@ class MultiTierStructure:
                                                   output_folder=tier_output_folder,
                                                   estimation_settings=estimation_settings[tier_name])
 
+    # TODO: Replace 'all' by None
     def get_tier_sample_inds(self, tier_name, tier_sample_list='all'):
         inds_in_tier = self.ind_tiers[tier_name]
         if tier_sample_list == 'all':
@@ -122,7 +123,7 @@ class TierEstimator:
         self.name = tier_name
         self.tier_pars = tier_pars
         self.pars_df = None
-        self.tier_sample_list = self.tier_structure.ind_tiers[tier_name].unique()
+        self.tier_sample_list = list(self.tier_structure.ind_tiers[tier_name].unique())
         self.template_folder = template_folder
         self.output_folder = output_folder
         self.estimation_settings = estimation_settings
@@ -351,15 +352,16 @@ class TierCodeGenerator:
                                                formatted_data=format_string_list_data(self.data.ind_data_types))
 
         # List of group data types
-        group_data_types_code = format_meta_data(var_name='ind_data_types',
+        group_data_types_code = format_meta_data(var_name='group_data_types',
                                                  formatted_data=format_string_list_data(self.data.group_data_types))
 
         # Groups each individual is part of
         groups_of_ind = self.data.get_groups_of_ind_list(ind_list)
         groups_of_ind_code = format_aux_data(
             var_name='groups_of_ind',
-            formatted_data=format_dict_data({ind_id: '{' + format_string_list_data(g_list) + '}'
-                                             for ind_id, g_list in groups_of_ind.items()}),
+            formatted_data=format_dict_data(
+                {ind_id: format_string_list_data(g_list, double_brackets=True) for ind_id, g_list in
+                 groups_of_ind.items()}),
             label='Groups of individuals',
             comment='Groups of individuals',
         )
@@ -375,8 +377,8 @@ class TierCodeGenerator:
         # Individuals in each tier sample
         tier_sample_inds_code = format_aux_data(
             var_name='tier_sample_inds',
-            formatted_data=format_dict_data({ts_id: '{' + format_string_list_data(ids) + '}'
-                                             for ts_id, ids in tier_sample_inds.items()}),
+            formatted_data=format_dict_data(
+                {ts_id: format_string_list_data(ids, double_brackets=True) for ts_id, ids in tier_sample_inds.items()}),
             label='List of individuals that belong to the name sample',
             comment='List of individuals that belong to the name sample',
         )
@@ -418,6 +420,7 @@ class TierCodeGenerator:
         mydata_template.close()
 
     def generate_pars_init_file(self, tier_sample_list):
+        # TODO: Use multitier.ind_list_from_tier_sample_list()
         if tier_sample_list == 'all':
             tier_sample_list = self.tier_structure.ind_tiers[self.name].unique()
         pars_dict = self.tier_structure.get_full_pars_dict(self.name, tier_sample_list[0])

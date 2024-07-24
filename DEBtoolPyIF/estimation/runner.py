@@ -32,10 +32,20 @@ def run_estimation(run_files_dir, species_name, window=False):
 class EstimationRunner:
     # TODO: Store empty buffers for output as class attributes so that hide_output can be a method option
 
-    def __init__(self, window=False, clear_before=True, species_name=None):
+    def __init__(self, matlab_session=None, window=False, clear_before=True, species_name=None):
+        if matlab_session is None:
+            self.eng = matlab.engine.start_matlab()
+        if matlab_session == 'find':
+            matlab_sessions = matlab.engine.find_matlab()
+            if not len(matlab_sessions):
+                raise Exception("No shared MATLAB session found. Make sure to run 'matlab.engine.shareEngine' in the "
+                                "MATLAB command window.")
+            else:
+                self.eng = matlab.engine.connect_matlab(matlab_sessions[0])
+        else:
+            self.eng = matlab.engine.connect_matlab(matlab_session)
         self.window = window
         self.clear_before = clear_before
-        self.eng = matlab.engine.start_matlab()
         self.species_name = species_name
 
     def apply_options_decorator(func):
@@ -45,7 +55,7 @@ class EstimationRunner:
             if self.window:
                 self.eng.desktop(nargout=0)
             if self.clear_before:
-                self.eng.eval("clear", nargout=0)
+                self.clear()
             # Call the actual function
             return func(self, *args, **kwargs)
 
@@ -143,6 +153,8 @@ class EstimationRunner:
     def close(self):
         self.eng.quit()
 
+    def clear(self):
+        self.eng.eval("clear", nargout=0)
 
 if __name__ == '__main__':
     print('Done!')

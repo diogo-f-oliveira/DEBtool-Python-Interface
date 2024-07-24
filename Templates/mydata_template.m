@@ -21,8 +21,8 @@ metaData.author   = {''};
 %% Group data
 $group_data
 
-% individual data types
-metaData.group_data_types = { $group_data_types };
+% Group data types
+$group_data_types
 
 % Cell array of group_ids
 $group_list
@@ -30,8 +30,8 @@ $group_list
 %% Individual data
 $individual_data
 
-% individual data types
-metaData.ind_data_types = { $ind_data_types };
+% Individual data types
+$ind_data_types
 
 % Cell array of ind_ids
 $ind_list
@@ -55,8 +55,7 @@ $tier_pars
 
 % Initial values for each tier parameter and sample
 % Struct with form tier_par_init_values.(par).(tier_sample_id) = value;
-metaData.tier_par_init_values = $tier_par_init_values;
-
+$tier_par_init_values
 
 
 %% Set temperature data and remove weights for dummy variables

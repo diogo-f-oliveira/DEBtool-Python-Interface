@@ -21,11 +21,11 @@ def run_simultaneous_estimations():
     twds = TimeWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
                                 age_col='age', bibkey=f'ACBM',
                                 comment=f'Data from Mertolenga performance test')
-    tfds = TimeCumulativeFeedDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'ACBM',
-                                        comment=f'Data from Mertolenga performance test')
-    # wfds = WeightFeedDataSource(f"../../Data/ACBM/CSV Files/weight_intake_clean.csv", id_col='sia',
+    tfds = TimeCumulativeFeedIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'ACBM',
+                                           comment=f'Data from Mertolenga performance test')
+    # wfds = WeightFeedIndDataSource(f"../../Data/ACBM/CSV Files/weight_intake_clean.csv", id_col='sia',
     #                             feed_col='cumul_dry', weight_col='weight',
     #                             bibkey=f"ACBM", comment=f'Data from Mertolenga performance test')
     runner = EstimationRunner()
@@ -83,10 +83,10 @@ def training_and_testing_code_generation():
                                 age_col='age', bibkey=f'Mertolenga',
                                 comment=f'Data from Mertolenga performance test')
     gen.add_data_source(twds)
-    tfds = TimeCumulativeFeedDataSource(f"../ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'Mertolenga',
-                                        comment=f'Data from Mertolenga performance test')
+    tfds = TimeCumulativeFeedIndDataSource(f"../ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'Mertolenga',
+                                           comment=f'Data from Mertolenga performance test')
     gen.add_data_source(tfds)
 
     # Generate code
@@ -121,10 +121,10 @@ def holdout_cross_validation():
                                 age_col='age', bibkey=f'Mertolenga',
                                 comment=f'Data from Mertolenga performance test')
     hcv.add_data_source(twds)
-    tfds = TimeCumulativeFeedDataSource(f"{data_folder}/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'Mertolenga',
-                                        comment=f'Data from Mertolenga performance test')
+    tfds = TimeCumulativeFeedIndDataSource(f"{data_folder}/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'Mertolenga',
+                                           comment=f'Data from Mertolenga performance test')
     hcv.add_data_source(tfds)
 
     # output_folder = "C:/Users/diogo/OneDrive - Universidade de Lisboa/Terraprima/Code/" \
@@ -165,10 +165,10 @@ def monte_carlo():
     twds = TimeWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
                                 age_col='age', bibkey=f'ACBM',
                                 comment=f'Data from Mertolenga performance test')
-    tfds = TimeCumulativeFeedDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'ACBM',
-                                        comment=f'Data from Mertolenga performance test')
+    tfds = TimeCumulativeFeedIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'ACBM',
+                                           comment=f'Data from Mertolenga performance test')
 
     gen = TestingCodeGenerator(template_folder=template_folder, individual_params=ind_pars,
                                species_name=species_name)
@@ -193,11 +193,11 @@ def run_two_step_estimations_simul():
     twds = TimeWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
                                 age_col='age', bibkey=f'ACBM',
                                 comment=f'Data from Mertolenga performance test')
-    tfds = TimeCumulativeFeedDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'ACBM',
-                                        comment=f'Data from Mertolenga performance test')
-    # wfds = WeightFeedDataSource(f"../../Data/ACBM/CSV Files/weight_intake_clean.csv", id_col='sia',
+    tfds = TimeCumulativeFeedIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'ACBM',
+                                           comment=f'Data from Mertolenga performance test')
+    # wfds = WeightFeedIndDataSource(f"../../Data/ACBM/CSV Files/weight_intake_clean.csv", id_col='sia',
     #                             feed_col='cumul_dry', weight_col='weight',
     #                             bibkey=f"ACBM", comment=f'Data from Mertolenga performance test')
     runner = EstimationRunner()
@@ -253,15 +253,15 @@ def run_two_step_estimations():
     # Data sources
     twds = TimeWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
                                 age_col='age', bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
-    fwds = FinalWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
-                                 age_col='age', bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
-    tfds = TimeCumulativeFeedDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
-    tfids = TotalFeedIntakeDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                      feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                      bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
-    # wfds = WeightFeedDataSource(f"../../Data/ACBM/CSV Files/weight_intake_clean.csv", id_col='sia',
+    fwds = FinalWeightIndDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
+                                    age_col='age', bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
+    tfds = TimeCumulativeFeedIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
+    tfids = TotalFeedIntakeIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                         feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                         bibkey=f'ACBM', comment=f'Data from Mertolenga performance test')
+    # wfds = WeightFeedIndDataSource(f"../../Data/ACBM/CSV Files/weight_intake_clean.csv", id_col='sia',
     #                             feed_col='cumul_dry', weight_col='weight',
     #                             bibkey=f"ACBM", comment=f'Data from Mertolenga performance test')
     data = DataCollection([twds, fwds, tfds, tfids])
@@ -316,10 +316,10 @@ def grid_search_two_step_group():
     twds = TimeWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
                                 age_col='age', bibkey=f'ACBM',
                                 comment=f'Data from Mertolenga performance test')
-    tfds = TimeCumulativeFeedDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'ACBM',
-                                        comment=f'Data from Mertolenga performance test')
+    tfds = TimeCumulativeFeedIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'ACBM',
+                                           comment=f'Data from Mertolenga performance test')
     data = DataCollection([twds, tfds])
     n_inds = len(twds.individuals)
 
@@ -349,13 +349,13 @@ def grid_search_two_step_group():
                                                            ind_data_weight=idw,
                                                            hide_output=True)
         else:
-            all_pars = estimator.runner.fetch_pars_from_mat_file(run_files_dir=f"{configuration_folder}/Group Step",
-                                                                 species_name=species_name)
+            all_pars = estimator.runner.fetch_pars(run_files_dir=f"{configuration_folder}/Group Step",
+                                                   species_name=species_name)
             default_pars = estimator.get_group_pars_from_all_pars(all_pars)
         print(default_pars)
 
         # Individual step
-        # Check if individual step is complete
+        # Check if individual step is estimation_complete
         ind_step_folder = f"{configuration_folder}/{' '.join(ind_pars)}"
         if os.path.exists(ind_step_folder):
             if len(open(f"{ind_step_folder}/ind_pars.csv", 'r').readlines()) == n_inds + 1:
@@ -386,10 +386,10 @@ def grid_search_two_step_pseudo():
     twds = TimeWeightDataSource(f"../../Data/ACBM/CSV Files/weights_clean.csv", id_col='sia', weight_col='weight',
                                 age_col='age', bibkey=f'ACBM',
                                 comment=f'Data from Mertolenga performance test')
-    tfds = TimeCumulativeFeedDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
-                                        feed_col='cumul_dry', age_col='age', weight_data_source=twds,
-                                        bibkey=f'ACBM',
-                                        comment=f'Data from Mertolenga performance test')
+    tfds = TimeCumulativeFeedIndDataSource(f"../../Data/ACBM/CSV Files/feed_consumption_clean.csv", id_col='sia',
+                                           feed_col='cumul_dry', age_col='age', weight_data_source=twds,
+                                           bibkey=f'ACBM',
+                                           comment=f'Data from Mertolenga performance test')
     data = DataCollection([twds, tfds])
     n_inds = len(twds.individuals)
 
@@ -425,21 +425,21 @@ def grid_search_two_step_pseudo():
                                                                hide_output=True)
             # If it is saved, then fetch the parameters
             else:
-                all_pars = estimator.runner.fetch_pars_from_mat_file(run_files_dir=group_step_estimation,
-                                                                     species_name=species_name)
+                all_pars = estimator.runner.fetch_pars(run_files_dir=group_step_estimation,
+                                                       species_name=species_name)
                 default_pars = estimator.get_group_pars_from_all_pars(all_pars)
             # Then copy to the configuration folder
             shutil.copytree(group_step_estimation, f"{configuration_folder}/Group Step")
         else:
-            all_pars = estimator.runner.fetch_pars_from_mat_file(run_files_dir=f"{configuration_folder}/Group Step",
-                                                                 species_name=species_name)
+            all_pars = estimator.runner.fetch_pars(run_files_dir=f"{configuration_folder}/Group Step",
+                                                   species_name=species_name)
             default_pars = estimator.get_group_pars_from_all_pars(all_pars)
         print(default_pars)
 
         # Individual step
         redo_individual_step = False
         estimator.main_output_folder = configuration_folder
-        # Check if individual step is complete
+        # Check if individual step is estimation_complete
         ind_step_folder = f"{configuration_folder}/{' '.join(ind_pars)}"
         if os.path.exists(ind_step_folder) and not redo_individual_step:
             if len(open(f"{ind_step_folder}/ind_pars.csv", 'r').readlines()) == n_inds + 1:
@@ -536,7 +536,7 @@ if __name__ == '__main__':
     # twds = TimeWeightDataSource(f"../../../Data/Angus/Angus PT/CSV Files/weights_2022.csv",
     #                             id_col='collar_id', weight_col='weight', date_col='date',
     #                             bibkey=bibkey, comment=comment)
-    # tfds = TimeFeedDataSource(f"../../../Data/Angus/Angus PT/CSV Files/feed_intake_2022.csv",
+    # tfds = TimeFeedIndDataSource(f"../../../Data/Angus/Angus PT/CSV Files/feed_intake_2022.csv",
     #                             id_col='collar_id', date_col='date', feed_col='dry_intake', weight_data_source=twds,
     #                             bibkey=bibkey, comment=comment)
     # data = DataCollection([twds, tfds])
@@ -566,9 +566,9 @@ if __name__ == '__main__':
                                 id_col='sia', weight_col='weight', date_col='date',
                                 bibkey=bibkey, comment=comment)
 
-    gtfds = TimeFeedGroupDataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_feed_intake_pen.csv",
-                                   group_col='pen', feed_col='dry_intake', date_col='date', weight_data_source=twds,
-                                   bibkey=bibkey, comment=comment)
+    gtfds = GroupTimeFeedDataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_feed_intake_pen.csv",
+                                    group_col='pen', feed_col='dry_intake', date_col='date', weight_data_source=twds,
+                                    bibkey=bibkey, comment=comment)
 
     tmds = TimeCH4DataSource(f"../../../Data/Angus/Greenbeef/CSV Files/greenbeef_1_emissions.csv",
                              id_col='sia', methane_col='CH4', date_col='date', weight_data_source=twds,

@@ -8,10 +8,11 @@ from ..multitier.procedure import MultiTierStructure
 class TierVisualizer:
     def __init__(self, tier_structure: MultiTierStructure, plotting_functions: dict):
         self.tier_structure = tier_structure
+        # TODO: Maybe do checkboxes for selecting tiers instead of dropdown widgets
         self.tier_sample_selectors = {}
         for tier_name, tier in self.tier_structure.tiers.items():
             self.tier_sample_selectors[tier_name] = widgets.Dropdown(
-                options=tier.tier_sample_list,
+                options=['all'] + tier.tier_sample_list,
                 description=f'{tier_name}:'
             )
         self.ind_selector = widgets.Dropdown(
@@ -32,8 +33,10 @@ class TierVisualizer:
     def plot_tier_data_and_predictions(self, tier_name):
         def display_data_and_predictions(tier_sample, data_type):
             with self.output_widget:  # Use the output widget as the context for plot display
-                clear_output(wait=True)  # Clear the previous plots
-                ind_list = sorted(self.tier_structure.get_tier_sample_inds(tier_name, [tier_sample])[tier_sample])
+                clear_output()  # Clear the previous plots
+                if tier_sample != 'all':
+                    tier_sample = [tier_sample]
+                ind_list = self.tier_structure.ind_list_from_tier_sample_list(tier_name, tier_sample)
                 if data_type in self.tier_structure.data.ind_data_types:
                     # Create subplots, max 5 per row
                     n_cols = 5 if len(ind_list) > 5 else len(ind_list)
@@ -41,34 +44,47 @@ class TierVisualizer:
                     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 4 * n_rows),
                                              tight_layout=True)
                     for i, ind_id in enumerate(ind_list):
-                        ax = axes[i // n_cols, i % n_cols] if n_rows > 1 else axes[i % n_cols]
+                        if len(ind_list) == 1:
+                            ax = axes
+                        elif n_rows == 1:
+                            ax = axes[i % n_cols]
+                        else:
+                            ax = axes[i // n_cols, i % n_cols]
                         self.plotting_functions[data_type](
                             ax=ax,
                             tier_structure=self.tier_structure,
                             tier_name=tier_name,
-                            tier_sample=tier_sample,
                             ind_id=ind_id
                         )
                     # TODO: axis labels should only be displayed on the outer axes
                 else:
                     group_ids_list = sorted(self.tier_structure.data.get_group_list_from_ind_list(ind_list))
                     # Create subplots, max 5 per row
+                    # TODO: Creating the figure should be a method
                     n_cols = 5 if len(ind_list) > 5 else len(ind_list)
                     n_rows = len(group_ids_list) // n_cols + (len(group_ids_list) % n_cols > 0)
                     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(4 * n_cols, 4 * n_rows),
                                              tight_layout=True)
                     for i, group_id in enumerate(group_ids_list):
-                        ax = axes[i // n_cols, i % n_cols] if n_rows > 1 else axes[i % n_cols]
+                        # TODO: Getting the axis should be a method
+                        if len(group_ids_list) == 1:
+                            ax = axes
+                        elif n_rows == 1:
+                            ax = axes[i % n_cols]
+                        else:
+                            ax = axes[i // n_cols, i % n_cols]
                         self.plotting_functions[data_type](
                             ax=ax,
                             tier_structure=self.tier_structure,
                             tier_name=tier_name,
-                            tier_sample=tier_sample,
                             group_id=group_id
                         )
                 # Hide unused axes
                 for j in range(i + 1, n_rows * n_cols):
                     axes.flat[j].axis('off')
+
+                # fig.show()
+                fig.canvas.draw()
 
         # This time, explicitly display the interactive widget and the output widget
         interactive_widget = widgets.interactive(display_data_and_predictions,

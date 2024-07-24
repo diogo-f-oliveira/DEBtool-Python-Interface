@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "DEBtoolPyIF"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
     { name = "Diogo F. Oliveira", email = "diogo.miguel.oliveira@tecnico.ulisboa.pt" },
 ]
@@ -21,7 +21,7 @@ classifiers = [
 license = { file = "LICENSE" }
 keywords = ["Dynamic Energy Budget", "DEB", "DEBtool"]
 dependencies = [
-    'numpy>=1.19.5',
+    'numpy<=1.26.4',
     'pandas>=1.2.0',
     'tabulate>=0.8.0'
 ]

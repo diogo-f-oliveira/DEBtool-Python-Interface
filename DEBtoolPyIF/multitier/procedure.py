@@ -73,6 +73,13 @@ class MultiTierStructure:
         return self.tiers[self.get_prev_tier(tier_name)].pars_df
 
     def get_init_par_values(self, tier_name, tier_sample_list='all'):
+        """
+        Get initial values of tier parameters for a list of tier samples, based on previous estimates of parameters.
+        If pseudo data are provided, then these are used as initial values.
+        :param tier_name: Tier identifier.
+        :param tier_sample_list: List of tier samples.
+        :return: a DataFrame with initial values of tier parameters for all tier samples.
+        """
         if tier_sample_list == 'all':
             tier_sample_list = self.ind_tiers[tier_name].unique()
         init_par_values = pd.DataFrame(columns=self.tier_pars[tier_name], index=tier_sample_list)
@@ -98,11 +105,22 @@ class MultiTierStructure:
         return init_par_values
 
     def get_full_pars_dict(self, tier_name, tier_sample, include_tier=False):
+        """
+        Get the values of all parameters in a given tier for a given tier sample. If include_tier is true,
+        then the function returns the parameter values estimated for the tier tier_name. Otherwise, it returns the
+        parameter values based only on higher tiers.
+        :param tier_name:
+        :param tier_sample:
+        :param include_tier:
+        :return:
+        """
         pars_dict = self.pars.copy()
         ts_tiers = self.ind_tiers.groupby(tier_name).get_group(tier_sample).iloc[0]
         for t in self.tier_names:
-            if not include_tier and t == tier_name:
+            if self.get_prev_tier(t) == tier_name:
                 break
+            if not include_tier and t == tier_name:
+                continue
             for par in self.tier_pars[t]:
                 pars_dict[par] = self.tiers[t].pars_df.loc[ts_tiers[t], par]
         return pars_dict

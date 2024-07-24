@@ -23,7 +23,8 @@ keywords = ["Dynamic Energy Budget", "DEB", "DEBtool"]
 dependencies = [
     'numpy<=1.26.4',
     'pandas>=1.2.0',
-    'tabulate>=0.8.0'
+    'tabulate>=0.9.0',
+    'setuptools>=70.0.0'
 ]
 
 [project.urls]

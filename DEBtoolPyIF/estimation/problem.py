@@ -1,14 +1,15 @@
-import matlab.engine
 from copy import deepcopy
 import os
 import random
 
+from .wrapper import DEBtoolWrapper
 
-class DEBModelParametrizationProblem:
+
+class DEBModelParametrizationProblem(DEBtoolWrapper):
     GEN_FACTOR = 20
     REQUIRED_FILES = ('mydata', 'pars_init', 'predict')
 
-    def __init__(self, species_folder, species_name, window=False):
+    def __init__(self, species_folder, species_name, matlab_session=None, window=False, clear_before=True):
         """
         Initialize the problem class for a given species.
         @param species_folder: The folder with the files needed to run DEB models and compute the loss function
@@ -16,20 +17,20 @@ class DEBModelParametrizationProblem:
         @param window: if true, a MATLAB window is opened where the commands are ran. Useful to check any variables in
         the workspace of MATLAB. Updates every time a command is called.
         """
-        self.species_name = species_name
         # Check that the folder has the correct files
         for file in self.REQUIRED_FILES:
-            if not os.path.isfile(f"{species_folder}/{file}_{self.species_name}.m"):
-                raise Exception(f"{file}_{self.species_name}.m file does not exist in the provided folder.")
+            if not os.path.isfile(f"{species_folder}/{file}_{species_name}.m"):
+                raise Exception(f"{file}_{species_name}.m file does not exist in the provided folder.")
         self.species_folder = species_folder
 
-        # Start the MATLAB engine
-        self.eng = matlab.engine.start_matlab()
-        # Open a MATLAB window
-        if window:
-            self.eng.desktop(nargout=0)
-        self.eng.cd(self.species_folder, nargout=0)
+        super().__init__(species_name=species_name, matlab_session=matlab_session, window=window,
+                         clear_before=clear_before)
 
+        self.cd(self.species_folder)
+        if self.window:
+            self.open_matlab_window()
+
+        # TODO: Set Problem instance method
         # Call my_data.m to get the data for the estimation
         self.eng.eval(f"[data, auxData, metaData, txtData, weights] = mydata_{self.species_name};", nargout=0)
 

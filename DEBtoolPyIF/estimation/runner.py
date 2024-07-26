@@ -1,6 +1,7 @@
 import os
-from .wrapper import DEBtoolWrapper
 from io import StringIO
+
+from .wrapper import DEBtoolWrapper
 
 
 class EstimationRunner(DEBtoolWrapper):

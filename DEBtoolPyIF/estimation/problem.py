@@ -26,6 +26,8 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         super().__init__(species_name=species_name, matlab_session=matlab_session, window=window,
                          clear_before=True)
 
+        self.set_instance(species_folder, species_name)
+
     @DEBtoolWrapper.apply_options_decorator
     def set_instance(self, species_folder, species_name):
         self.species_name = species_name
@@ -141,10 +143,13 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
 
 
 if __name__ == '__main__':
-    species_name = "Ovis_aries"
-    species_folder = r"C:\Users\diogo\Downloads\Ovis_aries_20230413\Ovis_aries"
+    species_name = "Echinops_telfairi"
+    all_species_folder = r"C:\Users\diogo\OneDrive - Universidade de Lisboa\Terraprima\Code\DEB Model Calibration Algorithms\species"
+    species_folder = os.path.join(all_species_folder, species_name)
 
-    problem = DEBModelParametrizationProblem(species_folder=species_folder, species_name=species_name, window=False)
+    problem = DEBModelParametrizationProblem(species_folder=species_folder,
+                                             species_name=species_name,
+                                             window=False)
 
     # Parameters are all zero, solution is infeasible
     pars_dict = problem.empty_pars_dict

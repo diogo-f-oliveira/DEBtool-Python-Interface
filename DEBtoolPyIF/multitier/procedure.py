@@ -13,7 +13,7 @@ from ..utils.data_formatter import check_files_exist_in_folder, format_string_li
 class MultiTierStructure:
     def __init__(self, species_name: str, ind_tiers: pd.DataFrame, data: DataCollection, pars: dict,
                  tier_pars: dict, template_folders: dict, output_folder: str, estimation_settings: dict,
-                 tier_output_folders: dict):
+                 tier_output_folders: dict, matlab_session=None):
         self.data = data
         self.species_name = species_name
         self.ind_tiers = ind_tiers
@@ -21,10 +21,10 @@ class MultiTierStructure:
         self.output_folder = output_folder
         self.pars = pars
         self.tier_pars = tier_pars
-        self.tiers = {tier: None for tier in self.tier_names}
+        self.tiers = {}
         self.build_tiers(estimation_settings=estimation_settings, template_folders=template_folders,
                          tier_output_folders=tier_output_folders)
-        self.estimation_runner = EstimationRunner(species_name=self.species_name)
+        self.estimation_runner = EstimationRunner(species_name=self.species_name, matlab_session=matlab_session)
 
     def build_tiers(self, estimation_settings, template_folders, tier_output_folders):
 
@@ -189,7 +189,6 @@ class TierEstimator:
 
     def estimate(self, list_of_tier_sample_lists=None, pseudo_data_weight=0.1, save_results=True, print_results=True,
                  hide_output=True):
-        # TODO: Add options of estimation runner
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
 
@@ -297,60 +296,27 @@ class TierCodeGenerator:
     def __init__(self, tier: TierEstimator):
         self.tier = tier
 
-        complete, missing_file = self.check_all_files_exist(self.template_folder)
+        complete, missing_file = self.check_all_files_exist(self.tier.template_folder)
         if not complete:
             raise Exception(f"Missing template file for {missing_file}.")
 
-    # TODO: Remove properties
-    @property
-    def name(self):
-        return self.tier.name
-
-    @property
-    def tier_structure(self):
-        return self.tier.tier_structure
-
-    @property
-    def output_folder(self):
-        return self.tier.output_folder
-
-    @property
-    def template_folder(self):
-        return self.tier.template_folder
-
-    @property
-    def estimation_settings(self):
-        return self.tier.estimation_settings
-
-    @property
-    def species_name(self):
-        return self.tier_structure.species_name
-
-    @property
-    def tier_pars(self):
-        return self.tier.tier_pars
-
-    @property
-    def data(self):
-        return self.tier_structure.data
-
     def check_all_files_exist(self, folder):
-        files = [f"{tf}_{self.species_name}.m" for tf in self.FILES_NEEDED]
+        files = [f"{tf}_{self.tier.tier_structure.species_name}.m" for tf in self.FILES_NEEDED]
         complete, missing_file = check_files_exist_in_folder(folder, files)
         return complete, missing_file
 
     def generate_mydata_file(self, tier_sample_list, pseudo_data_weight=0.1):
-        mydata_template = open(f'{self.template_folder}/mydata_{self.species_name}.m', 'r')
-        mydata_out = open(f'{self.output_folder}/mydata_{self.species_name}.m', 'w')
+        mydata_template = open(f'{self.tier.template_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'r')
+        mydata_out = open(f'{self.tier.output_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'w')
 
-        tier_sample_inds = self.tier_structure.get_tier_sample_inds(self.name, tier_sample_list)
-        ind_list = self.tier_structure.ind_list_from_tier_sample_list(self.name, tier_sample_list)
-        group_list = self.data.get_group_list_from_ind_list(ind_list=ind_list)
+        tier_sample_inds = self.tier.tier_structure.get_tier_sample_inds(self.tier.name, tier_sample_list)
+        ind_list = self.tier.tier_structure.ind_list_from_tier_sample_list(self.tier.name, tier_sample_list)
+        group_list = self.tier.tier_structure.data.get_group_list_from_ind_list(ind_list=ind_list)
 
         # Individual data
-        ind_data_code = '\n'.join(self.data.get_ind_data_code(ind_list=ind_list))
+        ind_data_code = '\n'.join(self.tier.tier_structure.data.get_ind_data_code(ind_list=ind_list))
         # Group data
-        group_data_code = '\n'.join(self.data.get_group_data_code(ind_list=ind_list))
+        group_data_code = '\n'.join(self.tier.tier_structure.data.get_group_data_code(ind_list=ind_list))
 
         # List of group ids
         group_list_code = format_aux_data(
@@ -367,14 +333,16 @@ class TierCodeGenerator:
 
         # List of individual data types
         ind_data_types_code = format_meta_data(var_name='ind_data_types',
-                                               formatted_data=format_string_list_data(self.data.ind_data_types))
+                                               formatted_data=format_string_list_data(
+                                                   self.tier.tier_structure.data.ind_data_types))
 
         # List of group data types
         group_data_types_code = format_meta_data(var_name='group_data_types',
-                                                 formatted_data=format_string_list_data(self.data.group_data_types))
+                                                 formatted_data=format_string_list_data(
+                                                     self.tier.tier_structure.data.group_data_types))
 
         # Groups each individual is part of
-        groups_of_ind = self.data.get_groups_of_ind_list(ind_list)
+        groups_of_ind = self.tier.tier_structure.data.get_groups_of_ind_list(ind_list)
         groups_of_ind_code = format_aux_data(
             var_name='groups_of_ind',
             formatted_data=format_dict_data(
@@ -404,13 +372,13 @@ class TierCodeGenerator:
         # Tier parameters
         tier_pars_code = format_aux_data(
             var_name='tier_pars',
-            formatted_data=format_string_list_data(self.tier_pars),
+            formatted_data=format_string_list_data(self.tier.tier_pars),
             label='Tier parameters',
             comment='Tier parameters',
             pars_init_access=True)
 
         # Initial values for tier parameters
-        tier_par_init_values = self.tier_structure.get_init_par_values(self.name, tier_sample_list).to_dict()
+        tier_par_init_values = self.tier.tier_structure.get_init_par_values(self.tier.name, tier_sample_list).to_dict()
         tier_par_init_values_code = format_meta_data(
             var_name='tier_par_init_values',
             formatted_data=format_dict_data(
@@ -440,10 +408,11 @@ class TierCodeGenerator:
     def generate_pars_init_file(self, tier_sample_list):
         # TODO: Use multitier.ind_list_from_tier_sample_list()
         if tier_sample_list == 'all':
-            tier_sample_list = self.tier_structure.ind_tiers[self.name].unique()
-        pars_dict = self.tier_structure.get_full_pars_dict(self.name, tier_sample_list[0])
-        pars_init_template = open(f'{self.template_folder}/pars_init_{self.species_name}.m', 'r')
-        pars_init_out = open(f'{self.output_folder}/pars_init_{self.species_name}.m', 'w')
+            tier_sample_list = self.tier.tier_structure.ind_tiers[self.tier.name].unique()
+        pars_dict = self.tier.tier_structure.get_full_pars_dict(self.tier.name, tier_sample_list[0])
+        pars_init_template = open(f'{self.tier.template_folder}/pars_init_{self.tier.tier_structure.species_name}.m',
+                                  'r')
+        pars_init_out = open(f'{self.tier.output_folder}/pars_init_{self.tier.tier_structure.species_name}.m', 'w')
 
         src = Template(pars_init_template.read())
         result = src.substitute(**pars_dict)
@@ -453,13 +422,14 @@ class TierCodeGenerator:
         pars_init_template.close()
 
     def generate_predict_file(self):
-        shutil.copy(src=f"{self.template_folder}/predict_{self.species_name}.m", dst=f"{self.output_folder}")
+        shutil.copy(src=f"{self.tier.template_folder}/predict_{self.tier.tier_structure.species_name}.m",
+                    dst=f"{self.tier.output_folder}")
 
     def generate_run_file(self):
-        run_template = open(f'{self.template_folder}/run_{self.species_name}.m', 'r')
-        run_out = open(f'{self.output_folder}/run_{self.species_name}.m', 'w')
+        run_template = open(f'{self.tier.template_folder}/run_{self.tier.tier_structure.species_name}.m', 'r')
+        run_out = open(f'{self.tier.output_folder}/run_{self.tier.tier_structure.species_name}.m', 'w')
         src = Template(run_template.read())
-        result = src.substitute(self.estimation_settings)
+        result = src.substitute(self.tier.estimation_settings)
         print(result, file=run_out)
         run_out.close()
         run_template.close()

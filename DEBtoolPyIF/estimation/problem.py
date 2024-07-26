@@ -1,14 +1,15 @@
-import matlab.engine
 from copy import deepcopy
 import os
 import random
 
+from .wrapper import DEBtoolWrapper
 
-class DEBModelParametrizationProblem:
-    GEN_FACTOR = 20
+
+class DEBModelParametrizationProblem(DEBtoolWrapper):
+    BOUND_FACTOR = 20
     REQUIRED_FILES = ('mydata', 'pars_init', 'predict')
 
-    def __init__(self, species_folder, species_name, window=False):
+    def __init__(self, species_folder, species_name, matlab_session=None, window=False):
         """
         Initialize the problem class for a given species.
         @param species_folder: The folder with the files needed to run DEB models and compute the loss function
@@ -16,19 +17,22 @@ class DEBModelParametrizationProblem:
         @param window: if true, a MATLAB window is opened where the commands are ran. Useful to check any variables in
         the workspace of MATLAB. Updates every time a command is called.
         """
-        self.species_name = species_name
         # Check that the folder has the correct files
         for file in self.REQUIRED_FILES:
-            if not os.path.isfile(f"{species_folder}/{file}_{self.species_name}.m"):
-                raise Exception(f"{file}_{self.species_name}.m file does not exist in the provided folder.")
+            if not os.path.isfile(f"{species_folder}/{file}_{species_name}.m"):
+                raise Exception(f"{file}_{species_name}.m file does not exist in the provided folder.")
         self.species_folder = species_folder
 
-        # Start the MATLAB engine
-        self.eng = matlab.engine.start_matlab()
-        # Open a MATLAB window
-        if window:
-            self.eng.desktop(nargout=0)
-        self.eng.cd(self.species_folder, nargout=0)
+        super().__init__(species_name=species_name, matlab_session=matlab_session, window=window,
+                         clear_before=True)
+
+        self.set_instance(species_folder, species_name)
+
+    @DEBtoolWrapper.apply_options_decorator
+    def set_instance(self, species_folder, species_name):
+        self.species_name = species_name
+        self.species_folder = species_folder
+        self.cd(self.species_folder)
 
         # Call my_data.m to get the data for the estimation
         self.eng.eval(f"[data, auxData, metaData, txtData, weights] = mydata_{self.species_name};", nargout=0)
@@ -45,11 +49,13 @@ class DEBModelParametrizationProblem:
         self.eng.eval("global lossfunction;", nargout=0)
         self.eng.eval("lossfunction = 'sb';", nargout=0)
 
+        # TODO: Get loss function value of parameters in pars_init.m file
+
     @property
-    def pars_dict(self):
+    def empty_pars_dict(self):
         """
-        Returns a dictionary with the parameters of the calibration problem and a 0 value.
-        @return: a dictionary with the parameters of the problem
+        Returns a dictionary with the parameters of the calibration problem and all values at 0.
+        @return: a dictionary with the parameters of the problem and all values at 0.
         """
         return {p: 0.0 for p in self.pars}
 
@@ -61,7 +67,7 @@ class DEBModelParametrizationProblem:
         centered around the values in the pars_init.m file. These bounds can be increase if desired.
         @return: A dictionary with parameters as keys and a tuple of bounds (min, max) for each parameter
         """
-        par_bounds = self.pars_dict
+        par_bounds = self.empty_pars_dict
         for p in par_bounds:
             # If the parameter is an efficiency it is between 0 and 1
             if 'kap' in p:
@@ -69,7 +75,7 @@ class DEBModelParametrizationProblem:
             # Otherwise give a large range to search around the value given in the pars_init file
             else:
                 v = self._all_pars[p]
-                par_bounds[p] = (v / self.GEN_FACTOR, v * self.GEN_FACTOR)
+                par_bounds[p] = (v / self.BOUND_FACTOR, v * self.BOUND_FACTOR)
         return par_bounds
 
     def check_pars(self, pars_dict: dict):
@@ -137,19 +143,22 @@ class DEBModelParametrizationProblem:
 
 
 if __name__ == '__main__':
-    species_name = "Ovis_aries"
-    species_folder = r"C:\Users\diogo\Downloads\Ovis_aries_20230413\Ovis_aries"
+    species_name = "Echinops_telfairi"
+    all_species_folder = r"C:\Users\diogo\OneDrive - Universidade de Lisboa\Terraprima\Code\DEB Model Calibration Algorithms\species"
+    species_folder = os.path.join(all_species_folder, species_name)
 
-    problem = DEBModelParametrizationProblem(species_folder=species_folder, species_name=species_name, window=False)
+    problem = DEBModelParametrizationProblem(species_folder=species_folder,
+                                             species_name=species_name,
+                                             window=False)
 
     # Parameters are all zero, solution is infeasible
-    pars_dict = problem.pars_dict
+    pars_dict = problem.empty_pars_dict
     print(problem.evaluate(pars_dict))
 
     # Randomly trying different parameter values
     par_bounds = problem.get_par_bounds
     for i in range(100):
-        pars_dict = problem.pars_dict
+        pars_dict = problem.empty_pars_dict
         for p, (lb, hb) in par_bounds.items():
             pars_dict[p] = (hb - lb) * random.random() + lb
         loss = problem.evaluate(pars_dict)

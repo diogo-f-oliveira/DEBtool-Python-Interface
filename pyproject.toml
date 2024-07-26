@@ -2,8 +2,9 @@
 requires = ["setuptools>=70.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ['DEBtoolPyIF']
+[tool.setuptools.packages.find]
+where = ["DEBtoolPyIF"]
+include = ["DEBtoolPyIF*"]
 
 [project]
 name = "DEBtoolPyIF"

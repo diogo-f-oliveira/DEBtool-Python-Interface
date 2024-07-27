@@ -18,27 +18,28 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         the workspace of MATLAB. Updates every time a command is called.
         """
         # Check that the folder has the correct files
-        for file in self.REQUIRED_FILES:
-            if not os.path.isfile(f"{species_folder}/{file}_{species_name}.m"):
-                raise Exception(f"{file}_{species_name}.m file does not exist in the provided folder.")
-        self.species_folder = species_folder
 
-        super().__init__(species_name=species_name, matlab_session=matlab_session, window=window,
-                         clear_before=True)
+        super().__init__(species_folder=species_folder, species_name=species_name, matlab_session=matlab_session,
+                         window=window, clear_before=True)
 
         self.set_instance(species_folder, species_name)
+
+    def check_amp_files_exist(self):
+        for file in self.REQUIRED_FILES:
+            if not os.path.isfile(f"{self.estim_files_dir}/{file}_{self.species_name}.m"):
+                raise Exception(f"{file}_{self.species_name}.m file does not exist in the provided folder.")
 
     @DEBtoolWrapper.apply_options_decorator
     def set_instance(self, species_folder, species_name):
         self.species_name = species_name
-        self.species_folder = species_folder
-        self.cd(self.species_folder)
+        self.estim_files_dir = species_folder
+        self.check_amp_files_exist()
+        self.cd(self.estim_files_dir)
 
         # Call my_data.m to get the data for the estimation
-        self.eng.eval(f"[data, auxData, metaData, txtData, weights] = mydata_{self.species_name};", nargout=0)
-
+        self.run_mydata_file()
         # Call pars_init.m to get the parameter values
-        self.eng.eval(f"[par, metaPar, txtPar] = pars_init_{species_name}(metaData);", nargout=0)
+        self.run_pars_init_file()
         self._all_pars = self.eng.workspace['par']
         self.pars = tuple(p for p, f in self._all_pars['free'].items() if f > 0)
 
@@ -131,7 +132,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         # Pass pars to MATLAB
         self.eng.workspace['par'] = self.get_complete_pars(pars_dict)
         # Get predictions
-        self.eng.eval(f"[prdData, info] = predict_{self.species_name}(par, data, auxData);", nargout=0)
+        self.run_predict_file()
         # If predict failed, the parameters are infeasible
         if not self.eng.workspace['info']:
             return float('nan')

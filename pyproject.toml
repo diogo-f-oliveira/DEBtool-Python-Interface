@@ -2,13 +2,9 @@
 requires = ["setuptools>=70.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["DEBtoolPyIF"]
-include = ["DEBtoolPyIF*"]
-
 [project]
 name = "DEBtoolPyIF"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
     { name = "Diogo F. Oliveira", email = "diogo.miguel.oliveira@tecnico.ulisboa.pt" },
 ]
@@ -31,6 +27,13 @@ dependencies = [
     'setuptools>=70.0.0'
 ]
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["DEBtoolPyIF*"]
+
 [project.urls]
-Homepage = "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface"
+Homepage = "https://gixthub.com/diogo-f-oliveira/DEBtool-Python-Interface"
 Issues = "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface/issues"

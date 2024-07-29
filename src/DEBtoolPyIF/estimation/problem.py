@@ -19,7 +19,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         """
         # Check that the folder has the correct files
 
-        super().__init__(species_folder=species_folder, species_name=species_name, matlab_session=matlab_session,
+        super().__init__(estim_filer_dir=species_folder, species_name=species_name, matlab_session=matlab_session,
                          window=window, clear_before=True)
 
         self.set_instance(species_folder, species_name)
@@ -30,9 +30,9 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
                 raise Exception(f"{file}_{self.species_name}.m file does not exist in the provided folder.")
 
     @DEBtoolWrapper.apply_options_decorator
-    def set_instance(self, species_folder, species_name):
+    def set_instance(self, estim_files_dir, species_name):
         self.species_name = species_name
-        self.estim_files_dir = species_folder
+        self.estim_files_dir = estim_files_dir
         self.check_amp_files_exist()
         self.cd(self.estim_files_dir)
 

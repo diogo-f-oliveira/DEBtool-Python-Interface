@@ -51,11 +51,11 @@ class MATLABWrapper:
 
 
 class DEBtoolWrapper(MATLABWrapper):
-    def __init__(self, species_folder, species_name, matlab_session=None, window=False, clear_before=True):
-        self.estim_files_dir = os.path.abspath(species_folder)
+    def __init__(self, estim_filer_dir, species_name, matlab_session=None, window=False, clear_before=True):
+        self.estim_files_dir = os.path.abspath(estim_filer_dir)
         # Check folder exists
         if not os.path.isdir(self.estim_files_dir):
-            raise Exception(f"Species folder {species_folder} does not exist.")
+            raise Exception(f"Species folder {self.estim_files_dir} does not exist.")
         self.species_name = species_name
         super(DEBtoolWrapper, self).__init__(matlab_session=matlab_session, window=window, clear_before=clear_before)
         self.cd(self.estim_files_dir)

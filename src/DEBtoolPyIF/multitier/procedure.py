@@ -24,7 +24,7 @@ class MultiTierStructure:
         self.tiers = {}
         self.build_tiers(estimation_settings=estimation_settings, template_folders=template_folders,
                          tier_output_folders=tier_output_folders)
-        self.estimation_runner = EstimationRunner(species_folder=self.output_folder, species_name=self.species_name,
+        self.estimation_runner = EstimationRunner(estim_filer_dir=self.output_folder, species_name=self.species_name,
                                                   matlab_session=matlab_session)
 
     def build_tiers(self, estimation_settings, template_folders, tier_output_folders):

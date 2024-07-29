@@ -1,6 +1,6 @@
 import pandas as pd
 
-from DEBtoolPyIF.data_sources.base import IndDataSourceBase, GroupDataSourceBase
+from src.DEBtoolPyIF.data_sources.base import IndDataSourceBase, GroupDataSourceBase
 
 
 class DataCollection:

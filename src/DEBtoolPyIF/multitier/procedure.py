@@ -24,7 +24,8 @@ class MultiTierStructure:
         self.tiers = {}
         self.build_tiers(estimation_settings=estimation_settings, template_folders=template_folders,
                          tier_output_folders=tier_output_folders)
-        self.estimation_runner = EstimationRunner(species_name=self.species_name, matlab_session=matlab_session)
+        self.estimation_runner = EstimationRunner(estim_filer_dir=self.output_folder, species_name=self.species_name,
+                                                  matlab_session=matlab_session)
 
     def build_tiers(self, estimation_settings, template_folders, tier_output_folders):
 
@@ -191,6 +192,7 @@ class TierEstimator:
                  hide_output=True):
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
+        self.tier_structure.estimation_runner.estim_files_dir = self.output_folder
 
         # Create files of estimation
         self.code_generator.generate_predict_file()
@@ -211,9 +213,7 @@ class TierEstimator:
             self.code_generator.generate_pars_init_file(tier_sample_list=ts_list)
 
             # Run estimation for name sample
-            success = self.tier_structure.estimation_runner.run_estimation(
-                run_files_dir=self.output_folder,
-                hide_output=hide_output)
+            success = self.tier_structure.estimation_runner.run_estimation(hide_output=hide_output)
             if not success:
                 print(f"Estimation for {self.name} tier with parameters {' '.join(self.tier_pars)} failed.")
                 continue
@@ -231,9 +231,7 @@ class TierEstimator:
             self.save_results()
 
     def fetch_pars(self, tier_sample_list):
-        pars = self.tier_structure.estimation_runner.fetch_pars_from_mat_file(
-            run_files_dir=self.output_folder,
-        )
+        pars = self.tier_structure.estimation_runner.fetch_pars_from_mat_file()
         # Store parameter values
         if len(self.pars_df) == 1:
             self.pars_df.iloc[0] = pars
@@ -243,9 +241,7 @@ class TierEstimator:
                     self.pars_df.loc[ts_id, par] = pars[f'{par}_{ts_id}']
 
     def fetch_errors(self, tier_sample_list):
-        estimation_errors = self.tier_structure.estimation_runner.fetch_errors_from_mat_file(
-            run_files_dir=self.output_folder
-        )
+        estimation_errors = self.tier_structure.estimation_runner.fetch_errors_from_mat_file()
         # Store individual data errors
         ind_list = self.tier_structure.ind_list_from_tier_sample_list(self.name, tier_sample_list)
 

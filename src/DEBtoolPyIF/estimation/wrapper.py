@@ -3,13 +3,13 @@ import functools
 import os
 
 
-class DEBtoolWrapper:
+class MATLABWrapper:
     # TODO: Create a method or decorator to hide output from executing MATLAB functions
 
-    def __init__(self, matlab_session=None, window=False, clear_before=True, species_name=None):
-        if matlab_session is None:
+    def __init__(self, matlab_session='start', window=False, clear_before=True):
+        if matlab_session == 'start':
             self.eng = matlab.engine.start_matlab()
-        if matlab_session == 'find':
+        elif matlab_session == 'find':
             matlab_sessions = matlab.engine.find_matlab()
             if not len(matlab_sessions):
                 raise Exception(
@@ -21,7 +21,6 @@ class DEBtoolWrapper:
             self.eng = matlab.engine.connect_matlab(matlab_session)
         self.window = window
         self.clear_before = clear_before
-        self.species_name = species_name
 
     def apply_options_decorator(func):
         @functools.wraps(func)
@@ -49,3 +48,28 @@ class DEBtoolWrapper:
         self.eng.desktop(nargout=0)
 
     # TODO: eval method
+
+
+class DEBtoolWrapper(MATLABWrapper):
+    def __init__(self, estim_filer_dir, species_name, matlab_session=None, window=False, clear_before=True):
+        self.estim_files_dir = os.path.abspath(estim_filer_dir)
+        # Check folder exists
+        if not os.path.isdir(self.estim_files_dir):
+            raise Exception(f"Species folder {self.estim_files_dir} does not exist.")
+        self.species_name = species_name
+        super(DEBtoolWrapper, self).__init__(matlab_session=matlab_session, window=window, clear_before=clear_before)
+        self.cd(self.estim_files_dir)
+
+    def load_results_file(self, results_file=None):
+        if results_file is None:
+            results_file = os.path.join(self.estim_files_dir, f"results_{self.species_name}.mat")
+        self.eng.eval(f"load('{results_file}');", nargout=0)
+
+    def run_mydata_file(self):
+        self.eng.eval(f"[data, auxData, metaData, txtData, weights] = mydata_{self.species_name};", nargout=0)
+
+    def run_pars_init_file(self):
+        self.eng.eval(f"[par, metaPar, txtPar] = pars_init_{self.species_name}(metaData);", nargout=0)
+
+    def run_predict_file(self):
+        self.eng.eval(f"[prdData, info] = predict_{self.species_name}(par, data, auxData);", nargout=0)

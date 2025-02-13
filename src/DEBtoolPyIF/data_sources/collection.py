@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.DEBtoolPyIF.data_sources.base import IndDataSourceBase, GroupDataSourceBase
+from ..data_sources.base import IndDataSourceBase, GroupDataSourceBase
 
 
 class DataCollection:
@@ -36,7 +36,7 @@ class DataCollection:
             self.data_source_of_group_df = pd.concat([self.data_source_of_group_df,
                                                       ds_of_group_df]).groupby(level=0).max()
         else:
-            raise Exception('Data sources must based on IndDataSourceBase or GroupDataSourceBase class')
+            raise Exception('Data sources must be based on IndDataSourceBase or GroupDataSourceBase class')
 
         # Combine group_of_ind dataframes
         self.group_of_ind_df = pd.concat([self.group_of_ind_df, ds_group_of_ind]).groupby(level=0).max()

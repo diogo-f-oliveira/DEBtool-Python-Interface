@@ -35,5 +35,5 @@ where = ["src"]
 include = ["DEBtoolPyIF*"]
 
 [project.urls]
-Homepage = "https://gixthub.com/diogo-f-oliveira/DEBtool-Python-Interface"
+Homepage = "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface"
 Issues = "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface/issues"

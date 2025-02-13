@@ -105,7 +105,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
             complete_pars[p] = v
         return complete_pars
 
-    def check_feasibilty(self, pars_dict: dict):
+    def check_feasibility(self, pars_dict: dict):
         """
         Checks that the parameters are feasible by calling a filter function for the DEB model
         @param pars_dict: A dictionary with the parameters of the problem
@@ -126,7 +126,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         self.check_pars(pars_dict)
 
         # Check feasibility
-        if not self.check_feasibilty(pars_dict):
+        if not self.check_feasibility(pars_dict):
             return float('nan')
 
         # Pass pars to MATLAB

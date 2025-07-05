@@ -5,6 +5,8 @@ class DataSourceBase:
     TYPE = ''
     UNITS = ''
     LABELS = ''
+    AUX_DATA_UNITS = ''
+    AUX_DATA_LABELS = ''
 
     def __init__(self, csv_filename, id_col, name=None, prefix='', bibkey='', comment=''):
         self.csv_filename = csv_filename
@@ -34,10 +36,37 @@ class DataSourceBase:
     def generate_code(self):
         return
 
+    def format_info(self, units):
+        if isinstance(units, str):
+            formatted_units = f"'{units}'"
+        elif isinstance(units, (tuple, list)):
+            formatted_units = '{'
+            for unit in units:
+                formatted_units += f"'{unit}', "
+            formatted_units = formatted_units[:-2] + "};"
+        else:
+            raise TypeError(f'Unexpected type {type(units)}. Units and Labels should be either a string or a tuple or '
+                            f'list of strings.')
+        return formatted_units
+
+    @property
+    def units(self):
+        return self.format_info(self.UNITS)
+
+    @property
+    def labels(self):
+        return self.format_info(self.LABELS)
+
+    @property
+    def aux_data_units(self):
+        return self.format_info(self.AUX_DATA_UNITS)
+
+    @property
+    def aux_data_labels(self):
+        return self.format_info(self.AUX_DATA_LABELS)
+
 
 class IndDataSourceBase(DataSourceBase):
-    AUX_DATA_UNITS = ''
-    AUX_DATA_LABELS = ''
 
     def __init__(self, csv_filename, id_col, name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
@@ -56,8 +85,6 @@ class IndDataSourceBase(DataSourceBase):
 
 
 class GroupDataSourceBase(DataSourceBase):
-    AUX_DATA_UNITS = ''
-    AUX_DATA_LABELS = ''
 
     def __init__(self, csv_filename, id_col, name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,

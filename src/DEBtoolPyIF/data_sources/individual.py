@@ -4,10 +4,10 @@ import pandas as pd
 
 class TimeWeightDataSource(IndDataSourceBase):
     TYPE = "tW"
-    UNITS = "{'d', 'kg'}"
-    LABELS = "{'Time since start', 'Wet weight'}"
-    AUX_DATA_UNITS = "'kg'"
-    AUX_DATA_LABELS = "'Initial weight'"
+    UNITS = ('d', 'kg')
+    LABELS = ('Time since start', 'Wet weight')
+    AUX_DATA_UNITS = 'kg'
+    AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, weight_col, date_col, name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
@@ -39,11 +39,11 @@ class TimeWeightDataSource(IndDataSourceBase):
                            f"{ind_data.loc[i, self.weight_col]}; "
             my_data_code += tw_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{ind_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Growth curve of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
@@ -56,6 +56,7 @@ class TimeWeightDataSource(IndDataSourceBase):
 
 # Deprecated
 class FinalWeightIndDataSource(IndDataSourceBase):
+    # TODO: Update with latest changes
     TYPE = 'Wf'
 
     def __init__(self, csv_filename, id_col, weight_col, age_col, date_col,
@@ -102,10 +103,10 @@ class FinalWeightIndDataSource(IndDataSourceBase):
 
 class TimeFeedIndDataSource(IndDataSourceBase):
     TYPE = "tJX"
-    UNITS = "{'d', 'kg'}"
-    LABELS = "{'Time since start', 'Daily food consumption'}"
-    AUX_DATA_UNITS = "'kg'"
-    AUX_DATA_LABELS = "'Initial weight'"
+    UNITS = ('d', 'kg')
+    LABELS = ('Time since start', 'Daily food consumption')
+    AUX_DATA_UNITS = 'kg'
+    AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
                  start_at_first=False, prefix='', name=None, bibkey='', comment=''):
@@ -153,11 +154,11 @@ class TimeFeedIndDataSource(IndDataSourceBase):
                              f"{ind_data.loc[i, self.feed_col]}; "
             my_data_code += t_JX_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{ind_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Daily feed consumption of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
@@ -170,10 +171,10 @@ class TimeFeedIndDataSource(IndDataSourceBase):
 
 class TimeCumulativeFeedIndDataSource(IndDataSourceBase):
     TYPE = "tCX"
-    UNITS = "{'d', 'kg'}"
-    LABELS = "{'Time since start', 'Cumulative food consumption during test'}"
-    AUX_DATA_UNITS = "'kg'"
-    AUX_DATA_LABELS = "'Initial weight'"
+    UNITS = ('d', 'kg')
+    LABELS = ('Time since start', 'Cumulative food consumption during test')
+    AUX_DATA_UNITS = 'kg'
+    AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
                  prefix='', name=None, bibkey='', comment=''):
@@ -216,11 +217,11 @@ class TimeCumulativeFeedIndDataSource(IndDataSourceBase):
                             f"{ind_data.loc[i, self.feed_col]}; "
             my_data_code += tCX_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{ind_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Food consumption of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
@@ -233,10 +234,10 @@ class TimeCumulativeFeedIndDataSource(IndDataSourceBase):
 
 class TimeCH4DataSource(IndDataSourceBase):
     TYPE = 'tCH4'
-    UNITS = "{'d', 'g/d'}"
-    LABELS = "{'Time since start', 'Daily methane (CH4) emissions'}"
-    AUX_DATA_UNITS = "'kg'"
-    AUX_DATA_LABELS = "'Initial weight'"
+    UNITS = ('d', 'g/d')
+    LABELS = ('Time since start', 'Daily methane (CH4) emissions')
+    AUX_DATA_UNITS = 'kg'
+    AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightDataSource,
                  start_at_first=False, name=None, prefix='', bibkey='', comment=''):
@@ -283,11 +284,11 @@ class TimeCH4DataSource(IndDataSourceBase):
                              f" {ind_data.loc[i, self.methane_col]}; "
             my_data_code += tCH4_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{ind_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Daily CH4 emissions of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
@@ -300,10 +301,10 @@ class TimeCH4DataSource(IndDataSourceBase):
 
 class TimeCO2DataSource(IndDataSourceBase):
     TYPE = 'tCO2'
-    UNITS = "{'d', 'g/d'}"
-    LABELS = "{'Time since start', 'Daily carbon dioxide (CO2) emissions'}"
-    AUX_DATA_UNITS = "'kg'"
-    AUX_DATA_LABELS = "'Initial weight'"
+    UNITS = ('d', 'g/d')
+    LABELS = ('Time since start', 'Daily carbon dioxide (CO2) emissions')
+    AUX_DATA_UNITS = 'kg'
+    AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightDataSource,
                  start_at_first=False, name=None, prefix='', bibkey='', comment=''):
@@ -350,11 +351,11 @@ class TimeCO2DataSource(IndDataSourceBase):
                              f" {ind_data.loc[i, self.co2_col]}; "
             my_data_code += tCO2_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{ind_id} = {initial_weight}; " \
-                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{ind_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Daily CO2 emissions of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
@@ -367,7 +368,7 @@ class TimeCO2DataSource(IndDataSourceBase):
 
 # Deprecated
 class WeightFeedIndDataSource(IndDataSourceBase):
-    # TODO: Update with last changes
+    # TODO: Update with latest changes
     TYPE = 'WCX'
 
     def __init__(self, csv_filename, id_col, weight_col, feed_col, date_col,
@@ -418,7 +419,7 @@ class WeightFeedIndDataSource(IndDataSourceBase):
 
 # Deprecated
 class TotalFeedIntakeIndDataSource(IndDataSourceBase):
-    # TODO: Update with last changes
+    # TODO: Update with latest changes
     TYPE = 'TFI'
 
     def __init__(self, csv_filename, id_col, feed_col, age_col, date_col, weight_data_source: TimeWeightDataSource,
@@ -468,8 +469,8 @@ class TotalFeedIntakeIndDataSource(IndDataSourceBase):
 
 class TimeMilkIndDataSource(IndDataSourceBase):
     TYPE = 'tJL'
-    UNITS = "{'d', 'L/d'}"
-    LABELS = "{'Time since start', 'Milk production per day'}"
+    UNITS = ('d', 'L/d')
+    LABELS = ('Time since start', 'Milk production per day')
 
     def __init__(self, csv_filename, id_col, milk_col, day_col, name=None, prefix='', bibkey='', comment=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
@@ -492,8 +493,8 @@ class TimeMilkIndDataSource(IndDataSourceBase):
                               f"{ind_data.loc[i, self.milk_col]}; "
             my_data_code += tmilk_data[:-2] + '];\n'
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Milk production curve of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "
@@ -506,10 +507,10 @@ class TimeMilkIndDataSource(IndDataSourceBase):
 
 class AgeWeightIndDataSource(IndDataSourceBase):
     TYPE = "aW"
-    UNITS = "{'d', 'kg'}"
-    LABELS = "{'Age since birth', 'Wet weight'}"
-    AUX_DATA_UNITS = "'-'"
-    AUX_DATA_LABELS = "'Number of twins'"
+    UNITS = ('d', 'kg')
+    LABELS = ('Age since birth', 'Wet weight')
+    AUX_DATA_UNITS = '-'
+    AUX_DATA_LABELS = 'Number of twins'
 
     def __init__(self, csv_filename, id_col, weight_col, age_col, n_twins_col, name=None, prefix='', bibkey='',
                  comment=''):
@@ -535,11 +536,11 @@ class AgeWeightIndDataSource(IndDataSourceBase):
                            f"{ind_data.loc[i, self.weight_col]}; "
             my_data_code += aw_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{ind_id} = {n_twins}; " \
-                            f"units.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{ind_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{ind_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{ind_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{ind_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{ind_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{ind_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{ind_id} = 'Age weight curve of individual {ind_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{ind_id} = '{self.comment}, individual {ind_id}'; "

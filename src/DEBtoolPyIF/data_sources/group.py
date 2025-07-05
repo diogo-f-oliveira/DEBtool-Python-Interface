@@ -6,10 +6,10 @@ import pandas as pd
 
 class GroupTimeFeedDataSource(GroupDataSourceBase):
     TYPE = 'tJX_grp'
-    UNITS = "{'d', 'kg'}"
-    LABELS = "{'Time since start', 'Daily food consumption of group during test'}"
-    AUX_DATA_UNITS = "{'kg'}"
-    AUX_DATA_LABELS = "{'Initial weights for the individuals in the group'}"
+    UNITS = ('d', 'kg')
+    LABELS = ('Time since start', 'Daily food consumption of group during test')
+    AUX_DATA_UNITS = ('kg')
+    AUX_DATA_LABELS = ('Initial weights for the individuals in the group')
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
                  name=None, prefix='', bibkey='', comment=''):
@@ -60,11 +60,11 @@ class GroupTimeFeedDataSource(GroupDataSourceBase):
                                    f"{group_data.loc[i, self.feed_col]}; "
             my_data_code += t_JX_group_data[:-2] + '];\n'
             my_data_code += f"init.{self.TYPE}_{group_id} = {format_dict_data(initial_weights)}; " \
-                            f"units.init.{self.TYPE}_{group_id} = {self.AUX_DATA_UNITS}; " \
-                            f"label.init.{self.TYPE}_{group_id} = {self.AUX_DATA_LABELS};\n"
+                            f"units.init.{self.TYPE}_{group_id} = {self.aux_data_units}; " \
+                            f"label.init.{self.TYPE}_{group_id} = {self.aux_data_labels};\n"
 
-            my_data_code += f"units.{self.TYPE}_{group_id} = {self.UNITS}; " \
-                            + f"label.{self.TYPE}_{group_id} = {self.LABELS}; " \
+            my_data_code += f"units.{self.TYPE}_{group_id} = {self.units}; " \
+                            + f"label.{self.TYPE}_{group_id} = {self.labels}; " \
                             + f"txtData.title.{self.TYPE}_{group_id} = 'Daily feed consumption of pen {group_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{group_id} = '{self.comment}, pen {group_id}'; "

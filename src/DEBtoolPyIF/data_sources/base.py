@@ -3,15 +3,15 @@ import pandas as pd
 
 class DataSourceBase:
     TYPE = ''
-    UNITS = ''
     LABELS = ''
-    AUX_DATA_UNITS = ''
     AUX_DATA_LABELS = ''
 
-    def __init__(self, csv_filename, id_col, name=None, prefix='', bibkey='', comment=''):
+    def __init__(self, csv_filename, id_col, name=None,
+                 prefix='', bibkey='', comment='',
+                 ind_var_unit='', dep_var_unit='', aux_var_unit='',
+                 ):
         self.csv_filename = csv_filename
         self.id_col = id_col
-
         # Load dataframe
         self.df = pd.read_csv(self.csv_filename)
 
@@ -29,6 +29,8 @@ class DataSourceBase:
         self.name = name
         self.bibkey = bibkey
         self.comment = comment
+        self._units = (ind_var_unit, dep_var_unit)
+        self._aux_data_units = aux_var_unit
 
         # Save groupby structure for faster processing
         self.groupbys = self.df.groupby(self.id_col)
@@ -51,7 +53,7 @@ class DataSourceBase:
 
     @property
     def units(self):
-        return self.format_info(self.UNITS)
+        return self.format_info(self._units)
 
     @property
     def labels(self):
@@ -59,7 +61,7 @@ class DataSourceBase:
 
     @property
     def aux_data_units(self):
-        return self.format_info(self.AUX_DATA_UNITS)
+        return self.format_info(self._aux_data_units)
 
     @property
     def aux_data_labels(self):
@@ -68,9 +70,13 @@ class DataSourceBase:
 
 class IndDataSourceBase(DataSourceBase):
 
-    def __init__(self, csv_filename, id_col, name=None, prefix='', bibkey='', comment=''):
-        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+    def __init__(self, csv_filename, id_col, name=None,
+                 prefix='', bibkey='', comment='',
+                 ind_var_unit='', dep_var_unit='', aux_var_unit='',
+                 ):
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         prefix=prefix, bibkey=bibkey, comment=comment,
+                         ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
 
         # Find the ids of all individuals
         self.individuals = {str(ci).replace(' ', '_') for ci in self.df[id_col].unique()}
@@ -86,9 +92,13 @@ class IndDataSourceBase(DataSourceBase):
 
 class GroupDataSourceBase(DataSourceBase):
 
-    def __init__(self, csv_filename, id_col, name=None, prefix='', bibkey='', comment=''):
-        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+    def __init__(self, csv_filename, id_col, name=None,
+                 prefix='', bibkey='', comment='',
+                 ind_var_unit='', dep_var_unit='', aux_var_unit='',
+                 ):
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         prefix=prefix, bibkey=bibkey, comment=comment,
+                         ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
 
         # Find the ids of all groups
         self.groups = {str(ci).replace(' ', '_') for ci in self.df[self.id_col].unique()}
@@ -114,5 +124,3 @@ class GroupDataSourceBase(DataSourceBase):
 
     def generate_code(self, ind_list='all'):
         return
-
-

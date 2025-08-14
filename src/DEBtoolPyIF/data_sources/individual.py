@@ -4,14 +4,16 @@ import pandas as pd
 
 class TimeWeightDataSource(IndDataSourceBase):
     TYPE = "tW"
-    UNITS = ('d', 'kg')
     LABELS = ('Time since start', 'Wet weight')
-    AUX_DATA_UNITS = 'kg'
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, weight_col, date_col, name=None, prefix='', bibkey='', comment=''):
-        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+    def __init__(self, csv_filename, id_col, weight_col, date_col, name=None,
+                 prefix='', bibkey='', comment='',
+                 time_unit='d', weight_unit='kg',
+                 ):
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         prefix=prefix, bibkey=bibkey, comment=comment,
+                         ind_var_unit=time_unit, dep_var_unit=weight_unit, aux_var_unit=weight_unit)
         self.weight_col = weight_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -103,15 +105,14 @@ class FinalWeightIndDataSource(IndDataSourceBase):
 
 class TimeFeedIndDataSource(IndDataSourceBase):
     TYPE = "tJX"
-    UNITS = ('d', 'kg')
     LABELS = ('Time since start', 'Daily food consumption')
-    AUX_DATA_UNITS = 'kg'
     AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
-                 start_at_first=False, prefix='', name=None, bibkey='', comment=''):
+                 start_at_first=False, prefix='', name=None, bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,
+                         aux_var_unit=weight_data_source._units[1])
         self.feed_col = feed_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -171,15 +172,14 @@ class TimeFeedIndDataSource(IndDataSourceBase):
 
 class TimeCumulativeFeedIndDataSource(IndDataSourceBase):
     TYPE = "tCX"
-    UNITS = ('d', 'kg')
     LABELS = ('Time since start', 'Cumulative food consumption during test')
-    AUX_DATA_UNITS = 'kg'
     AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
-                 prefix='', name=None, bibkey='', comment=''):
+                 prefix='', name=None, bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,
+                         aux_var_unit=weight_data_source._units[1])
         self.feed_col = feed_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -234,15 +234,15 @@ class TimeCumulativeFeedIndDataSource(IndDataSourceBase):
 
 class TimeCH4DataSource(IndDataSourceBase):
     TYPE = 'tCH4'
-    UNITS = ('d', 'g/d')
     LABELS = ('Time since start', 'Daily methane (CH4) emissions')
-    AUX_DATA_UNITS = 'kg'
     AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightDataSource,
-                 start_at_first=False, name=None, prefix='', bibkey='', comment=''):
+                 start_at_first=False, name=None, prefix='', bibkey='', comment='', time_unit='d', methane_unit='g/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=time_unit, dep_var_unit=methane_unit,
+                         aux_var_unit=weight_data_source._units[1])
+
         self.methane_col = methane_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -301,15 +301,15 @@ class TimeCH4DataSource(IndDataSourceBase):
 
 class TimeCO2DataSource(IndDataSourceBase):
     TYPE = 'tCO2'
-    UNITS = ('d', 'g/d')
     LABELS = ('Time since start', 'Daily carbon dioxide (CO2) emissions')
-    AUX_DATA_UNITS = 'kg'
     AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightDataSource,
-                 start_at_first=False, name=None, prefix='', bibkey='', comment=''):
+                 start_at_first=False, name=None, prefix='', bibkey='', comment='', time_unit='d', co2_unit='g/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=time_unit, dep_var_unit=co2_unit,
+                         aux_var_unit=weight_data_source._units[1])
+
         self.co2_col = co2_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
@@ -469,12 +469,12 @@ class TotalFeedIntakeIndDataSource(IndDataSourceBase):
 
 class TimeMilkIndDataSource(IndDataSourceBase):
     TYPE = 'tJL'
-    UNITS = ('d', 'L/d')
     LABELS = ('Time since start', 'Milk production per day')
 
-    def __init__(self, csv_filename, id_col, milk_col, day_col, name=None, prefix='', bibkey='', comment=''):
+    def __init__(self, csv_filename, id_col, milk_col, day_col, name=None, prefix='', bibkey='', comment='',
+                 time_unit='d', milk_unit='L/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=time_unit, dep_var_unit=milk_unit)
         self.milk_col = milk_col
         self.day_col = day_col
 
@@ -505,17 +505,16 @@ class TimeMilkIndDataSource(IndDataSourceBase):
         return my_data_code
 
 
-class AgeWeightIndDataSource(IndDataSourceBase):
+# TODO: Check if this is supposed to be time since birth, age since birth is a misnomer
+class AgeWeightTwinsIndDataSource(IndDataSourceBase):
     TYPE = "aW"
-    UNITS = ('d', 'kg')
     LABELS = ('Age since birth', 'Wet weight')
-    AUX_DATA_UNITS = '-'
     AUX_DATA_LABELS = 'Number of twins'
 
     def __init__(self, csv_filename, id_col, weight_col, age_col, n_twins_col, name=None, prefix='', bibkey='',
-                 comment=''):
+                 comment='', age_unit='d', weight_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=age_unit, dep_var_unit=weight_unit, aux_var_unit='#')
         self.weight_col = weight_col
         self.age_col = age_col
         self.n_twins_col = n_twins_col

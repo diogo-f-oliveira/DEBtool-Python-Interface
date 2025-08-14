@@ -6,15 +6,14 @@ import pandas as pd
 
 class GroupTimeFeedDataSource(GroupDataSourceBase):
     TYPE = 'tJX_grp'
-    UNITS = ('d', 'kg')
     LABELS = ('Time since start', 'Daily food consumption of group during test')
-    AUX_DATA_UNITS = ('kg')
     AUX_DATA_LABELS = ('Initial weights for the individuals in the group')
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
-                 name=None, prefix='', bibkey='', comment=''):
+                 name=None, prefix='', bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment)
+                         comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,
+                         aux_var_unit=weight_data_source._units[1])
         self.feed_col = feed_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])

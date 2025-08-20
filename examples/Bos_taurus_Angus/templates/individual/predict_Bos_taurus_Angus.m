@@ -28,6 +28,7 @@ for i=1:length(auxData.tiers.ind_list)
     if ~filter_stx(ind_pars)
         prdData = []; info = 0; return
     end
+    vars_pull(ind_pars);  vars_pull(parscomp_st(ind_pars));
 
     % Growth curve parameters
     rT_B = TC * p_M / 3 / (E_G + f * kap * p_Am / v);
@@ -79,6 +80,5 @@ prdData.groups_of_ind = 10;
 prdData.tier_sample_list = 10;
 prdData.tier_sample_inds = 10;
 prdData.tier_pars = 10;
-prdData.transition_times = 10;
 
 end

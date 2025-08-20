@@ -111,7 +111,7 @@ end
 
 %% Set weights of individual data
 cumulative_data_types = {'tW'};
-ind_data_weights = struct('tW', 3/40);
+ind_data_weights = struct('tW', 3/20);
 
 for dt=1:length(metaData.ind_data_types)
     data_type = metaData.ind_data_types{dt};
@@ -133,7 +133,7 @@ end
 
 
 %% Set weights of group data
-group_data_weights = struct('tJX_grp', 5/40);
+group_data_weights = struct('tJX_grp', 5/20);
 for dt=1:length(metaData.group_data_types)
     data_type = metaData.group_data_types{dt};
     for g=1:length(tiers.group_list)

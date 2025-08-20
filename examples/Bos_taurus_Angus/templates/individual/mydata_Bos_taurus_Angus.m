@@ -39,10 +39,6 @@ $ind_list
 % Struct with form groups_of_ind.(ind_id) = list_of_groups_ids_ind_belongs_to
 $groups_of_ind
 
-% Transition times due to habituation to algae additive
-% Diet of each ind
-$extra_info
-
 % Cell array of tier_sample_ids
 $tier_sample_list
 
@@ -135,7 +131,7 @@ for ts=1:length(tiers.tier_sample_list)
         weights.psd.(varname) = $pseudo_data_weight;
     end
 end
-
+    
 %% pack auxData and txtData for output
 auxData.temp = temp;
 auxData.tiers = tiers;

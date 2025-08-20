@@ -85,6 +85,5 @@ prdData.groups_of_ind = 10;
 prdData.tier_sample_list = 10;
 prdData.tier_sample_inds = 10;
 prdData.tier_pars = 10;
-prdData.transition_times = 10;
 
 end

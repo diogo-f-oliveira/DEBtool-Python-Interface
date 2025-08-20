@@ -18,7 +18,7 @@ vars_pull(female_pars); vars_pull(parscomp_st(female_pars));
 
 % stage transitions
 pars_txf = [g k l_T v_Hb v_Hx v_Hp];
-[t_pf, t_xf, t_bf, l_pf, l_xf, l_bf, info] = get_tx(pars_txf, [f_milk f]);
+[t_pf, t_xf, t_bf, l_pf, l_xf, l_bf, info] = get_tx(pars_txf, f);
 if ~info
     prdData = []; info = 0; return
 end
@@ -60,7 +60,7 @@ vars_pull(par);  vars_pull(parscomp_st(par));
 
 % stage transitions
 pars_txf = [g k l_T v_Hb v_Hx v_Hp];
-[t_pm, t_xm, t_bm, l_pm, l_xm, l_bm, info] = get_tx(pars_txf, [f_milk f]);
+[t_pm, t_xm, t_bm, l_pm, l_xm, l_bm, info] = get_tx(pars_txf, f);
 if ~info
     prdData = []; info = 0; return
 end

@@ -71,7 +71,6 @@ def create_tier_structure():
         'del_M': 0.15,
         'p_Am_f': 4500,
         'E_Hp_f': 6e+7,
-        'f_milk': 1
     }
     # Parameters that are estimated in each tier
     tier_pars = {
@@ -81,9 +80,9 @@ def create_tier_structure():
     }
 
     estimation_settings = {
-        'breed': dict(n_runs=50, results_output_mode=3, n_steps=500, pars_init_method=2, tol_fun=1e-4),
-        'diet': dict(n_runs=50, results_output_mode=0, n_steps=500, pars_init_method=2, tol_fun=1e-4),
-        'individual': dict(n_runs=50, results_output_mode=0, n_steps=500, pars_init_method=2, tol_fun=1e-4)
+        'breed': dict(n_runs=5, results_output_mode=-3, n_steps=500, pars_init_method=2, tol_fun=1e-4),
+        'diet': dict(n_runs=5, results_output_mode=0, n_steps=500, pars_init_method=2, tol_fun=1e-4),
+        'individual': dict(n_runs=5, results_output_mode=0, n_steps=500, pars_init_method=2, tol_fun=1e-4)
     }
     tier_output_folders = {
         'breed': 'breed',
@@ -97,7 +96,8 @@ def create_tier_structure():
                                    template_folders=template_folders,
                                    output_folder=ESTIMATION_FOLDER,
                                    estimation_settings=estimation_settings,
-                                   tier_output_folders=tier_output_folders)
+                                   tier_output_folders=tier_output_folders,
+                                   matlab_session='find')
 
     return multitier
 
@@ -105,8 +105,8 @@ def create_tier_structure():
 if __name__ == '__main__':
     multitier = create_tier_structure()
 
-    multitier.tiers['breed'].estimate(hide_output=True)
-    # multitier.tiers['breed'].load_results()
+    # multitier.tiers['breed'].estimate(hide_output=True)
+    multitier.tiers['breed'].load_results()
     # multitier.tiers['breed'].fetch_pars(tier_sample_list=['male'])
     # multitier.tiers['breed'].fetch_errors(tier_sample_list=['male'])
     # multitier.tiers['breed'].save_results()

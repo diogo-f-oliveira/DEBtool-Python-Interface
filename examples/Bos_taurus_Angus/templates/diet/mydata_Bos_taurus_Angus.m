@@ -39,9 +39,6 @@ $ind_list
 % Struct with form groups_of_ind.(ind_id) = list_of_groups_ids_ind_belongs_to
 $groups_of_ind
 
-% Transition times due to habituation to algae additive
-$extra_info
-
 % Cell array of tier_sample_ids
 $tier_sample_list
 

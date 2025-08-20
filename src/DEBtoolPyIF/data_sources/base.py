@@ -1,5 +1,7 @@
 import pandas as pd
 
+from ..utils.data_formatter import is_valid_matlab_field_name
+
 
 class DataSourceBase:
     TYPE = ''
@@ -15,13 +17,12 @@ class DataSourceBase:
         # Load dataframe
         self.df = pd.read_csv(self.csv_filename)
 
-        # Load dataframe
-        self.df = pd.read_csv(self.csv_filename)
         # Set ids as string and add prefix
         self.df[self.id_col] = self.df[self.id_col].astype(str)
         self.prefix = prefix
         if self.prefix:
             self.df[self.id_col] = f"{self.prefix}_" + self.df[self.id_col]
+        # Check if ids are valid
 
         # Set the name and info of the datasource
         if name is None:
@@ -34,6 +35,14 @@ class DataSourceBase:
 
         # Save groupby structure for faster processing
         self.groupbys = self.df.groupby(self.id_col)
+
+    def check_id_validity(self):
+        unique_ids = self.df[self.id_col].unique()
+        invalid_ids = [val for val in unique_ids if not is_valid_matlab_field_name(val)]
+
+        if invalid_ids:
+            raise Exception(f"DataSource {self.name} has IDs in df.id_col that cannot be used as MATLAB struct field "
+                            f"names: {invalid_ids!r}")
 
     def generate_code(self):
         return

@@ -1,4 +1,5 @@
 import os
+import re
 
 
 def check_files_exist_in_folder(folder_name, files):
@@ -43,3 +44,35 @@ def format_aux_data(var_name, formatted_data, label, comment='-', units='-', bib
 
 def format_meta_data(var_name, formatted_data):
     return f"metaData.{var_name} = {formatted_data}; \n"
+
+
+def is_valid_matlab_field_name(fieldname: str) -> bool:
+    """
+    Checks if a string is a valid MATLAB struct field name.
+    :param fieldname: The string to check.
+    :return: True, if field name is a valid MATLAB struct field name.
+    """
+    if not fieldname:
+        return False
+    # First character must be a letter, rest can be letters, digits, or underscores
+    return bool(re.match(r'^[A-Za-z][A-Za-z0-9_]*$', fieldname))
+
+
+def sanitize_matlab_field_name(fieldname: str) -> str:
+    """
+    Converts a string into a valid MATLAB struct field name. Replaces invalid characters with underscores. If the first
+    character is not a letter, prepends 'x'.
+    :param fieldname: The MATLAB struct field name to sanitize.
+    :return: The MATLAB struct field name
+    """
+    if not fieldname:
+        return "x"
+
+    # Replace invalid chars with underscores
+    fieldname = re.sub(r'[^A-Za-z0-9_]', '_', fieldname)
+
+    # Ensure first char is a letter
+    if not re.match(r'^[A-Za-z]', fieldname):
+        fieldname = 'x' + fieldname
+
+    return fieldname

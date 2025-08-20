@@ -19,7 +19,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         """
         # Check that the folder has the correct files
 
-        super().__init__(estim_filer_dir=species_folder, species_name=species_name, matlab_session=matlab_session,
+        super().__init__(estim_files_dir=species_folder, species_name=species_name, matlab_session=matlab_session,
                          window=window, clear_before=True)
 
         self.set_instance(species_folder, species_name)

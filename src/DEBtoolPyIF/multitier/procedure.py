@@ -24,7 +24,7 @@ class MultiTierStructure:
         self.tiers = {}
         self.build_tiers(estimation_settings=estimation_settings, template_folders=template_folders,
                          tier_output_folders=tier_output_folders)
-        self.estimation_runner = EstimationRunner(estim_filer_dir=self.output_folder, species_name=self.species_name,
+        self.estimation_runner = EstimationRunner(estim_files_dir=self.output_folder, species_name=self.species_name,
                                                   matlab_session=matlab_session)
 
     def build_tiers(self, estimation_settings, template_folders, tier_output_folders):
@@ -39,9 +39,9 @@ class MultiTierStructure:
                                 f" are not all estimated in the previous name.")
             # Create output folder for name estimation
             if tier_name not in tier_output_folders:
-                tier_output_folder = f"{self.output_folder}/{tier_name}/{tier_pars_str}"
+                tier_output_folder = f"{self.output_folder}/{tier_name}"
             else:
-                tier_output_folder = f"{self.output_folder}/{tier_name}/{tier_output_folders[tier_name]}"
+                tier_output_folder = f"{self.output_folder}/{tier_output_folders[tier_name]}"
 
             os.makedirs(tier_output_folder, exist_ok=True)
             self.tiers[tier_name] = TierEstimator(tier_structure=self,
@@ -188,42 +188,51 @@ class TierEstimator:
                                     index=self.tier_structure.ind_tiers[self.name].unique())
         self.pars_df.index.name = 'tier_sample'
 
-    def estimate(self, list_of_tier_sample_lists=None, pseudo_data_weight=0.1, save_results=True, print_results=True,
+    # TODO: Add option to only estimate for some tier samples not all that exist in the tier
+    def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True,
                  hide_output=True):
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
-        self.tier_structure.estimation_runner.estim_files_dir = self.output_folder
 
-        # Create files of estimation
-        self.code_generator.generate_predict_file()
-        self.code_generator.generate_run_file()
+        # Get list of tier samples or groups
+        if len(self.tier_sample_list) == 1:
+            folder_names = ['']
+            list_of_tier_sample_lists = [self.tier_sample_list]
+        # Check if this is an individual tier
+        elif len(self.tier_sample_list) == len(self.tier_structure.ind_tiers.index.values) and \
+                len(self.group_data_errors.index):
+            folder_names = list(self.tier_structure.data.groups)
+            list_of_tier_sample_lists = [self.tier_structure.data.get_ind_list_of_group(g_id) for g_id in
+                                         self.tier_structure.data.groups]
+        else:
+            folder_names = self.tier_sample_list
+            list_of_tier_sample_lists = [[ts_id] for ts_id in self.tier_sample_list]
 
-        if list_of_tier_sample_lists is None:
-            # Check if this is an individual tier
-            if len(self.tier_sample_list) == len(self.tier_structure.ind_tiers.index.values) and \
-                    len(self.group_data_errors.index):
-                list_of_tier_sample_lists = [self.tier_structure.data.get_ind_list_of_group(g_id) for g_id in
-                                             self.group_data_errors.index]
-            else:
-                list_of_tier_sample_lists = [[ts_id] for ts_id in self.tier_sample_list]
-
-        for ts_list in list_of_tier_sample_lists:
-            tier_estim_start_time = pd.Timestamp.now()
+        for ts_name, ts_list in zip(folder_names, list_of_tier_sample_lists):
+            # Create estimation folder and set it in TierCodeGenerator and EstimationRunner objects
+            output_folder = f"{self.output_folder}/{ts_name}"
+            os.makedirs(output_folder, exist_ok=True)
+            self.tier_structure.estimation_runner.estim_files_dir = output_folder
+            self.code_generator.output_folder = output_folder
+            # Generate estimation files
             self.code_generator.generate_mydata_file(tier_sample_list=ts_list, pseudo_data_weight=pseudo_data_weight)
             self.code_generator.generate_pars_init_file(tier_sample_list=ts_list)
+            self.code_generator.generate_predict_file()
+            self.code_generator.generate_run_file()
 
             # Run estimation for name sample
+            tier_estim_start_time = pd.Timestamp.now()
             success = self.tier_structure.estimation_runner.run_estimation(hide_output=hide_output)
             if not success:
-                print(f"Estimation for {self.name} tier with parameters {' '.join(self.tier_pars)} failed.")
+                print(f"Estimation for {self.name} tier with parameters {' '.join(self.tier_pars)} failed for tier "
+                      f"sample or group {ts_name}.")
                 continue
-
-            self.fetch_pars(tier_sample_list=ts_list)
-
-            self.fetch_errors(tier_sample_list=ts_list)
-
             tier_estim_end_time = pd.Timestamp.now()
+
+            # Fetch and store results
             self.tier_errors.loc[ts_list, 'estim_time'] = (tier_estim_end_time - tier_estim_start_time).total_seconds()
+            self.fetch_pars(tier_sample_list=ts_list)
+            self.fetch_errors(tier_sample_list=ts_list)
 
         if print_results:
             self.print_results(tier_sample_list=self.tier_sample_list)
@@ -291,6 +300,7 @@ class TierCodeGenerator:
 
     def __init__(self, tier: TierEstimator):
         self.tier = tier
+        self.output_folder = None
 
         complete, missing_file = self.check_all_files_exist(self.tier.template_folder)
         if not complete:
@@ -303,7 +313,7 @@ class TierCodeGenerator:
 
     def generate_mydata_file(self, tier_sample_list, pseudo_data_weight=0.1):
         mydata_template = open(f'{self.tier.template_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'r')
-        mydata_out = open(f'{self.tier.output_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'w')
+        mydata_out = open(f'{self.output_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'w')
 
         tier_sample_inds = self.tier.tier_structure.get_tier_sample_inds(self.tier.name, tier_sample_list)
         ind_list = self.tier.tier_structure.ind_list_from_tier_sample_list(self.tier.name, tier_sample_list)
@@ -408,7 +418,7 @@ class TierCodeGenerator:
         pars_dict = self.tier.tier_structure.get_full_pars_dict(self.tier.name, tier_sample_list[0])
         pars_init_template = open(f'{self.tier.template_folder}/pars_init_{self.tier.tier_structure.species_name}.m',
                                   'r')
-        pars_init_out = open(f'{self.tier.output_folder}/pars_init_{self.tier.tier_structure.species_name}.m', 'w')
+        pars_init_out = open(f'{self.output_folder}/pars_init_{self.tier.tier_structure.species_name}.m', 'w')
 
         src = Template(pars_init_template.read())
         result = src.substitute(**pars_dict)
@@ -419,11 +429,11 @@ class TierCodeGenerator:
 
     def generate_predict_file(self):
         shutil.copy(src=f"{self.tier.template_folder}/predict_{self.tier.tier_structure.species_name}.m",
-                    dst=f"{self.tier.output_folder}")
+                    dst=f"{self.output_folder}")
 
     def generate_run_file(self):
         run_template = open(f'{self.tier.template_folder}/run_{self.tier.tier_structure.species_name}.m', 'r')
-        run_out = open(f'{self.tier.output_folder}/run_{self.tier.tier_structure.species_name}.m', 'w')
+        run_out = open(f'{self.output_folder}/run_{self.tier.tier_structure.species_name}.m', 'w')
         src = Template(run_template.read())
         result = src.substitute(self.tier.estimation_settings)
         print(result, file=run_out)

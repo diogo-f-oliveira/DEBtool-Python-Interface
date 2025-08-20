@@ -25,7 +25,6 @@ class MATLABWrapper:
     def apply_options_decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            # Apply the options just like in the original apply_options method
             if self.window:
                 self.open_matlab_window()
             if self.clear_before:
@@ -51,8 +50,8 @@ class MATLABWrapper:
 
 
 class DEBtoolWrapper(MATLABWrapper):
-    def __init__(self, estim_filer_dir, species_name, matlab_session=None, window=False, clear_before=True):
-        self.estim_files_dir = os.path.abspath(estim_filer_dir)
+    def __init__(self, estim_files_dir, species_name, matlab_session=None, window=False, clear_before=True):
+        self.estim_files_dir = os.path.abspath(estim_files_dir)
         # Check folder exists
         if not os.path.isdir(self.estim_files_dir):
             raise Exception(f"Species folder {self.estim_files_dir} does not exist.")

@@ -105,8 +105,8 @@ def create_tier_structure():
 if __name__ == '__main__':
     multitier = create_tier_structure()
 
-    # multitier.tiers['breed'].estimate(hide_output=True)
-    multitier.tiers['breed'].load_results()
+    multitier.tiers['breed'].estimate(hide_output=True)
+    # multitier.tiers['breed'].load_results()
     # multitier.tiers['breed'].fetch_pars(tier_sample_list=['male'])
     # multitier.tiers['breed'].fetch_errors(tier_sample_list=['male'])
     # multitier.tiers['breed'].save_results()

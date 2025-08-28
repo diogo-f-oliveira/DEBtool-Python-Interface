@@ -6,8 +6,8 @@ from tabulate import tabulate
 
 from ..data_sources.collection import DataCollection
 from ..estimation.runner import EstimationRunner
-from ..utils.mydata_code_generation import check_files_exist_in_folder, format_list_of_strings_in_matlab, format_dict_in_matlab, \
-    generate_tier_variable_code, generate_meta_data_code
+from ..utils.mydata_code_generation import check_files_exist_in_folder, generate_tier_variable_code, generate_meta_data_code
+from ..utils.data_conversion import convert_list_of_strings_to_matlab, convert_dict_to_matlab
 
 
 class MultiTierStructure:
@@ -369,12 +369,12 @@ class TierCodeGenerator:
         group_data_code = '\n'.join(group_mydata_code_list)
 
         entity_data_types_code = generate_meta_data_code(var_name='entity_data_types',
-                                                         formatted_data=format_list_of_strings_in_matlab(list(entity_data_types)))
+                                                         formatted_data=convert_list_of_strings_to_matlab(list(entity_data_types)))
         group_data_types_code = generate_meta_data_code(var_name='group_data_types',
-                                                        formatted_data=format_list_of_strings_in_matlab(list(group_data_types)))
+                                                        formatted_data=convert_list_of_strings_to_matlab(list(group_data_types)))
         entity_list_code = generate_tier_variable_code(
             var_name='entity_list',
-            formatted_data=format_list_of_strings_in_matlab(entity_list),
+            formatted_data=convert_list_of_strings_to_matlab(entity_list),
             label='List of entities',
             pars_init_access=True,
         )
@@ -382,8 +382,8 @@ class TierCodeGenerator:
         # List of entity ids per tier included in the estimation
         tier_entities_code = generate_tier_variable_code(
             var_name='tier_entities',
-            formatted_data=format_dict_in_matlab(
-                {t: format_list_of_strings_in_matlab(g_list, double_brackets=True) for t, g_list in tier_entities.items()}
+            formatted_data=convert_dict_to_matlab(
+                {t: convert_list_of_strings_to_matlab(g_list, double_brackets=True) for t, g_list in tier_entities.items()}
             ),
             label='List of entity ids for each tier',
         )
@@ -391,8 +391,8 @@ class TierCodeGenerator:
         # List of group ids per tier included in the estimation
         tier_groups_code = generate_tier_variable_code(
             var_name='tier_groups',
-            formatted_data=format_dict_in_matlab(
-                {t: format_list_of_strings_in_matlab(g_list, double_brackets=True) for t, g_list in tier_groups.items()}
+            formatted_data=convert_dict_to_matlab(
+                {t: convert_list_of_strings_to_matlab(g_list, double_brackets=True) for t, g_list in tier_groups.items()}
             ),
             label='List of groups ids for each tier',
         )
@@ -400,19 +400,19 @@ class TierCodeGenerator:
         # Subtree of hierarchical structure
         data_to_format = {}
         for entity_id, subtree in tier_subtree.items():
-            data_to_format[entity_id] = format_dict_in_matlab(
-                {t: format_list_of_strings_in_matlab(e_list, double_brackets=True) for t, e_list in subtree.items()})
+            data_to_format[entity_id] = convert_dict_to_matlab(
+                {t: convert_list_of_strings_to_matlab(e_list, double_brackets=True) for t, e_list in subtree.items()})
         tier_subtree_code = generate_tier_variable_code(
             var_name='tier_subtree',
-            formatted_data=format_dict_in_matlab(data_to_format),
+            formatted_data=convert_dict_to_matlab(data_to_format),
             label='Tier subtree',
         )
 
         # Groups of entity
         groups_of_entity_code = generate_tier_variable_code(
             var_name='groups_of_entity',
-            formatted_data=format_dict_in_matlab(
-                {e_id: format_list_of_strings_in_matlab(g_list, double_brackets=True) for e_id, g_list in
+            formatted_data=convert_dict_to_matlab(
+                {e_id: convert_list_of_strings_to_matlab(g_list, double_brackets=True) for e_id, g_list in
                  groups_of_entity.items()}
             ),
             label='Groups each entity belongs to'
@@ -421,7 +421,7 @@ class TierCodeGenerator:
         # Tier parameters
         tier_pars_code = generate_tier_variable_code(
             var_name='tier_pars',
-            formatted_data=format_list_of_strings_in_matlab(self.tier_estimator.tier_pars),
+            formatted_data=convert_list_of_strings_to_matlab(self.tier_estimator.tier_pars),
             label='Tier parameters',
             comment='Tier parameters',
             pars_init_access=True)
@@ -431,8 +431,8 @@ class TierCodeGenerator:
             tier_name=self.tier_estimator.name, entity_list=entity_list).to_dict()
         tier_par_init_values_code = generate_meta_data_code(
             var_name='tier_par_init_values',
-            formatted_data=format_dict_in_matlab(
-                {p: format_dict_in_matlab(init_values) for p, init_values in tier_par_init_values.items()})
+            formatted_data=convert_dict_to_matlab(
+                {p: convert_dict_to_matlab(init_values) for p, init_values in tier_par_init_values.items()})
         )
 
         src = Template(mydata_template.read())

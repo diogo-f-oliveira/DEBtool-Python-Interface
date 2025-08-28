@@ -1,6 +1,6 @@
 from .base import GroupDataSourceBase
 from .entity import TimeWeightEntityDataSource
-from ..utils.mydata_code_generation import format_dict_in_matlab
+from ..utils.data_conversion import convert_dict_to_matlab
 import pandas as pd
 
 
@@ -58,7 +58,7 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
                 t_JX_group_data += f"{(group_data.loc[i, self.date_col] - initial_dates[0]).days} " \
                                    f"{group_data.loc[i, self.feed_col]}; "
             my_data_code += t_JX_group_data[:-2] + '];\n'
-            my_data_code += f"init.{self.TYPE}_{group_id} = {format_dict_in_matlab(initial_weights)}; " \
+            my_data_code += f"init.{self.TYPE}_{group_id} = {convert_dict_to_matlab(initial_weights)}; " \
                             f"units.init.{self.TYPE}_{group_id} = {self.aux_data_units}; " \
                             f"label.init.{self.TYPE}_{group_id} = {self.aux_data_labels};\n"
 

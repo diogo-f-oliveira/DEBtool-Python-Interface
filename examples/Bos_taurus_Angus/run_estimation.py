@@ -4,7 +4,8 @@ from src.DEBtoolPyIF.data_sources.collection import DataCollection
 from src.DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource
 from src.DEBtoolPyIF.data_sources.group import TimeFeedGroupDataSource
 from src.DEBtoolPyIF.multitier.procedure import MultiTierStructure
-from src.DEBtoolPyIF.utils.mydata_code_generation import format_dict_in_matlab, generate_tier_variable_code, generate_meta_data_code
+from src.DEBtoolPyIF.utils.mydata_code_generation import generate_tier_variable_code, generate_meta_data_code
+from src.DEBtoolPyIF.utils.data_conversion import convert_dict_to_matlab
 
 from itertools import combinations
 import os

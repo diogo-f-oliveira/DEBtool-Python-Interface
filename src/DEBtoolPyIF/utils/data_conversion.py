@@ -6,6 +6,7 @@ def convert_string_to_matlab(string: str) -> str:
 
 
 def convert_numeric_array_to_matlab(array: [int, float, np.array]):
+    # TODO: Argument for number of decimal places (per column?)
     if np.size(array) == 1:
         if isinstance(array, np.ndarray):
             return array.item()

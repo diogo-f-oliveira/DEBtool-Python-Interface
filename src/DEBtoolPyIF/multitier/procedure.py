@@ -11,13 +11,13 @@ from ..utils.data_formatter import check_files_exist_in_folder, format_string_li
 
 
 class MultiTierStructure:
-    def __init__(self, species_name: str, ind_tiers: pd.DataFrame, data: DataCollection, pars: dict,
+    def __init__(self, species_name: str, entity_vs_tier: pd.DataFrame, data: dict[str, DataCollection], pars: dict,
                  tier_pars: dict, template_folders: dict, output_folder: str, estimation_settings: dict,
                  tier_output_folders: dict, matlab_session=None):
         self.data = data
         self.species_name = species_name
-        self.ind_tiers = ind_tiers
-        self.tier_names = list(self.ind_tiers.columns)
+        self.entity_vs_tier = entity_vs_tier
+        self.tier_names = list(self.entity_vs_tier.columns)
         self.output_folder = output_folder
         self.pars = pars
         self.tier_pars = tier_pars
@@ -35,8 +35,8 @@ class MultiTierStructure:
                 raise Exception(f"Template folder for name {tier_name} is not defined.")
             tier_pars_str = ' '.join(self.tier_pars[tier_name])
             if not all([p in self.pars for p in self.tier_pars[tier_name]]):
-                raise Exception(f"Cannot estimate name pars {tier_pars_str} for {tier_name} name as they"
-                                f" are not all estimated in the previous name.")
+                raise Exception(f"Cannot estimate tier pars {tier_pars_str} for {tier_name} tier as they"
+                                f" are not all estimated in the previous tier.")
             # Create output folder for name estimation
             if tier_name not in tier_output_folders:
                 tier_output_folder = f"{self.output_folder}/{tier_name}"
@@ -51,50 +51,56 @@ class MultiTierStructure:
                                                   output_folder=tier_output_folder,
                                                   estimation_settings=estimation_settings[tier_name])
 
-    # TODO: Replace 'all' by None
-    def get_tier_sample_inds(self, tier_name, tier_sample_list='all'):
-        inds_in_tier = self.ind_tiers[tier_name]
-        if tier_sample_list == 'all':
-            tier_sample_list = inds_in_tier.unique()
-        return {ts_id: list(ids.index) for ts_id, ids in inds_in_tier.groupby(inds_in_tier) if
-                ts_id in tier_sample_list}
+    def get_all_entities_in_tier(self, tier_name):
+        return self.entity_vs_tier.loc[tier_name].index.to_list()
 
-    def ind_list_from_tier_sample_list(self, tier_name, tier_sample_list='all'):
-        inds_in_tier = self.ind_tiers[tier_name]
-        if tier_sample_list == 'all':
-            return list(inds_in_tier.index)
-        return list(inds_in_tier[inds_in_tier.isin(tier_sample_list)].index)
+    def entities_in_tier_below_from_entity_list(self, tier_name, tier_below, entity_list='all'):
+        entities_of_tier_below = self.entity_vs_tier.loc[tier_below, tier_name]
+        if entity_list == 'all':
+            return entities_of_tier_below.index.to_list()
+        return entities_of_tier_below[entities_of_tier_below.isin(entity_list)].index.to_list()
 
-    def get_prev_tier(self, tier_name):
+    def get_tier_index(self, tier_name):
+        return self.tier_names.index(tier_name)
+
+    def get_tier_above(self, tier_name):
         if tier_name == self.tier_names[0]:
             return None
-        return self.tier_names[self.tier_names.index(tier_name) - 1]
+        return self.tier_names[self.get_tier_index(tier_name) - 1]
 
-    def get_pars_from_prev_tier(self, tier_name):
-        return self.tiers[self.get_prev_tier(tier_name)].pars_df
+    def get_tier_below(self, tier_name):
+        if tier_name == self.tier_names[-1]:
+            return None
+        return self.tier_names[self.get_tier_index(tier_name) + 1]
 
-    def get_init_par_values(self, tier_name, tier_sample_list='all'):
+    def get_all_tiers_below(self, tier_name):
+        return self.tier_names[self.get_tier_index(tier_name):]
+
+    def get_pars_from_tier_above(self, tier_name):
+        return self.tiers[self.get_tier_above(tier_name)].pars_df
+
+    def get_init_par_values(self, tier_name, entity_list='all'):
         """
         Get initial values of tier parameters for a list of tier samples, based on previous estimates of parameters.
         If pseudo data are provided, then these are used as initial values.
         :param tier_name: Tier identifier.
-        :param tier_sample_list: List of tier samples.
+        :param entity_list: List of tier samples.
         :return: a DataFrame with initial values of tier parameters for all tier samples.
         """
-        if tier_sample_list == 'all':
-            tier_sample_list = self.ind_tiers[tier_name].unique()
-        init_par_values = pd.DataFrame(columns=self.tier_pars[tier_name], index=tier_sample_list)
+        if entity_list == 'all':
+            entity_list = self.get_all_entities_in_tier(tier_name)
+        init_par_values = pd.DataFrame(columns=self.tier_pars[tier_name], index=entity_list)
 
-        prev_tier = self.get_prev_tier(tier_name)
+        prev_tier = self.get_tier_above(tier_name)
         # Case for top tier
         if prev_tier is None:
-            for ts_id in tier_sample_list:
+            for ts_id in entity_list:
                 for par in self.tier_pars[tier_name]:
                     init_par_values.loc[ts_id, par] = self.pars[par]
         else:
-            prev_tier_par_values = self.get_pars_from_prev_tier(tier_name)
-            for ts_id in tier_sample_list:
-                prev_ts_id = self.ind_tiers.groupby(tier_name).get_group(ts_id)[prev_tier].iloc[0]
+            prev_tier_par_values = self.get_pars_from_tier_above(tier_name)
+            for ts_id in entity_list:
+                prev_ts_id = self.entity_vs_tier.groupby(tier_name).get_group(ts_id)[prev_tier].iloc[0]
                 for par in self.tier_pars[tier_name]:
                     # Use pseudo data if available
                     if par in self.tiers[tier_name].pseudo_data:
@@ -116,9 +122,9 @@ class MultiTierStructure:
         :return:
         """
         pars_dict = self.pars.copy()
-        ts_tiers = self.ind_tiers.groupby(tier_name).get_group(tier_sample).iloc[0]
+        ts_tiers = self.entity_vs_tier.groupby(tier_name).get_group(tier_sample).iloc[0]
         for t in self.tier_names:
-            if self.get_prev_tier(t) == tier_name:
+            if self.get_tier_above(t) == tier_name:
                 break
             if not include_tier and t == tier_name:
                 continue
@@ -142,7 +148,8 @@ class TierEstimator:
         self.name = tier_name
         self.tier_pars = tier_pars
         self.pars_df = None
-        self.tier_sample_list = list(self.tier_structure.ind_tiers[tier_name].unique())
+        self.tier_entities = self.tier_structure.get_all_entities_in_tier(self.name)
+        self.tier_groups = list(self.tier_structure.data[tier_name].groups)
         self.template_folder = template_folder
         self.output_folder = output_folder
         self.estimation_settings = estimation_settings
@@ -153,30 +160,44 @@ class TierEstimator:
 
         self.set_tier_parameters(tier_pars)
 
-        self.ind_data_errors = pd.DataFrame(columns=['tier_sample'] + self.tier_structure.data.ind_data_types,
-                                            index=self.tier_structure.data.individuals)
-        self.ind_data_errors.index.name = 'ind_id'
-        self.ind_data_errors['tier_sample'] = self.tier_structure.ind_tiers[tier_name]
+        entity_list = []
+        entity_data_types = set()
+        group_list = []
+        group_data_types = set()
+        for tier_name in self.tier_structure.get_all_tiers_below(self.name):
+            # Entity data
+            tier_entities = self.tier_structure.data[tier_name].entities
+            entity_list.extend([(tier_name, entity_id) for entity_id in tier_entities])
+            entity_data_types.update(self.tier_structure.data[tier_name].entity_data_types)
+            # Group data
+            tier_groups = self.tier_structure.data[tier_name].groups
+            group_list.extend([(tier_name, g_id) for g_id in tier_groups])
+            group_data_types.update(self.tier_structure.data[tier_name].group_data_types)
 
-        self.group_data_errors = pd.DataFrame(columns=['tier_sample'] + self.tier_structure.data.group_data_types,
-                                              index=self.tier_structure.data.groups)
-        self.group_data_errors['tier_sample'] = ''
-        self.group_data_errors.index.name = 'group_id'
-        for g_id in self.group_data_errors.index:
-            inds_in_group = self.tier_structure.data.get_ind_list_of_group(g_id)
-            # Assume all individuals in the group have the same tier sample
-            self.group_data_errors.loc[g_id, 'tier_sample'] = self.tier_structure.ind_tiers[tier_name].loc[
-                inds_in_group[0]]
-
-        self.tier_errors = pd.DataFrame(
-            columns=[
-                        'estim_time'] + self.tier_structure.data.ind_data_types + self.tier_structure.data.group_data_types,
-            index=self.tier_sample_list)
-        self.tier_errors.index.name = 'tier_sample'
+        self.entity_data_errors = pd.DataFrame(columns=list(entity_data_types),
+                                               index=pd.MultiIndex.from_tuples(entity_list, names=('tier', 'entity')))
+        self.group_data_errors = pd.DataFrame(columns=list(group_data_types),
+                                              index=pd.MultiIndex.from_tuples(group_list, names=('tier', 'group')))
 
         self.code_generator = TierCodeGenerator(tier=self)
         self.estim_start_time = None
         self.estim_end_time = None
+
+    @property
+    def data(self):
+        return self.tier_structure.data[self.name]
+
+    @property
+    def tier_index(self):
+        return self.tier_structure.get_tier_index(self.name)
+
+    @property
+    def tier_below(self):
+        return self.tier_structure.get_tier_below(self.name)
+
+    @property
+    def tier_above(self):
+        return self.tier_structure.get_tier_above(self.name)
 
     @property
     def estimation_complete(self):
@@ -184,207 +205,230 @@ class TierEstimator:
 
     def set_tier_parameters(self, tier_pars):
         self.tier_pars = tier_pars
-        self.pars_df = pd.DataFrame(columns=self.tier_pars,
-                                    index=self.tier_structure.ind_tiers[self.name].unique())
-        self.pars_df.index.name = 'tier_sample'
+        self.pars_df = pd.DataFrame(columns=self.tier_pars, index=self.tier_entities)
+        self.pars_df.index.name = 'entity'
 
-    # TODO: Add option to only estimate for some tier samples not all that exist in the tier
-    def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True,
-                 hide_output=True):
+    def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True):
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
 
+        # TODO: Add option to only estimate for some tier samples not all that exist in the tier
         # Get list of tier samples or groups
-        if len(self.tier_sample_list) == 1:
+        # If there is only one entity in the tier, then do not create a subfolder
+        if len(self.tier_entities) == 1:
             folder_names = ['']
-            list_of_tier_sample_lists = [self.tier_sample_list]
-        # Check if this is an individual tier
-        elif len(self.tier_sample_list) == len(self.tier_structure.ind_tiers.index.values) and \
-                len(self.group_data_errors.index):
-            folder_names = list(self.tier_structure.data.groups)
-            list_of_tier_sample_lists = [self.tier_structure.data.get_ind_list_of_group(g_id) for g_id in
-                                         self.tier_structure.data.groups]
+            list_of_tier_entity_lists = [self.tier_entities]
+        # Check if the tier has groups
+        elif len(self.tier_groups):
+            folder_names = self.tier_groups
+            list_of_tier_entity_lists = [self.data.get_entity_list_of_group(g_id) for g_id in self.tier_groups]
         else:
-            folder_names = self.tier_sample_list
-            list_of_tier_sample_lists = [[ts_id] for ts_id in self.tier_sample_list]
+            folder_names = self.tier_entities
+            list_of_tier_entity_lists = [[entity_id] for entity_id in self.tier_entities]
 
-        for ts_name, ts_list in zip(folder_names, list_of_tier_sample_lists):
+        for group_name, entity_list in zip(folder_names, list_of_tier_entity_lists):
             # Create estimation folder and set it in TierCodeGenerator and EstimationRunner objects
-            output_folder = f"{self.output_folder}/{ts_name}"
+            output_folder = f"{self.output_folder}/{group_name}"
             os.makedirs(output_folder, exist_ok=True)
             self.tier_structure.estimation_runner.estim_files_dir = output_folder
             self.code_generator.output_folder = output_folder
             # Generate estimation files
-            self.code_generator.generate_mydata_file(tier_sample_list=ts_list, pseudo_data_weight=pseudo_data_weight)
-            self.code_generator.generate_pars_init_file(tier_sample_list=ts_list)
-            self.code_generator.generate_predict_file()
-            self.code_generator.generate_run_file()
+            self.code_generator.generate_code(entity_list=entity_list, pseudo_data_weight=pseudo_data_weight)
 
             # Run estimation for name sample
-            tier_estim_start_time = pd.Timestamp.now()
             success = self.tier_structure.estimation_runner.run_estimation(hide_output=hide_output)
             if not success:
                 print(f"Estimation for {self.name} tier with parameters {' '.join(self.tier_pars)} failed for tier "
-                      f"sample or group {ts_name}.")
+                      f"entity or group {group_name}.")
                 continue
-            tier_estim_end_time = pd.Timestamp.now()
 
             # Fetch and store results
-            self.tier_errors.loc[ts_list, 'estim_time'] = (tier_estim_end_time - tier_estim_start_time).total_seconds()
-            self.fetch_pars(tier_sample_list=ts_list)
-            self.fetch_errors(tier_sample_list=ts_list)
+            self.fetch_pars(entity_list=entity_list)
+            self.fetch_errors()
+
+        self.estim_end_time = pd.Timestamp.now()
 
         if print_results:
-            self.print_results(tier_sample_list=self.tier_sample_list)
+            self.print_results()
         if save_results:
             self.save_results()
 
-    def fetch_pars(self, tier_sample_list):
+    def fetch_pars(self, entity_list):
         pars = self.tier_structure.estimation_runner.fetch_pars_from_mat_file()
         # Store parameter values
         if len(self.pars_df) == 1:
             self.pars_df.iloc[0] = pars
         else:
             for par in self.tier_pars:
-                for ts_id in tier_sample_list:
+                for ts_id in entity_list:
                     self.pars_df.loc[ts_id, par] = pars[f'{par}_{ts_id}']
 
-    def fetch_errors(self, tier_sample_list):
+    def fetch_errors(self):
         estimation_errors = self.tier_structure.estimation_runner.fetch_errors_from_mat_file()
-        # Store individual data errors
-        ind_list = self.tier_structure.ind_list_from_tier_sample_list(self.name, tier_sample_list)
 
-        for dt in self.tier_structure.data.ind_data_types:
-            for ind_id in ind_list:
-                varname = f'{dt}_{ind_id}'
-                if varname in estimation_errors:
-                    self.ind_data_errors.loc[ind_id, dt] = estimation_errors[varname]
-            # TODO: When the tier sample list has more than one individual and the estimation tier is individual,
-            #  the tier errors are stored improperly. Need a check for whether the tier is an individual tier
-
-            self.tier_errors.loc[tier_sample_list, dt] = self.ind_data_errors.loc[ind_list, dt].mean()
-        # Store group data errors
-        group_list = self.tier_structure.data.get_group_list_from_ind_list(ind_list=ind_list)
-        for dt in self.tier_structure.data.group_data_types:
-            for group_id in group_list:
-                varname = f'{dt}_{group_id}'
-                if varname in estimation_errors:
-                    self.group_data_errors.loc[group_id, dt] = estimation_errors[varname]
-            self.tier_errors.loc[tier_sample_list, dt] = self.group_data_errors.loc[group_list, dt].mean()
+        for tier_name in self.tier_structure.get_all_tiers_below(self.name):
+            # Entity data
+            tier = self.tier_structure.tiers[tier_name]
+            for e_id in tier.data._entities:
+                for dt in tier.data.entity_data_types:
+                    varname = f'{dt}_{e_id}'
+                    if varname in estimation_errors:
+                        self.entity_data_errors.loc[(tier_name, e_id), dt] = estimation_errors[varname]
+            # Group data
+            for g_id in tier.data._groups:
+                for dt in tier.data.group_data_types:
+                    varname = f'{dt}_{g_id}'
+                    if varname in estimation_errors:
+                        self.group_data_errors.loc[(tier_name, g_id), dt] = estimation_errors[varname]
 
     def save_results(self):
         self.pars_df.to_csv(f"{self.output_folder}/{self.name}_pars.csv")
-        self.ind_data_errors.to_csv(f"{self.output_folder}/{self.name}_ind_data_errors.csv")
+        self.entity_data_errors.to_csv(f"{self.output_folder}/{self.name}_entity_data_errors.csv")
         self.group_data_errors.to_csv(f"{self.output_folder}/{self.name}_group_data_errors.csv")
-        self.tier_errors.to_csv(f"{self.output_folder}/{self.name}_tier_errors.csv")
 
     def load_results(self):
-        self.pars_df = pd.read_csv(f"{self.output_folder}/{self.name}_pars.csv", index_col='tier_sample')
-        self.ind_data_errors = pd.read_csv(f"{self.output_folder}/{self.name}_ind_data_errors.csv",
-                                           index_col='ind_id')
+        self.pars_df = pd.read_csv(f"{self.output_folder}/{self.name}_pars.csv", index_col='entity')
+        self.entity_data_errors = pd.read_csv(f"{self.output_folder}/{self.name}_entity_data_errors.csv",
+                                              index_col=['tier', 'entity'])
         self.group_data_errors = pd.read_csv(f"{self.output_folder}/{self.name}_group_data_errors.csv",
-                                             index_col='group_id')
-        self.tier_errors = pd.read_csv(f"{self.output_folder}/{self.name}_tier_errors.csv",
-                                       index_col='tier_sample')
+                                             index_col=['tier', 'group'])
 
-    def print_results(self, tier_sample_list):
-        print(tabulate(self.tier_errors.loc[tier_sample_list, :], tablefmt="simple", showindex=True, headers="keys"))
+    def print_results(self):
+        df = pd.concat([self.group_data_errors.groupby(level='tier').mean(),
+                        self.entity_data_errors.groupby(level='tier').mean()], axis=1)
+        print(tabulate(df, tablefmt="simple", showindex=True, headers="keys"))
         print('\n')
 
-    def print_pars(self, tier_sample_list):
-        print(tabulate(self.pars_df.loc[tier_sample_list, :], tablefmt="simple", showindex=True, headers="keys"))
+    def print_pars(self, entity_list='all'):
+        if entity_list == 'all':
+            entity_list = self.tier_entities
+        print(tabulate(self.pars_df.loc[entity_list, :], tablefmt="simple", showindex=True, headers="keys"))
+        print('\n')
 
 
 class TierCodeGenerator:
     FILES_NEEDED = ['mydata', 'pars_init', 'predict', 'run']
 
     def __init__(self, tier: TierEstimator):
-        self.tier = tier
+        self.tier_estimator = tier
+        self.tier_structure = tier.tier_structure
         self.output_folder = None
 
-        complete, missing_file = self.check_all_files_exist(self.tier.template_folder)
+        complete, missing_file = self.check_all_files_exist(self.tier_estimator.template_folder)
         if not complete:
             raise Exception(f"Missing template file for {missing_file}.")
 
     def check_all_files_exist(self, folder):
-        files = [f"{tf}_{self.tier.tier_structure.species_name}.m" for tf in self.FILES_NEEDED]
+        files = [f"{tf}_{self.tier_estimator.tier_structure.species_name}.m" for tf in self.FILES_NEEDED]
         complete, missing_file = check_files_exist_in_folder(folder, files)
         return complete, missing_file
 
-    def generate_mydata_file(self, tier_sample_list, pseudo_data_weight=0.1):
-        mydata_template = open(f'{self.tier.template_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'r')
-        mydata_out = open(f'{self.output_folder}/mydata_{self.tier.tier_structure.species_name}.m', 'w')
+    def generate_mydata_file(self, entity_list, pseudo_data_weight=0.1):
+        mydata_template = open(
+            f'{self.tier_estimator.template_folder}/mydata_{self.tier_estimator.tier_structure.species_name}.m', 'r')
+        mydata_out = open(f'{self.output_folder}/mydata_{self.tier_estimator.tier_structure.species_name}.m', 'w')
 
-        tier_sample_inds = self.tier.tier_structure.get_tier_sample_inds(self.tier.name, tier_sample_list)
-        ind_list = self.tier.tier_structure.ind_list_from_tier_sample_list(self.tier.name, tier_sample_list)
-        group_list = self.tier.tier_structure.data.get_group_list_from_ind_list(ind_list=ind_list)
+        entity_mydata_code_list = []
+        group_mydata_code_list = []
+        entity_data_types = set()
+        group_data_types = set()
+        tier_entities = {}
+        tier_groups = {}
+        tier_subtree = {entity_id: {} for entity_id in entity_list}
+        groups_of_entity = {}
+        for tier_name in self.tier_structure.get_all_tiers_below(self.tier_estimator.name):
+            tier = self.tier_structure.tiers[tier_name]
 
-        # Individual data
-        ind_data_code = '\n'.join(self.tier.tier_structure.data.get_ind_data_code(ind_list=ind_list))
-        # Group data
-        group_data_code = '\n'.join(self.tier.tier_structure.data.get_group_data_code(ind_list=ind_list))
+            # Get list of entities and groups to include in the estimation
+            tier_entities_to_include = []
+            tier_group_list = []
+            for entity_id in entity_list:
+                te_list = self.tier_structure.entities_in_tier_below_from_entity_list(
+                    tier_name=self.tier_estimator.name, tier_below=tier_name, entity_list=[entity_id]
+                )
+                tier_entities_to_include.extend(te_list)
+                tier_group_list.extend(tier.data.get_group_list_from_entity_list(te_list))
 
-        # List of group ids
-        group_list_code = format_aux_data(
-            var_name='group_list',
-            formatted_data=format_string_list_data(group_list),
-            label='List of groups ids', comment='List of group ids',
-        )
-        # List of individual ids
-        ind_list_code = format_aux_data(
-            var_name='ind_list',
-            formatted_data=format_string_list_data(ind_list),
-            label='List of individuals', comment='List of individuals',
-            pars_init_access=True)
+                if tier_name != self.tier_estimator.name:
+                    tier_subtree[entity_id][tier_name] = te_list
 
-        # List of individual data types
-        ind_data_types_code = format_meta_data(var_name='ind_data_types',
-                                               formatted_data=format_string_list_data(
-                                                   self.tier.tier_structure.data.ind_data_types))
+            # Generate mydata code
+            ent_dt, ent_mc = tier.data.get_entity_mydata_code(tier_entities_to_include)
+            entity_data_types.update(set(ent_dt))
+            entity_mydata_code_list.extend(ent_mc)
+            g_dt, g_mc = tier.data.get_group_mydata_code(tier_entities_to_include)
+            group_data_types.update(set(g_dt))
+            group_mydata_code_list.extend(g_mc)
 
-        # List of group data types
+            # Generate aux variables
+            tier_entities[tier_name] = tier_entities_to_include
+            tier_groups[tier_name] = tier_group_list
+            groups_of_entity.update(tier.data.get_groups_of_entities(tier_entities_to_include))
+
+        entity_data_code = '\n'.join(entity_mydata_code_list)
+        group_data_code = '\n'.join(group_mydata_code_list)
+
+        entity_data_types_code = format_meta_data(var_name='entity_data_types',
+                                                  formatted_data=format_string_list_data(list(entity_data_types)))
         group_data_types_code = format_meta_data(var_name='group_data_types',
-                                                 formatted_data=format_string_list_data(
-                                                     self.tier.tier_structure.data.group_data_types))
-
-        # Groups each individual is part of
-        groups_of_ind = self.tier.tier_structure.data.get_groups_of_ind_list(ind_list)
-        groups_of_ind_code = format_aux_data(
-            var_name='groups_of_ind',
-            formatted_data=format_dict_data(
-                {ind_id: format_string_list_data(g_list, double_brackets=True) for ind_id, g_list in
-                 groups_of_ind.items()}),
-            label='Groups of individuals',
-            comment='Groups of individuals',
+                                                 formatted_data=format_string_list_data(list(group_data_types)))
+        entity_list_code = format_aux_data(
+            var_name='entity_list',
+            formatted_data=format_string_list_data(entity_list),
+            label='List of entities',
+            pars_init_access=True,
         )
 
-        # List of tier samples
-        tier_sample_list_code = format_aux_data(
-            var_name='tier_sample_list',
-            formatted_data=format_string_list_data(list(tier_sample_inds.keys())),
-            label='Tier sample list',
-            comment='Tier sample list',
-            pars_init_access=True)
-
-        # Individuals in each tier sample
-        tier_sample_inds_code = format_aux_data(
-            var_name='tier_sample_inds',
+        # List of entity ids per tier included in the estimation
+        tier_entities_code = format_aux_data(
+            var_name='tier_entities',
             formatted_data=format_dict_data(
-                {ts_id: format_string_list_data(ids, double_brackets=True) for ts_id, ids in tier_sample_inds.items()}),
-            label='List of individuals that belong to the name sample',
-            comment='List of individuals that belong to the name sample',
+                {t: format_string_list_data(g_list, double_brackets=True) for t, g_list in tier_entities.items()}
+            ),
+            label='List of entity ids for each tier',
+        )
+
+        # List of group ids per tier included in the estimation
+        tier_groups_code = format_aux_data(
+            var_name='tier_groups',
+            formatted_data=format_dict_data(
+                {t: format_string_list_data(g_list, double_brackets=True) for t, g_list in tier_groups.items()}
+            ),
+            label='List of groups ids for each tier',
+        )
+
+        # Subtree of hierarchical structure
+        data_to_format = {}
+        for entity_id, subtree in tier_subtree.items():
+            data_to_format[entity_id] = format_dict_data(
+                {t: format_string_list_data(e_list, double_brackets=True) for t, e_list in subtree.items()})
+        tier_subtree_code = format_aux_data(
+            var_name='tier_subtree',
+            formatted_data=format_dict_data(data_to_format),
+            label='Tier subtree',
+        )
+
+        # Groups of entity
+        groups_of_entity_code = format_aux_data(
+            var_name='groups_of_entity',
+            formatted_data=format_dict_data(
+                {e_id: format_string_list_data(g_list, double_brackets=True) for e_id, g_list in
+                 groups_of_entity.items()}
+            ),
+            label='Groups each entity belongs to'
         )
 
         # Tier parameters
         tier_pars_code = format_aux_data(
             var_name='tier_pars',
-            formatted_data=format_string_list_data(self.tier.tier_pars),
+            formatted_data=format_string_list_data(self.tier_estimator.tier_pars),
             label='Tier parameters',
             comment='Tier parameters',
             pars_init_access=True)
 
         # Initial values for tier parameters
-        tier_par_init_values = self.tier.tier_structure.get_init_par_values(self.tier.name, tier_sample_list).to_dict()
+        tier_par_init_values = self.tier_estimator.tier_structure.get_init_par_values(
+            tier_name=self.tier_estimator.name, entity_list=entity_list).to_dict()
         tier_par_init_values_code = format_meta_data(
             var_name='tier_par_init_values',
             formatted_data=format_dict_data(
@@ -393,32 +437,33 @@ class TierCodeGenerator:
 
         src = Template(mydata_template.read())
         result = src.substitute(
+            entity_data=entity_data_code,
             group_data=group_data_code,
+            entity_data_types=entity_data_types_code,
             group_data_types=group_data_types_code,
-            group_list=group_list_code,
-            individual_data=ind_data_code,
-            ind_data_types=ind_data_types_code,
-            ind_list=ind_list_code,
-            groups_of_ind=groups_of_ind_code,
-            tier_sample_list=tier_sample_list_code,
-            tier_sample_inds=tier_sample_inds_code,
+            entity_list=entity_list_code,
+            tier_entities=tier_entities_code,
+            tier_groups=tier_groups_code,
+            tier_subtree=tier_subtree_code,
+            groups_of_entity=groups_of_entity_code,
             tier_pars=tier_pars_code,
             tier_par_init_values=tier_par_init_values_code,
-            extra_info=self.tier.extra_info,
+            extra_info=self.tier_estimator.extra_info,
             pseudo_data_weight=pseudo_data_weight
         )
         print(result, file=mydata_out)
         mydata_out.close()
         mydata_template.close()
 
-    def generate_pars_init_file(self, tier_sample_list):
+    def generate_pars_init_file(self, entity_list):
         # TODO: Use multitier.ind_list_from_tier_sample_list()
-        if tier_sample_list == 'all':
-            tier_sample_list = self.tier.tier_structure.ind_tiers[self.tier.name].unique()
-        pars_dict = self.tier.tier_structure.get_full_pars_dict(self.tier.name, tier_sample_list[0])
-        pars_init_template = open(f'{self.tier.template_folder}/pars_init_{self.tier.tier_structure.species_name}.m',
-                                  'r')
-        pars_init_out = open(f'{self.output_folder}/pars_init_{self.tier.tier_structure.species_name}.m', 'w')
+        if entity_list == 'all':
+            entity_list = self.tier_estimator.tier_structure.get_all_entities_in_tier(self.tier_estimator.name)
+        pars_dict = self.tier_estimator.tier_structure.get_full_pars_dict(self.tier_estimator.name, entity_list[0])
+        pars_init_template = open(
+            f'{self.tier_estimator.template_folder}/pars_init_{self.tier_estimator.tier_structure.species_name}.m',
+            'r')
+        pars_init_out = open(f'{self.output_folder}/pars_init_{self.tier_estimator.tier_structure.species_name}.m', 'w')
 
         src = Template(pars_init_template.read())
         result = src.substitute(**pars_dict)
@@ -428,53 +473,22 @@ class TierCodeGenerator:
         pars_init_template.close()
 
     def generate_predict_file(self):
-        shutil.copy(src=f"{self.tier.template_folder}/predict_{self.tier.tier_structure.species_name}.m",
-                    dst=f"{self.output_folder}")
+        shutil.copy(
+            src=f"{self.tier_estimator.template_folder}/predict_{self.tier_estimator.tier_structure.species_name}.m",
+            dst=f"{self.output_folder}")
 
     def generate_run_file(self):
-        run_template = open(f'{self.tier.template_folder}/run_{self.tier.tier_structure.species_name}.m', 'r')
-        run_out = open(f'{self.output_folder}/run_{self.tier.tier_structure.species_name}.m', 'w')
+        run_template = open(
+            f'{self.tier_estimator.template_folder}/run_{self.tier_estimator.tier_structure.species_name}.m', 'r')
+        run_out = open(f'{self.output_folder}/run_{self.tier_estimator.tier_structure.species_name}.m', 'w')
         src = Template(run_template.read())
-        result = src.substitute(self.tier.estimation_settings)
+        result = src.substitute(self.tier_estimator.estimation_settings)
         print(result, file=run_out)
         run_out.close()
         run_template.close()
 
-    def generate_code(self, tier_sample_list, pseudo_data_weight=0.1):
-        self.generate_mydata_file(tier_sample_list=tier_sample_list, pseudo_data_weight=pseudo_data_weight)
-        self.generate_pars_init_file(tier_sample_list=tier_sample_list)
+    def generate_code(self, entity_list, pseudo_data_weight=0.1):
+        self.generate_mydata_file(entity_list=entity_list, pseudo_data_weight=pseudo_data_weight)
+        self.generate_pars_init_file(entity_list=entity_list)
         self.generate_predict_file()
         self.generate_run_file()
-
-
-def estimate_all_par_combinations(tier_structure: MultiTierStructure, pars_combinations: list,
-                                  reestimate_complete=False):
-    if isinstance(reestimate_complete, bool):
-        reestimate_complete = {tier_name: reestimate_complete for tier_name in tier_structure.tier_names}
-
-    prev_par_comb = {tier: None for tier in tier_structure.tier_names}
-    pars_combinations.sort()
-    for par_comb in pars_combinations:
-        for i, tier in enumerate(tier_structure.tiers.values()):
-            tier_pars = par_comb[i]
-            #  Skip tier estimation if the tier pars of the previous combination are the same
-            if tier_pars == prev_par_comb[tier.name]:
-                continue
-            if tier.tier_pars != tier_pars:
-                tier_structure.set_tier_parameters(tier.name, tier_pars)
-                tier.output_folder = f"{tier_structure.output_folder}/{tier.name}/{' '.join(tier_pars)}"
-                os.makedirs(tier.output_folder, exist_ok=True)
-
-            # Check if files exist
-            all_estim_files, _ = tier.code_generator.check_all_files_exist(folder=tier.template_folder)
-            all_results_files, _ = check_files_exist_in_folder(folder_name=tier.output_folder,
-                                                               files=[f"{tier.name}_{ft}.csv" for ft in
-                                                                      TierEstimator.OUTPUT_FILES])
-            if all_estim_files and all_results_files:
-                tier.load_results()
-                prev_par_comb[tier.name] = tier_pars
-                if tier.estimation_complete and not reestimate_complete[tier.name]:
-                    continue
-            tier.estimate()
-
-    return tier_structure

@@ -1,5 +1,5 @@
 from .base import GroupDataSourceBase
-from .individual import TimeWeightDataSource
+from .entity import TimeWeightDataSource
 from ..utils.data_formatter import format_dict_data
 import pandas as pd
 
@@ -23,29 +23,29 @@ class GroupTimeFeedDataSource(GroupDataSourceBase):
         self.weight_data.df[self.id_col] = self.weight_data.df[self.id_col].astype('str')
         if self.prefix:
             self.weight_data.df[self.id_col] = f"{self.prefix}_" + self.weight_data.df[self.id_col]
-        self.create_group_of_ind_df(self.weight_data)
+        self.create_entity_vs_group_df(self.weight_data)
 
     def get_data(self, group_id):
         group_data = self.get_group_data(group_id).sort_values(by=self.date_col)
 
         initial_dates = []
         initial_weights = {}
-        for ind_id in self.get_ind_list_of_group(group_id):
-            ind_weight_data = self.weight_data.get_ind_data(ind_id).copy()
+        for entity_id in self.get_entity_list_of_group(group_id):
+            ind_weight_data = self.weight_data.get_entity_data(entity_id).copy()
             ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] -
                                        group_data.iloc[0][self.date_col]).apply(lambda d: d.days - 1)
             ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-            initial_weights[ind_id] = ind_weight_data.iloc[0][self.weight_data.weight_col]
+            initial_weights[entity_id] = ind_weight_data.iloc[0][self.weight_data.weight_col]
             initial_dates.append(ind_weight_data.iloc[0][self.weight_data.date_col])
 
         return group_data, initial_dates, initial_weights
 
-    def generate_code(self, ind_list='all'):
-        if ind_list == 'all':
-            ind_list = list(self.weight_data.individuals)
-        group_list = self.get_groups_in_ind_list(ind_list)
+    def generate_mydata_code(self, entity_list='all'):
+        if entity_list == 'all':
+            entity_list = list(self.weight_data.entities)
+        group_list = self.get_groups_in_entity_list(entity_list)
 
-        my_data_code = f'%% Time vs Group daily feed consumption data\n\n'
+        my_data_code = ''
         for group_id in group_list:
             if group_id not in self.groups:
                 continue
@@ -64,11 +64,14 @@ class GroupTimeFeedDataSource(GroupDataSourceBase):
 
             my_data_code += f"units.{self.TYPE}_{group_id} = {self.units}; " \
                             + f"label.{self.TYPE}_{group_id} = {self.labels}; " \
-                            + f"txtData.title.{self.TYPE}_{group_id} = 'Daily feed consumption of pen {group_id}'; "
+                            + f"title.{self.TYPE}_{group_id} = 'Daily feed consumption of pen {group_id}'; "
             if self.comment:
                 my_data_code += f"comment.{self.TYPE}_{group_id} = '{self.comment}, pen {group_id}'; "
             if self.bibkey:
                 my_data_code += f"bibkey.{self.TYPE}_{group_id} = '{self.bibkey}';"
             my_data_code += '\n\n'
+
+        if len(my_data_code):
+            my_data_code = '%% Time vs Group daily feed consumption data\n\n' + my_data_code
 
         return my_data_code

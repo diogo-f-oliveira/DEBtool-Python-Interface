@@ -44,21 +44,20 @@ class DataSourceBase:
             raise Exception(f"DataSource {self.name} has IDs in df.id_col that cannot be used as MATLAB struct field "
                             f"names: {invalid_ids!r}")
 
-    def generate_code(self):
+    def generate_mydata_code(self, entity_list='all'):
         return
 
     def format_info(self, units):
         if isinstance(units, str):
-            formatted_units = f"'{units}'"
+            return f"'{units}'"
         elif isinstance(units, (tuple, list)):
             formatted_units = '{'
             for unit in units:
                 formatted_units += f"'{unit}', "
-            formatted_units = formatted_units[:-2] + "};"
+            return formatted_units[:-2] + '}'
         else:
             raise TypeError(f'Unexpected type {type(units)}. Units and Labels should be either a string or a tuple or '
                             f'list of strings.')
-        return formatted_units
 
     @property
     def units(self):
@@ -77,7 +76,7 @@ class DataSourceBase:
         return self.format_info(self.AUX_DATA_LABELS)
 
 
-class IndDataSourceBase(DataSourceBase):
+class EntityDataSourceBase(DataSourceBase):
 
     def __init__(self, csv_filename, id_col, name=None,
                  prefix='', bibkey='', comment='',
@@ -88,15 +87,13 @@ class IndDataSourceBase(DataSourceBase):
                          ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
 
         # Find the ids of all individuals
-        self.individuals = {str(ci).replace(' ', '_') for ci in self.df[id_col].unique()}
+        # TODO: une sanitize function instead of just replacing spaces?
+        self.entities = {str(ci).replace(' ', '_') for ci in self.df[id_col].unique()}
 
-    def generate_code(self, ind_list='all'):
-        return
-
-    def get_ind_data(self, ind_id):
-        if ind_id not in self.individuals:
+    def get_entity_data(self, entity_id):
+        if entity_id not in self.entities:
             raise Exception('Invalid ind_id, individual not found in the dataset')
-        return self.groupbys.get_group(ind_id)
+        return self.groupbys.get_group(entity_id)
 
 
 class GroupDataSourceBase(DataSourceBase):
@@ -111,25 +108,22 @@ class GroupDataSourceBase(DataSourceBase):
 
         # Find the ids of all groups
         self.groups = {str(ci).replace(' ', '_') for ci in self.df[self.id_col].unique()}
-        self.group_of_ind_df = pd.DataFrame(columns=sorted(self.groups))
+        self.entity_vs_group_df = pd.DataFrame(columns=sorted(self.groups))
 
-    def create_group_of_ind_df(self, ind_data_source: IndDataSourceBase):
-        for ind_id in list(ind_data_source.individuals):
-            group_id = ind_data_source.get_ind_data(ind_id)[self.id_col].iloc[0]
-            self.group_of_ind_df.loc[ind_id, group_id] = True
+    def create_entity_vs_group_df(self, entity_data_source: EntityDataSourceBase):
+        for entity_id in list(entity_data_source.entities):
+            group_id = entity_data_source.get_entity_data(entity_id)[self.id_col].iloc[0]
+            self.entity_vs_group_df.loc[entity_id, group_id] = True
 
-    def get_groups_in_ind_list(self, ind_list):
+    def get_groups_in_entity_list(self, entity_list):
         # Only returns groups of individuals that exist in the data
-        ind_list = [ind_id for ind_id in ind_list if ind_id in self.group_of_ind_df.index]
-        return sorted(self.group_of_ind_df.loc[ind_list].dropna(axis=1, how='all').columns)
+        entity_list = [entity_id for entity_id in entity_list if entity_id in self.entity_vs_group_df.index]
+        return sorted(self.entity_vs_group_df.loc[entity_list].dropna(axis=1, how='all').columns)
 
-    def get_ind_list_of_group(self, group_id):
-        return sorted(self.group_of_ind_df[group_id].dropna().index)
+    def get_entity_list_of_group(self, group_id):
+        return sorted(self.entity_vs_group_df[group_id].dropna().index)
 
     def get_group_data(self, group_id):
         if group_id not in self.groups:
             raise Exception('Invalid group_id, group not found in the dataset')
         return self.groupbys.get_group(group_id)
-
-    def generate_code(self, ind_list='all'):
-        return

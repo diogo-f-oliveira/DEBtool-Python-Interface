@@ -19,6 +19,9 @@ def format_string_list_data(list_data: list, double_brackets: bool = False):
 
 
 def format_dict_data(dict_data: dict, is_string_data=False):
+    # Return empty struct if dict is empty
+    if not dict_data:
+        return 'struct()'
     formatted = 'struct('
     for k, v in dict_data.items():
         if is_string_data:
@@ -28,13 +31,15 @@ def format_dict_data(dict_data: dict, is_string_data=False):
     return formatted
 
 
-def format_aux_data(var_name, formatted_data, label, comment='-', units='-', bibkey='-', pars_init_access=False):
+def format_tier_variable(var_name, formatted_data, label, units='-', bibkey='', comment='', pars_init_access=False):
     s = f"data.{var_name} = 10; " \
         f"units.{var_name} = '-'; " \
-        f"label.{var_name} = 'Dummy variable'; " \
-        f"comment.{var_name} = '{comment}'; " \
-        f"bibkey.{var_name} = '{bibkey}'; \n"
-    s += f"tiers.{var_name} = {formatted_data}; " \
+        f"label.{var_name} = 'Dummy variable'; "
+    if comment:
+        s += f"comment.{var_name} = '{comment}'; "
+    if bibkey:
+        s += f"bibkey.{var_name} = '{bibkey}';"
+    s += f"\ntiers.{var_name} = {formatted_data}; " \
          f"units.tiers.{var_name} = '{units}'; " \
          f"label.tiers.{var_name} = '{label}'; \n"
     if pars_init_access:

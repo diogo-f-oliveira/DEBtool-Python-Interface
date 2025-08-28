@@ -7,7 +7,7 @@ from tabulate import tabulate
 from ..data_sources.collection import DataCollection
 from ..estimation.runner import EstimationRunner
 from ..utils.data_formatter import check_files_exist_in_folder, format_string_list_data, format_dict_data, \
-    format_aux_data, format_meta_data
+    format_tier_variable, format_meta_data
 
 
 class MultiTierStructure:
@@ -372,7 +372,7 @@ class TierCodeGenerator:
                                                   formatted_data=format_string_list_data(list(entity_data_types)))
         group_data_types_code = format_meta_data(var_name='group_data_types',
                                                  formatted_data=format_string_list_data(list(group_data_types)))
-        entity_list_code = format_aux_data(
+        entity_list_code = format_tier_variable(
             var_name='entity_list',
             formatted_data=format_string_list_data(entity_list),
             label='List of entities',
@@ -380,7 +380,7 @@ class TierCodeGenerator:
         )
 
         # List of entity ids per tier included in the estimation
-        tier_entities_code = format_aux_data(
+        tier_entities_code = format_tier_variable(
             var_name='tier_entities',
             formatted_data=format_dict_data(
                 {t: format_string_list_data(g_list, double_brackets=True) for t, g_list in tier_entities.items()}
@@ -389,7 +389,7 @@ class TierCodeGenerator:
         )
 
         # List of group ids per tier included in the estimation
-        tier_groups_code = format_aux_data(
+        tier_groups_code = format_tier_variable(
             var_name='tier_groups',
             formatted_data=format_dict_data(
                 {t: format_string_list_data(g_list, double_brackets=True) for t, g_list in tier_groups.items()}
@@ -402,14 +402,14 @@ class TierCodeGenerator:
         for entity_id, subtree in tier_subtree.items():
             data_to_format[entity_id] = format_dict_data(
                 {t: format_string_list_data(e_list, double_brackets=True) for t, e_list in subtree.items()})
-        tier_subtree_code = format_aux_data(
+        tier_subtree_code = format_tier_variable(
             var_name='tier_subtree',
             formatted_data=format_dict_data(data_to_format),
             label='Tier subtree',
         )
 
         # Groups of entity
-        groups_of_entity_code = format_aux_data(
+        groups_of_entity_code = format_tier_variable(
             var_name='groups_of_entity',
             formatted_data=format_dict_data(
                 {e_id: format_string_list_data(g_list, double_brackets=True) for e_id, g_list in
@@ -419,7 +419,7 @@ class TierCodeGenerator:
         )
 
         # Tier parameters
-        tier_pars_code = format_aux_data(
+        tier_pars_code = format_tier_variable(
             var_name='tier_pars',
             formatted_data=format_string_list_data(self.tier_estimator.tier_pars),
             label='Tier parameters',

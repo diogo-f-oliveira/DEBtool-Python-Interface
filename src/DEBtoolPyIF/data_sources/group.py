@@ -1,3 +1,5 @@
+import numpy as np
+
 from .base import GroupDataSourceBase
 from .entity import TimeWeightEntityDataSource
 from ..utils.data_conversion import convert_dict_to_matlab
@@ -10,9 +12,10 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
     AUX_DATA_LABELS = ('Initial weights for the individuals in the group')
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
-                 name=None, prefix='', bibkey='', comment='', time_unit='d', feed_unit='kg'):
+                 name=None, time_unit='d', feed_unit='kg',
+                 prefix='', bibkey='', comment='', title='', id_name=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,
+                         comment=comment, title=title, id_name=id_name, ind_var_unit=time_unit, dep_var_unit=feed_unit,
                          aux_var_unit=weight_data_source._units[1])
         self.feed_col = feed_col
         self.date_col = date_col
@@ -53,22 +56,14 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
             # group
             group_data, initial_dates, initial_weights = self.get_data(group_id)
 
-            t_JX_group_data = f'data.{self.TYPE}_{group_id} = ['
-            for i in group_data.index.values:
-                t_JX_group_data += f"{(group_data.loc[i, self.date_col] - initial_dates[0]).days} " \
-                                   f"{group_data.loc[i, self.feed_col]}; "
-            my_data_code += t_JX_group_data[:-2] + '];\n'
-            my_data_code += f"init.{self.TYPE}_{group_id} = {convert_dict_to_matlab(initial_weights)}; " \
-                            f"units.init.{self.TYPE}_{group_id} = {self.aux_data_units}; " \
-                            f"label.init.{self.TYPE}_{group_id} = {self.aux_data_labels};\n"
+            time_data = group_data[self.date_col].apply(lambda x: (x - initial_dates[0]).days).values
+            feed_data = group_data[self.feed_col].values
+            data = np.column_stack([time_data, feed_data])
 
-            my_data_code += f"units.{self.TYPE}_{group_id} = {self.units}; " \
-                            + f"label.{self.TYPE}_{group_id} = {self.labels}; " \
-                            + f"title.{self.TYPE}_{group_id} = 'Daily feed consumption of pen {group_id}'; "
-            if self.comment:
-                my_data_code += f"comment.{self.TYPE}_{group_id} = '{self.comment}, pen {group_id}'; "
-            if self.bibkey:
-                my_data_code += f"bibkey.{self.TYPE}_{group_id} = '{self.bibkey}';"
+            conv_aux_data = convert_dict_to_matlab(initial_weights)
+            my_data_code += self.generate_dataset_code(id_=group_id, data=data, converted_aux_data=conv_aux_data,
+                                                       auxdata_struct_name='init')
+
             my_data_code += '\n\n'
 
         if len(my_data_code):

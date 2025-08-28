@@ -1,4 +1,7 @@
+import numpy as np
+
 from .base import EntityDataSourceBase
+from ..utils.data_conversion import convert_numeric_array_to_matlab
 import pandas as pd
 
 
@@ -8,11 +11,11 @@ class TimeWeightEntityDataSource(EntityDataSourceBase):
     AUX_DATA_LABELS = 'Initial weight'
 
     def __init__(self, csv_filename, id_col, weight_col, date_col, name=None,
-                 prefix='', bibkey='', comment='',
+                 prefix='', bibkey='', comment='', title='', id_name='',
                  time_unit='d', weight_unit='kg',
                  ):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
-                         prefix=prefix, bibkey=bibkey, comment=comment,
+                         prefix=prefix, bibkey=bibkey, comment=comment, title=title, id_name=id_name,
                          ind_var_unit=time_unit, dep_var_unit=weight_unit, aux_var_unit=weight_unit)
         self.weight_col = weight_col
         self.date_col = date_col
@@ -35,22 +38,12 @@ class TimeWeightEntityDataSource(EntityDataSourceBase):
                 continue
             ind_data, initial_date, initial_weight = self.get_data(entity_id)
 
-            tw_data = f'data.{self.TYPE}_{entity_id} = ['
-            for i in ind_data.index.values:
-                tw_data += f"{(ind_data.loc[i, self.date_col] - initial_date).days} " \
-                           f"{ind_data.loc[i, self.weight_col]}; "
-            my_data_code += tw_data[:-2] + '];\n'
-            my_data_code += f"init.{self.TYPE}_{entity_id} = {initial_weight}; " \
-                            f"units.init.{self.TYPE}_{entity_id} = {self.aux_data_units}; " \
-                            f"label.init.{self.TYPE}_{entity_id} = {self.aux_data_labels};\n"
+            time_data = ind_data[self.date_col].apply(lambda x: (x - initial_date).days).values
+            weight_data = ind_data[self.weight_col].values
+            data = np.column_stack([time_data, weight_data])
 
-            my_data_code += f"units.{self.TYPE}_{entity_id} = {self.units}; " \
-                            + f"label.{self.TYPE}_{entity_id} = {self.labels}; " \
-                            + f"title.{self.TYPE}_{entity_id} = 'Growth curve of individual {entity_id}'; "
-            if self.comment:
-                my_data_code += f"comment.{self.TYPE}_{entity_id} = '{self.comment}, individual {entity_id}'; "
-            if self.bibkey:
-                my_data_code += f"bibkey.{self.TYPE}_{entity_id} = '{self.bibkey}';"
+            my_data_code += self.generate_dataset_code(id_=entity_id, data=data, converted_aux_data=initial_weight,
+                                       auxdata_struct_name='init')
             my_data_code += '\n\n'
 
         if len(my_data_code):
@@ -425,7 +418,8 @@ class TotalFeedIntakeEntityDataSource(EntityDataSourceBase):
     # TODO: Update with latest changes
     TYPE = 'TFI'
 
-    def __init__(self, csv_filename, id_col, feed_col, age_col, date_col, weight_data_source: TimeWeightEntityDataSource,
+    def __init__(self, csv_filename, id_col, feed_col, age_col, date_col,
+                 weight_data_source: TimeWeightEntityDataSource,
                  name=None, bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name=name)
         self.feed_col = feed_col

@@ -24,11 +24,13 @@ def load_data():
     # Data sources
     twds = TimeWeightEntityDataSource(f"{DATA_FOLDER}/greenbeef_1_weights.csv",
                                       id_col='sia', weight_col='weight', date_col='date',
+                                      title='Wet weight growth curve', id_name='individual',
                                       bibkey=bibkey, comment=comment)
 
     gtfds = TimeFeedGroupDataSource(f"{DATA_FOLDER}/greenbeef_1_feed_intake_pen.csv",
                                     id_col='pen', feed_col='dry_intake', date_col='date',
                                     weight_data_source=twds,
+                                    title='Daily feed consumption',
                                     prefix=prefix, bibkey=bibkey, comment=comment)
 
     return {
@@ -119,7 +121,7 @@ def create_tier_structure():
 if __name__ == '__main__':
     multitier = create_tier_structure()
 
-    multitier.tiers['breed'].estimate(hide_output=True)
+    multitier.tiers['breed'].estimate(hide_output=True, save_results=False)
     # multitier.tiers['breed'].load_results()
     # multitier.tiers['breed'].fetch_pars(tier_sample_list=['male'])
     # multitier.tiers['breed'].fetch_errors(tier_sample_list=['male'])
@@ -128,7 +130,7 @@ if __name__ == '__main__':
     multitier.tiers['breed'].print_pars()
 
     # dy_ts_list = multitier.tiers['diet'].tier_entities
-    multitier.tiers['diet'].estimate(hide_output=True)
+    multitier.tiers['diet'].estimate(hide_output=True, save_results=False)
     # multitier.tiers['diet'].load_results()
     # multitier.tiers['diet'].fetch_pars(tier_sample_list=dy_ts_list)
     # multitier.tiers['diet'].fetch_errors(tier_sample_list=dy_ts_list)
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     multitier.tiers['diet'].print_pars()
 
     ind_list = multitier.tiers['individual'].tier_entities
-    multitier.tiers['individual'].estimate()
+    multitier.tiers['individual'].estimate(hide_output=True, save_results=False)
     multitier.tiers['individual'].print_pars()
 
     print('Done')

@@ -1,6 +1,7 @@
 import pandas as pd
 
-from ..utils.mydata_code_generation import is_valid_matlab_field_name
+from ..utils.mydata_code_generation import is_valid_matlab_field_name, generate_data_code, generate_aux_data_code
+from ..utils.data_conversion import convert_numeric_array_to_matlab
 
 
 class DataSourceBase:
@@ -9,8 +10,8 @@ class DataSourceBase:
     AUX_DATA_LABELS = ''
 
     def __init__(self, csv_filename, id_col, name=None,
-                 prefix='', bibkey='', comment='',
                  ind_var_unit='', dep_var_unit='', aux_var_unit='',
+                 prefix='', title='', bibkey='', comment='', id_name='',
                  ):
         self.csv_filename = csv_filename
         self.id_col = id_col
@@ -28,10 +29,16 @@ class DataSourceBase:
         if name is None:
             name = csv_filename.split('/')[-1][:-4] + '_' + self.TYPE
         self.name = name
-        self.bibkey = bibkey
-        self.comment = comment
         self._units = (ind_var_unit, dep_var_unit)
         self._aux_data_units = aux_var_unit
+        self.bibkey = bibkey
+        self.comment = comment
+        if not title:
+            title = ' vs '.join(self.LABELS)
+        self.title = title
+        if id_name is None:
+            id_name = self.id_col
+        self.id_name = id_name
 
         # Save groupby structure for faster processing
         self.groupbys = self.df.groupby(self.id_col)
@@ -47,16 +54,29 @@ class DataSourceBase:
     def generate_mydata_code(self, entity_list='all'):
         return
 
-    def format_info(self, units):
-        if isinstance(units, str):
-            return f"'{units}'"
-        elif isinstance(units, (tuple, list)):
+    def generate_dataset_code(self, id_, data, converted_aux_data=None, auxdata_struct_name=''):
+        converted_data = convert_numeric_array_to_matlab(data)
+        var_name = f"{self.TYPE}_{id_}"
+        dataset_code = generate_data_code(var_name=var_name, converted_data=converted_data, units=self.units,
+                                          label=self.labels, bibkey=self.bibkey, comment=self.comment,
+                                          title=f"{self.title}, {self.id_name} {id_}", )
+        if converted_aux_data:
+            dataset_code += generate_aux_data_code(var_name=var_name, converted_data=converted_aux_data,
+                                                   struct_name=auxdata_struct_name, label=self.aux_data_labels,
+                                                   units=self.aux_data_units)
+        return dataset_code
+
+    @staticmethod
+    def format_info(info):
+        if isinstance(info, str):
+            return f"'{info}'"
+        elif isinstance(info, (tuple, list)):
             formatted_units = '{'
-            for unit in units:
+            for unit in info:
                 formatted_units += f"'{unit}', "
             return formatted_units[:-2] + '}'
         else:
-            raise TypeError(f'Unexpected type {type(units)}. Units and Labels should be either a string or a tuple or '
+            raise TypeError(f'Unexpected type {type(info)}. Units and Labels should be either a string or a tuple or '
                             f'list of strings.')
 
     @property
@@ -79,15 +99,15 @@ class DataSourceBase:
 class EntityDataSourceBase(DataSourceBase):
 
     def __init__(self, csv_filename, id_col, name=None,
-                 prefix='', bibkey='', comment='',
+                 prefix='', bibkey='', comment='', title='', id_name='',
                  ind_var_unit='', dep_var_unit='', aux_var_unit='',
                  ):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
-                         prefix=prefix, bibkey=bibkey, comment=comment,
+                         prefix=prefix, bibkey=bibkey, comment=comment, title=title, id_name=id_name,
                          ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
 
         # Find the ids of all individuals
-        # TODO: une sanitize function instead of just replacing spaces?
+        # TODO: use sanitize function instead of just replacing spaces?
         self.entities = {str(ci).replace(' ', '_') for ci in self.df[id_col].unique()}
 
     def get_entity_data(self, entity_id):
@@ -99,11 +119,11 @@ class EntityDataSourceBase(DataSourceBase):
 class GroupDataSourceBase(DataSourceBase):
 
     def __init__(self, csv_filename, id_col, name=None,
-                 prefix='', bibkey='', comment='',
+                 prefix='', bibkey='', comment='', title='', id_name='',
                  ind_var_unit='', dep_var_unit='', aux_var_unit='',
                  ):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
-                         prefix=prefix, bibkey=bibkey, comment=comment,
+                         prefix=prefix, bibkey=bibkey, comment=comment, title=title, id_name=id_name,
                          ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
 
         # Find the ids of all groups

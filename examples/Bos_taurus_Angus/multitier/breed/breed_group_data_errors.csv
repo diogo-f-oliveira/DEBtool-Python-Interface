@@ -1,5 +1,5 @@
-group_id,tier_sample,tJX_grp
-Pen_2,male,0.13350607455639327
-Pen_3,male,0.07658311809358087
-Pen_4,male,0.08849583485989403
-Pen_5,male,0.10679445514680666
+tier,group,tJX_grp
+individual,Pen_2,0.1347234399494142
+individual,Pen_3,0.07634307207357165
+individual,Pen_4,0.08793760669841963
+individual,Pen_5,0.10710453211616996

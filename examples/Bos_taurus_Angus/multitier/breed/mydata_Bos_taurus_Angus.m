@@ -71,131 +71,131 @@ units.tJX_grp_Pen_5 = {'d', 'kg'}; label.tJX_grp_Pen_5 = {'Time since start', 'D
 metaData.group_data_types = {'tJX_grp'}; 
 
 
-% Cell array of group_ids
-data.group_list = 10; units.group_list = '-'; label.group_list = 'Dummy variable'; comment.group_list = 'List of group ids'; bibkey.group_list = '-'; 
-tiers.group_list = {'Pen_2', 'Pen_3', 'Pen_4', 'Pen_5'}; units.tiers.group_list = '-'; label.tiers.group_list = 'List of groups ids'; 
+% Struct with form tier_groups.(tier_name) = list_of_groups_of_tier
+data.tier_groups = 10; units.tier_groups = '-'; label.tier_groups = 'Dummy variable'; 
+tiers.tier_groups = struct('breed', {{}}, 'diet', {{}}, 'individual', {{'Pen_2', 'Pen_3', 'Pen_4', 'Pen_5'}}); units.tiers.tier_groups = '-'; label.tiers.tier_groups = 'List of groups ids for each tier'; 
 
 
-%% Individual data
+%% Entity data
 %% Time vs Weight data 
-
-data.tW_PT533843896 = [0 480; 14 492; 21 506; 35 536; 50 551; 63 574; 83 586];
-init.tW_PT533843896 = 480; units.init.tW_PT533843896 = 'kg'; label.init.tW_PT533843896 = 'Initial weight';
-units.tW_PT533843896 = {'d', 'kg'}; label.tW_PT533843896 = {'Time since start', 'Wet weight'}; title.tW_PT533843896 = 'Growth curve of individual PT533843896'; comment.tW_PT533843896 = 'Data from GreenBeef trial 1, individual PT533843896'; bibkey.tW_PT533843896 = 'GreenBeefTrial1';
 
 data.tW_PT424401157 = [0 469; 14 482; 21 486; 35 512; 50 540; 63 549; 83 571];
 init.tW_PT424401157 = 469; units.init.tW_PT424401157 = 'kg'; label.init.tW_PT424401157 = 'Initial weight';
 units.tW_PT424401157 = {'d', 'kg'}; label.tW_PT424401157 = {'Time since start', 'Wet weight'}; title.tW_PT424401157 = 'Growth curve of individual PT424401157'; comment.tW_PT424401157 = 'Data from GreenBeef trial 1, individual PT424401157'; bibkey.tW_PT424401157 = 'GreenBeefTrial1';
 
-data.tW_PT924401183 = [0 510; 14 543; 21 555; 35 587; 50 624; 63 648; 83 685];
-init.tW_PT924401183 = 510; units.init.tW_PT924401183 = 'kg'; label.init.tW_PT924401183 = 'Initial weight';
-units.tW_PT924401183 = {'d', 'kg'}; label.tW_PT924401183 = {'Time since start', 'Wet weight'}; title.tW_PT924401183 = 'Growth curve of individual PT924401183'; comment.tW_PT924401183 = 'Data from GreenBeef trial 1, individual PT924401183'; bibkey.tW_PT924401183 = 'GreenBeefTrial1';
-
-data.tW_PT933843912 = [0 545; 14 561; 21 565; 35 581; 50 616; 63 649; 83 668];
-init.tW_PT933843912 = 545; units.init.tW_PT933843912 = 'kg'; label.init.tW_PT933843912 = 'Initial weight';
-units.tW_PT933843912 = {'d', 'kg'}; label.tW_PT933843912 = {'Time since start', 'Wet weight'}; title.tW_PT933843912 = 'Growth curve of individual PT933843912'; comment.tW_PT933843912 = 'Data from GreenBeef trial 1, individual PT933843912'; bibkey.tW_PT933843912 = 'GreenBeefTrial1';
-
-data.tW_PT933602927 = [0 426; 14 450; 21 462; 35 482; 50 497; 63 524; 83 539];
-init.tW_PT933602927 = 426; units.init.tW_PT933602927 = 'kg'; label.init.tW_PT933602927 = 'Initial weight';
-units.tW_PT933602927 = {'d', 'kg'}; label.tW_PT933602927 = {'Time since start', 'Wet weight'}; title.tW_PT933602927 = 'Growth curve of individual PT933602927'; comment.tW_PT933602927 = 'Data from GreenBeef trial 1, individual PT933602927'; bibkey.tW_PT933602927 = 'GreenBeefTrial1';
-
-data.tW_PT333842562 = [0 515; 14 535; 21 539; 35 566; 50 594; 63 630; 83 652];
-init.tW_PT333842562 = 515; units.init.tW_PT333842562 = 'kg'; label.init.tW_PT333842562 = 'Initial weight';
-units.tW_PT333842562 = {'d', 'kg'}; label.tW_PT333842562 = {'Time since start', 'Wet weight'}; title.tW_PT333842562 = 'Growth curve of individual PT333842562'; comment.tW_PT333842562 = 'Data from GreenBeef trial 1, individual PT333842562'; bibkey.tW_PT333842562 = 'GreenBeefTrial1';
-
-data.tW_PT524401180 = [0 496; 14 503; 21 508; 35 532; 50 560; 63 586; 83 610];
-init.tW_PT524401180 = 496; units.init.tW_PT524401180 = 'kg'; label.init.tW_PT524401180 = 'Initial weight';
-units.tW_PT524401180 = {'d', 'kg'}; label.tW_PT524401180 = {'Time since start', 'Wet weight'}; title.tW_PT524401180 = 'Growth curve of individual PT524401180'; comment.tW_PT524401180 = 'Data from GreenBeef trial 1, individual PT524401180'; bibkey.tW_PT524401180 = 'GreenBeefTrial1';
-
-data.tW_PT533358890 = [0 477; 14 493; 21 498; 35 529; 50 551; 63 586; 83 621];
-init.tW_PT533358890 = 477; units.init.tW_PT533358890 = 'kg'; label.init.tW_PT533358890 = 'Initial weight';
-units.tW_PT533358890 = {'d', 'kg'}; label.tW_PT533358890 = {'Time since start', 'Wet weight'}; title.tW_PT533358890 = 'Growth curve of individual PT533358890'; comment.tW_PT533358890 = 'Data from GreenBeef trial 1, individual PT533358890'; bibkey.tW_PT533358890 = 'GreenBeefTrial1';
-
-data.tW_PT333653651 = [0 536; 14 548; 21 561; 35 589; 50 603; 63 615; 83 632];
-init.tW_PT333653651 = 536; units.init.tW_PT333653651 = 'kg'; label.init.tW_PT333653651 = 'Initial weight';
-units.tW_PT333653651 = {'d', 'kg'}; label.tW_PT333653651 = {'Time since start', 'Wet weight'}; title.tW_PT333653651 = 'Growth curve of individual PT333653651'; comment.tW_PT333653651 = 'Data from GreenBeef trial 1, individual PT333653651'; bibkey.tW_PT333653651 = 'GreenBeefTrial1';
+data.tW_PT624139868 = [0 464; 14 470; 21 480; 35 508; 50 542; 63 558; 83 582];
+init.tW_PT624139868 = 464; units.init.tW_PT624139868 = 'kg'; label.init.tW_PT624139868 = 'Initial weight';
+units.tW_PT624139868 = {'d', 'kg'}; label.tW_PT624139868 = {'Time since start', 'Wet weight'}; title.tW_PT624139868 = 'Growth curve of individual PT624139868'; comment.tW_PT624139868 = 'Data from GreenBeef trial 1, individual PT624139868'; bibkey.tW_PT624139868 = 'GreenBeefTrial1';
 
 data.tW_PT833653649 = [0 535; 14 546; 21 557; 35 586; 50 613; 63 641; 83 656];
 init.tW_PT833653649 = 535; units.init.tW_PT833653649 = 'kg'; label.init.tW_PT833653649 = 'Initial weight';
 units.tW_PT833653649 = {'d', 'kg'}; label.tW_PT833653649 = {'Time since start', 'Wet weight'}; title.tW_PT833653649 = 'Growth curve of individual PT833653649'; comment.tW_PT833653649 = 'Data from GreenBeef trial 1, individual PT833653649'; bibkey.tW_PT833653649 = 'GreenBeefTrial1';
 
-data.tW_PT233843883 = [0 506; 14 525; 21 533; 35 561; 50 583; 63 592; 83 620];
-init.tW_PT233843883 = 506; units.init.tW_PT233843883 = 'kg'; label.init.tW_PT233843883 = 'Initial weight';
-units.tW_PT233843883 = {'d', 'kg'}; label.tW_PT233843883 = {'Time since start', 'Wet weight'}; title.tW_PT233843883 = 'Growth curve of individual PT233843883'; comment.tW_PT233843883 = 'Data from GreenBeef trial 1, individual PT233843883'; bibkey.tW_PT233843883 = 'GreenBeefTrial1';
-
-data.tW_PT524956505 = [0 542; 14 567; 21 577; 35 603; 50 638; 63 664; 83 707];
-init.tW_PT524956505 = 542; units.init.tW_PT524956505 = 'kg'; label.init.tW_PT524956505 = 'Initial weight';
-units.tW_PT524956505 = {'d', 'kg'}; label.tW_PT524956505 = {'Time since start', 'Wet weight'}; title.tW_PT524956505 = 'Growth curve of individual PT524956505'; comment.tW_PT524956505 = 'Data from GreenBeef trial 1, individual PT524956505'; bibkey.tW_PT524956505 = 'GreenBeefTrial1';
-
-data.tW_PT433843806 = [0 507; 14 532; 21 532; 35 568; 50 600; 63 607; 83 628];
-init.tW_PT433843806 = 507; units.init.tW_PT433843806 = 'kg'; label.init.tW_PT433843806 = 'Initial weight';
-units.tW_PT433843806 = {'d', 'kg'}; label.tW_PT433843806 = {'Time since start', 'Wet weight'}; title.tW_PT433843806 = 'Growth curve of individual PT433843806'; comment.tW_PT433843806 = 'Data from GreenBeef trial 1, individual PT433843806'; bibkey.tW_PT433843806 = 'GreenBeefTrial1';
+data.tW_PT533843896 = [0 480; 14 492; 21 506; 35 536; 50 551; 63 574; 83 586];
+init.tW_PT533843896 = 480; units.init.tW_PT533843896 = 'kg'; label.init.tW_PT533843896 = 'Initial weight';
+units.tW_PT533843896 = {'d', 'kg'}; label.tW_PT533843896 = {'Time since start', 'Wet weight'}; title.tW_PT533843896 = 'Growth curve of individual PT533843896'; comment.tW_PT533843896 = 'Data from GreenBeef trial 1, individual PT533843896'; bibkey.tW_PT533843896 = 'GreenBeefTrial1';
 
 data.tW_PT933843894 = [0 508; 14 521; 21 534; 35 563; 50 583; 63 610; 83 639];
 init.tW_PT933843894 = 508; units.init.tW_PT933843894 = 'kg'; label.init.tW_PT933843894 = 'Initial weight';
 units.tW_PT933843894 = {'d', 'kg'}; label.tW_PT933843894 = {'Time since start', 'Wet weight'}; title.tW_PT933843894 = 'Growth curve of individual PT933843894'; comment.tW_PT933843894 = 'Data from GreenBeef trial 1, individual PT933843894'; bibkey.tW_PT933843894 = 'GreenBeefTrial1';
 
-data.tW_PT833653644 = [0 548; 14 544; 21 553; 35 579; 50 603; 63 623; 83 652];
-init.tW_PT833653644 = 548; units.init.tW_PT833653644 = 'kg'; label.init.tW_PT833653644 = 'Initial weight';
-units.tW_PT833653644 = {'d', 'kg'}; label.tW_PT833653644 = {'Time since start', 'Wet weight'}; title.tW_PT833653644 = 'Growth curve of individual PT833653644'; comment.tW_PT833653644 = 'Data from GreenBeef trial 1, individual PT833653644'; bibkey.tW_PT833653644 = 'GreenBeefTrial1';
+data.tW_PT433843806 = [0 507; 14 532; 21 532; 35 568; 50 600; 63 607; 83 628];
+init.tW_PT433843806 = 507; units.init.tW_PT433843806 = 'kg'; label.init.tW_PT433843806 = 'Initial weight';
+units.tW_PT433843806 = {'d', 'kg'}; label.tW_PT433843806 = {'Time since start', 'Wet weight'}; title.tW_PT433843806 = 'Growth curve of individual PT433843806'; comment.tW_PT433843806 = 'Data from GreenBeef trial 1, individual PT433843806'; bibkey.tW_PT433843806 = 'GreenBeefTrial1';
 
-data.tW_PT724523831 = [0 485; 14 505; 21 510; 35 474; 50 504; 63 581; 83 565];
-init.tW_PT724523831 = 485; units.init.tW_PT724523831 = 'kg'; label.init.tW_PT724523831 = 'Initial weight';
-units.tW_PT724523831 = {'d', 'kg'}; label.tW_PT724523831 = {'Time since start', 'Wet weight'}; title.tW_PT724523831 = 'Growth curve of individual PT724523831'; comment.tW_PT724523831 = 'Data from GreenBeef trial 1, individual PT724523831'; bibkey.tW_PT724523831 = 'GreenBeefTrial1';
+data.tW_PT333653651 = [0 536; 14 548; 21 561; 35 589; 50 603; 63 615; 83 632];
+init.tW_PT333653651 = 536; units.init.tW_PT333653651 = 'kg'; label.init.tW_PT333653651 = 'Initial weight';
+units.tW_PT333653651 = {'d', 'kg'}; label.tW_PT333653651 = {'Time since start', 'Wet weight'}; title.tW_PT333653651 = 'Growth curve of individual PT333653651'; comment.tW_PT333653651 = 'Data from GreenBeef trial 1, individual PT333653651'; bibkey.tW_PT333653651 = 'GreenBeefTrial1';
 
 data.tW_PT224401177 = [0 562; 14 589; 21 597; 35 632; 50 660; 63 697; 83 723];
 init.tW_PT224401177 = 562; units.init.tW_PT224401177 = 'kg'; label.init.tW_PT224401177 = 'Initial weight';
 units.tW_PT224401177 = {'d', 'kg'}; label.tW_PT224401177 = {'Time since start', 'Wet weight'}; title.tW_PT224401177 = 'Growth curve of individual PT224401177'; comment.tW_PT224401177 = 'Data from GreenBeef trial 1, individual PT224401177'; bibkey.tW_PT224401177 = 'GreenBeefTrial1';
 
-data.tW_PT033634130 = [0 453; 14 468; 21 471; 35 500; 50 517; 63 526; 83 556];
-init.tW_PT033634130 = 453; units.init.tW_PT033634130 = 'kg'; label.init.tW_PT033634130 = 'Initial weight';
-units.tW_PT033634130 = {'d', 'kg'}; label.tW_PT033634130 = {'Time since start', 'Wet weight'}; title.tW_PT033634130 = 'Growth curve of individual PT033634130'; comment.tW_PT033634130 = 'Data from GreenBeef trial 1, individual PT033634130'; bibkey.tW_PT033634130 = 'GreenBeefTrial1';
+data.tW_PT724523831 = [0 485; 14 505; 21 510; 35 474; 50 504; 63 581; 83 565];
+init.tW_PT724523831 = 485; units.init.tW_PT724523831 = 'kg'; label.init.tW_PT724523831 = 'Initial weight';
+units.tW_PT724523831 = {'d', 'kg'}; label.tW_PT724523831 = {'Time since start', 'Wet weight'}; title.tW_PT724523831 = 'Growth curve of individual PT724523831'; comment.tW_PT724523831 = 'Data from GreenBeef trial 1, individual PT724523831'; bibkey.tW_PT724523831 = 'GreenBeefTrial1';
 
-data.tW_PT624139868 = [0 464; 14 470; 21 480; 35 508; 50 542; 63 558; 83 582];
-init.tW_PT624139868 = 464; units.init.tW_PT624139868 = 'kg'; label.init.tW_PT624139868 = 'Initial weight';
-units.tW_PT624139868 = {'d', 'kg'}; label.tW_PT624139868 = {'Time since start', 'Wet weight'}; title.tW_PT624139868 = 'Growth curve of individual PT624139868'; comment.tW_PT624139868 = 'Data from GreenBeef trial 1, individual PT624139868'; bibkey.tW_PT624139868 = 'GreenBeefTrial1';
+data.tW_PT333842562 = [0 515; 14 535; 21 539; 35 566; 50 594; 63 630; 83 652];
+init.tW_PT333842562 = 515; units.init.tW_PT333842562 = 'kg'; label.init.tW_PT333842562 = 'Initial weight';
+units.tW_PT333842562 = {'d', 'kg'}; label.tW_PT333842562 = {'Time since start', 'Wet weight'}; title.tW_PT333842562 = 'Growth curve of individual PT333842562'; comment.tW_PT333842562 = 'Data from GreenBeef trial 1, individual PT333842562'; bibkey.tW_PT333842562 = 'GreenBeefTrial1';
+
+data.tW_PT833653644 = [0 548; 14 544; 21 553; 35 579; 50 603; 63 623; 83 652];
+init.tW_PT833653644 = 548; units.init.tW_PT833653644 = 'kg'; label.init.tW_PT833653644 = 'Initial weight';
+units.tW_PT833653644 = {'d', 'kg'}; label.tW_PT833653644 = {'Time since start', 'Wet weight'}; title.tW_PT833653644 = 'Growth curve of individual PT833653644'; comment.tW_PT833653644 = 'Data from GreenBeef trial 1, individual PT833653644'; bibkey.tW_PT833653644 = 'GreenBeefTrial1';
 
 data.tW_PT533987885 = [0 436; 14 449; 21 460; 35 486; 50 502; 63 515; 83 542];
 init.tW_PT533987885 = 436; units.init.tW_PT533987885 = 'kg'; label.init.tW_PT533987885 = 'Initial weight';
 units.tW_PT533987885 = {'d', 'kg'}; label.tW_PT533987885 = {'Time since start', 'Wet weight'}; title.tW_PT533987885 = 'Growth curve of individual PT533987885'; comment.tW_PT533987885 = 'Data from GreenBeef trial 1, individual PT533987885'; bibkey.tW_PT533987885 = 'GreenBeefTrial1';
 
+data.tW_PT524401180 = [0 496; 14 503; 21 508; 35 532; 50 560; 63 586; 83 610];
+init.tW_PT524401180 = 496; units.init.tW_PT524401180 = 'kg'; label.init.tW_PT524401180 = 'Initial weight';
+units.tW_PT524401180 = {'d', 'kg'}; label.tW_PT524401180 = {'Time since start', 'Wet weight'}; title.tW_PT524401180 = 'Growth curve of individual PT524401180'; comment.tW_PT524401180 = 'Data from GreenBeef trial 1, individual PT524401180'; bibkey.tW_PT524401180 = 'GreenBeefTrial1';
+
+data.tW_PT933843912 = [0 545; 14 561; 21 565; 35 581; 50 616; 63 649; 83 668];
+init.tW_PT933843912 = 545; units.init.tW_PT933843912 = 'kg'; label.init.tW_PT933843912 = 'Initial weight';
+units.tW_PT933843912 = {'d', 'kg'}; label.tW_PT933843912 = {'Time since start', 'Wet weight'}; title.tW_PT933843912 = 'Growth curve of individual PT933843912'; comment.tW_PT933843912 = 'Data from GreenBeef trial 1, individual PT933843912'; bibkey.tW_PT933843912 = 'GreenBeefTrial1';
+
+data.tW_PT533358890 = [0 477; 14 493; 21 498; 35 529; 50 551; 63 586; 83 621];
+init.tW_PT533358890 = 477; units.init.tW_PT533358890 = 'kg'; label.init.tW_PT533358890 = 'Initial weight';
+units.tW_PT533358890 = {'d', 'kg'}; label.tW_PT533358890 = {'Time since start', 'Wet weight'}; title.tW_PT533358890 = 'Growth curve of individual PT533358890'; comment.tW_PT533358890 = 'Data from GreenBeef trial 1, individual PT533358890'; bibkey.tW_PT533358890 = 'GreenBeefTrial1';
+
+data.tW_PT924401183 = [0 510; 14 543; 21 555; 35 587; 50 624; 63 648; 83 685];
+init.tW_PT924401183 = 510; units.init.tW_PT924401183 = 'kg'; label.init.tW_PT924401183 = 'Initial weight';
+units.tW_PT924401183 = {'d', 'kg'}; label.tW_PT924401183 = {'Time since start', 'Wet weight'}; title.tW_PT924401183 = 'Growth curve of individual PT924401183'; comment.tW_PT924401183 = 'Data from GreenBeef trial 1, individual PT924401183'; bibkey.tW_PT924401183 = 'GreenBeefTrial1';
+
+data.tW_PT524956505 = [0 542; 14 567; 21 577; 35 603; 50 638; 63 664; 83 707];
+init.tW_PT524956505 = 542; units.init.tW_PT524956505 = 'kg'; label.init.tW_PT524956505 = 'Initial weight';
+units.tW_PT524956505 = {'d', 'kg'}; label.tW_PT524956505 = {'Time since start', 'Wet weight'}; title.tW_PT524956505 = 'Growth curve of individual PT524956505'; comment.tW_PT524956505 = 'Data from GreenBeef trial 1, individual PT524956505'; bibkey.tW_PT524956505 = 'GreenBeefTrial1';
+
+data.tW_PT233843883 = [0 506; 14 525; 21 533; 35 561; 50 583; 63 592; 83 620];
+init.tW_PT233843883 = 506; units.init.tW_PT233843883 = 'kg'; label.init.tW_PT233843883 = 'Initial weight';
+units.tW_PT233843883 = {'d', 'kg'}; label.tW_PT233843883 = {'Time since start', 'Wet weight'}; title.tW_PT233843883 = 'Growth curve of individual PT233843883'; comment.tW_PT233843883 = 'Data from GreenBeef trial 1, individual PT233843883'; bibkey.tW_PT233843883 = 'GreenBeefTrial1';
+
+data.tW_PT033634130 = [0 453; 14 468; 21 471; 35 500; 50 517; 63 526; 83 556];
+init.tW_PT033634130 = 453; units.init.tW_PT033634130 = 'kg'; label.init.tW_PT033634130 = 'Initial weight';
+units.tW_PT033634130 = {'d', 'kg'}; label.tW_PT033634130 = {'Time since start', 'Wet weight'}; title.tW_PT033634130 = 'Growth curve of individual PT033634130'; comment.tW_PT033634130 = 'Data from GreenBeef trial 1, individual PT033634130'; bibkey.tW_PT033634130 = 'GreenBeefTrial1';
+
+data.tW_PT933602927 = [0 426; 14 450; 21 462; 35 482; 50 497; 63 524; 83 539];
+init.tW_PT933602927 = 426; units.init.tW_PT933602927 = 'kg'; label.init.tW_PT933602927 = 'Initial weight';
+units.tW_PT933602927 = {'d', 'kg'}; label.tW_PT933602927 = {'Time since start', 'Wet weight'}; title.tW_PT933602927 = 'Growth curve of individual PT933602927'; comment.tW_PT933602927 = 'Data from GreenBeef trial 1, individual PT933602927'; bibkey.tW_PT933602927 = 'GreenBeefTrial1';
 
 
-% individual data types
-metaData.ind_data_types = {'tW'}; 
+
+% entity data types
+metaData.entity_data_types = {'tW'}; 
 
 
-% Cell array of ind_ids
-data.ind_list = 10; units.ind_list = '-'; label.ind_list = 'Dummy variable'; comment.ind_list = 'List of individuals'; bibkey.ind_list = '-'; 
-tiers.ind_list = {'PT533843896', 'PT424401157', 'PT924401183', 'PT933843912', 'PT933602927', 'PT333842562', 'PT524401180', 'PT533358890', 'PT333653651', 'PT833653649', 'PT233843883', 'PT524956505', 'PT433843806', 'PT933843894', 'PT833653644', 'PT724523831', 'PT224401177', 'PT033634130', 'PT624139868', 'PT533987885'}; units.tiers.ind_list = '-'; label.tiers.ind_list = 'List of individuals'; 
-metaData.ind_list = tiers.ind_list; % Save in metaData to use in pars_init.m
+% Cell array of entity_ids
+data.entity_list = 10; units.entity_list = '-'; label.entity_list = 'Dummy variable'; 
+tiers.entity_list = {'male'}; units.tiers.entity_list = '-'; label.tiers.entity_list = 'List of entities'; 
+metaData.entity_list = tiers.entity_list; % Save in metaData to use in pars_init.m
 
-% Struct with form groups_of_ind.(ind_id) = list_of_groups_ids_ind_belongs_to
-data.groups_of_ind = 10; units.groups_of_ind = '-'; label.groups_of_ind = 'Dummy variable'; comment.groups_of_ind = 'Groups of individuals'; bibkey.groups_of_ind = '-'; 
-tiers.groups_of_ind = struct('PT533843896', {{'Pen_4'}}, 'PT424401157', {{'Pen_2'}}, 'PT924401183', {{'Pen_4'}}, 'PT933843912', {{'Pen_2'}}, 'PT933602927', {{'Pen_4'}}, 'PT333842562', {{'Pen_3'}}, 'PT524401180', {{'Pen_3'}}, 'PT533358890', {{'Pen_5'}}, 'PT333653651', {{'Pen_5'}}, 'PT833653649', {{'Pen_3'}}, 'PT233843883', {{'Pen_5'}}, 'PT524956505', {{'Pen_4'}}, 'PT433843806', {{'Pen_2'}}, 'PT933843894', {{'Pen_3'}}, 'PT833653644', {{'Pen_2'}}, 'PT724523831', {{'Pen_5'}}, 'PT224401177', {{'Pen_4'}}, 'PT033634130', {{'Pen_5'}}, 'PT624139868', {{'Pen_2'}}, 'PT533987885', {{'Pen_3'}}); units.tiers.groups_of_ind = '-'; label.tiers.groups_of_ind = 'Groups of individuals'; 
+% Struct with form tier_entities.(tier_name) = list_of_entities_of_tier
+data.tier_entities = 10; units.tier_entities = '-'; label.tier_entities = 'Dummy variable'; 
+tiers.tier_entities = struct('breed', {{'male'}}, 'diet', {{'CTRL', 'TMR'}}, 'individual', {{'PT424401157', 'PT624139868', 'PT833653649', 'PT533843896', 'PT933843894', 'PT433843806', 'PT333653651', 'PT224401177', 'PT724523831', 'PT333842562', 'PT833653644', 'PT533987885', 'PT524401180', 'PT933843912', 'PT533358890', 'PT924401183', 'PT524956505', 'PT233843883', 'PT033634130', 'PT933602927'}}); units.tiers.tier_entities = '-'; label.tiers.tier_entities = 'List of entity ids for each tier'; 
 
 
-% Cell array of tier_sample_ids
-data.tier_sample_list = 10; units.tier_sample_list = '-'; label.tier_sample_list = 'Dummy variable'; comment.tier_sample_list = 'Tier sample list'; bibkey.tier_sample_list = '-'; 
-tiers.tier_sample_list = {'male'}; units.tiers.tier_sample_list = '-'; label.tiers.tier_sample_list = 'Tier sample list'; 
-metaData.tier_sample_list = tiers.tier_sample_list; % Save in metaData to use in pars_init.m
+% Struct with form groups_of_entity.(entity_id) = list_of_groups_ids_entity_belongs_to
+data.groups_of_entity = 10; units.groups_of_entity = '-'; label.groups_of_entity = 'Dummy variable'; 
+tiers.groups_of_entity = struct('PT424401157', {{'Pen_2'}}, 'PT624139868', {{'Pen_2'}}, 'PT833653649', {{'Pen_3'}}, 'PT533843896', {{'Pen_4'}}, 'PT933843894', {{'Pen_3'}}, 'PT433843806', {{'Pen_2'}}, 'PT333653651', {{'Pen_5'}}, 'PT224401177', {{'Pen_4'}}, 'PT724523831', {{'Pen_5'}}, 'PT333842562', {{'Pen_3'}}, 'PT833653644', {{'Pen_2'}}, 'PT533987885', {{'Pen_3'}}, 'PT524401180', {{'Pen_3'}}, 'PT933843912', {{'Pen_2'}}, 'PT533358890', {{'Pen_5'}}, 'PT924401183', {{'Pen_4'}}, 'PT524956505', {{'Pen_4'}}, 'PT233843883', {{'Pen_5'}}, 'PT033634130', {{'Pen_5'}}, 'PT933602927', {{'Pen_4'}}); units.tiers.groups_of_entity = '-'; label.tiers.groups_of_entity = 'Groups each entity belongs to'; 
 
-% Struct with form 
-% tier_sample_inds.(tier_sample_id) = list_of_inds_in_tier_sample
-data.tier_sample_inds = 10; units.tier_sample_inds = '-'; label.tier_sample_inds = 'Dummy variable'; comment.tier_sample_inds = 'List of individuals that belong to the name sample'; bibkey.tier_sample_inds = '-'; 
-tiers.tier_sample_inds = struct('male', {{'PT533843896', 'PT424401157', 'PT924401183', 'PT933843912', 'PT933602927', 'PT333842562', 'PT524401180', 'PT533358890', 'PT333653651', 'PT833653649', 'PT233843883', 'PT524956505', 'PT433843806', 'PT933843894', 'PT833653644', 'PT724523831', 'PT224401177', 'PT033634130', 'PT624139868', 'PT533987885'}}); units.tiers.tier_sample_inds = '-'; label.tiers.tier_sample_inds = 'List of individuals that belong to the name sample'; 
+    
+% Tier subtree
+% Lists entities that are below entity_id for each tier below
+% Struct with form tier_subtree.(entity_id).(tier_name) = list_of_entities_below
+data.tier_subtree = 10; units.tier_subtree = '-'; label.tier_subtree = 'Dummy variable'; 
+tiers.tier_subtree = struct('male', struct('diet', {{'CTRL', 'TMR'}}, 'individual', {{'PT424401157', 'PT624139868', 'PT833653649', 'PT533843896', 'PT933843894', 'PT433843806', 'PT333653651', 'PT224401177', 'PT724523831', 'PT333842562', 'PT833653644', 'PT533987885', 'PT524401180', 'PT933843912', 'PT533358890', 'PT924401183', 'PT524956505', 'PT233843883', 'PT033634130', 'PT933602927'}})); units.tiers.tier_subtree = '-'; label.tiers.tier_subtree = 'Tier subtree'; 
 
 
 %% Tier parameters
 % Cell array with tier parameters
-data.tier_pars = 10; units.tier_pars = '-'; label.tier_pars = 'Dummy variable'; comment.tier_pars = 'Tier parameters'; bibkey.tier_pars = '-'; 
+data.tier_pars = 10; units.tier_pars = '-'; label.tier_pars = 'Dummy variable'; comment.tier_pars = 'Tier parameters'; 
 tiers.tier_pars = {'p_Am', 'kap_X', 'p_M', 'v', 'kap', 'E_G', 'E_Hb', 'E_Hx', 'E_Hp', 'h_a', 't_0', 'del_M', 'p_Am_f', 'E_Hp_f'}; units.tiers.tier_pars = '-'; label.tiers.tier_pars = 'Tier parameters'; 
 metaData.tier_pars = tiers.tier_pars; % Save in metaData to use in pars_init.m
 
-% Initial values for each tier parameter and sample
-% Struct with form tier_par_init_values.(par).(tier_sample_id) = value;
+% Initial values for each tier parameter and entity
+% Struct with form tier_par_init_values.(par).(entity_id) = value;
 metaData.tier_par_init_values = struct('p_Am', struct('male', 5000), 'kap_X', struct('male', 0.2), 'p_M', struct('male', 80), 'v', struct('male', 0.05), 'kap', struct('male', 0.97), 'E_G', struct('male', 7800), 'E_Hb', struct('male', 2000000.0), 'E_Hx', struct('male', 20000000.0), 'E_Hp', struct('male', 60000000.0), 'h_a', struct('male', 5e-10), 't_0', struct('male', 80), 'del_M', struct('male', 0.15), 'p_Am_f', struct('male', 4500), 'E_Hp_f', struct('male', 60000000.0)); 
-
 
 
 %% Set temperature data and remove weights for dummy variables
@@ -203,7 +203,7 @@ weights = setweights(data, []);
 
 metaData.data_fields = fieldnames(data);
 temp = struct();
-for i = 1:length(metaData.data_fields)
+for i=1:length(metaData.data_fields)
     % Add typical temperature only to fields without specified temperature
     field = metaData.data_fields{i};
     if ~isfield(temp, field)
@@ -228,11 +228,11 @@ end
 cumulative_data_types = {'tW'};
 ind_data_weights = struct('tW', 3/20);
 
-for dt=1:length(metaData.ind_data_types)
-    data_type = metaData.ind_data_types{dt};
+for dt=1:length(metaData.entity_data_types)
+    data_type = metaData.entity_data_types{dt};
     cumulative = strcmp(data_type, cumulative_data_types);
-    for i=1:length(tiers.ind_list)
-        ind_id = tiers.ind_list{i};
+    for i=1:length(tiers.tier_entities.individual)
+        ind_id = tiers.tier_entities.individual{i};
         data_varname = [data_type '_' ind_id];
         if isfield(data, data_varname)
             weights.(data_varname) = weights.(data_varname) * ind_data_weights.(data_type);
@@ -249,10 +249,11 @@ end
 
 %% Set weights of group data
 group_data_weights = struct('tJX_grp', 5/20);
+
 for dt=1:length(metaData.group_data_types)
     data_type = metaData.group_data_types{dt};
-    for g=1:length(tiers.group_list)
-        g_id = tiers.group_list{g};
+    for g=1:length(tiers.tier_groups.individual)
+        g_id = tiers.tier_groups.individual{g};
         data_varname = [data_type '_' g_id];
     
         if isfield(data, data_varname)

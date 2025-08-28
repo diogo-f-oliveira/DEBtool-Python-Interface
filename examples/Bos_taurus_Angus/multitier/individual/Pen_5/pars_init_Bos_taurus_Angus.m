@@ -6,18 +6,18 @@ metaPar.model = 'stx';
 par.T_ref = 293.15;   free.T_ref = 0;   units.T_ref = 'K';        label.T_ref = 'Reference temperature'; 
 
 %% core primary parameters 
-par.p_Am  = 4545.209098166135;      free.p_Am   = 0;   units.p_Am = 'J/d.cm^2';  label.p_Am  = 'Surface-specific maximum assimilation rate';
-par.kap_X = 0.22337822221306397;     free.kap_X  = 0;   units.kap_X = '-';        label.kap_X = 'digestion efficiency of food to reserve'; 
-par.v = 0.12228562720606667;             free.v      = 0;   units.v = 'cm/d';         label.v = 'energy conductance'; 
-par.kap = 0.9758577038694498;         free.kap    = 0;   units.kap = '-';          label.kap = 'allocation fraction to soma'; 
-par.p_M = 77.38870485312222;         free.p_M    = 0;   units.p_M = 'J/d.cm^3';   label.p_M = '[p_M], vol-spec somatic maint'; 
-par.E_G = 7852.85903545736;         free.E_G    = 0;   units.E_G = 'J/cm^3';     label.E_G = '[E_G], spec cost for structure'; 
-par.E_Hb = 2098509.779034093;       free.E_Hb   = 0;   units.E_Hb = 'J';         label.E_Hb = 'maturity at birth'; 
-par.E_Hx = 27502702.96809911;       free.E_Hx   = 0;   units.E_Hx = 'J';         label.E_Hx = 'maturity at weaning'; 
-par.E_Hp = 44884919.525291935;       free.E_Hp   = 0;   units.E_Hp = 'J';         label.E_Hp = 'maturity at puberty'; 
-par.h_a = 3.7131466156065974e-11;         free.h_a    = 0;   units.h_a = '1/d^2';      label.h_a = 'Weibull aging acceleration'; 
-par.t_0 = 195.7265365352592;         free.t_0    = 0;   units.t_0 = 'd';          label.t_0 = 'time at start development'; 
-par.del_M = 0.37068513407998316;     free.del_M  = 0;   units.del_M = '-';        label.del_M = 'shape coefficent';
+par.p_Am  = 2216.5549523042755;      free.p_Am   = 0;   units.p_Am = 'J/d.cm^2';  label.p_Am  = 'Surface-specific maximum assimilation rate';
+par.kap_X = 0.2424935228887613;     free.kap_X  = 0;   units.kap_X = '-';        label.kap_X = 'digestion efficiency of food to reserve'; 
+par.v = 0.35026158502519045;             free.v      = 0;   units.v = 'cm/d';         label.v = 'energy conductance'; 
+par.kap = 0.9732603650127476;         free.kap    = 0;   units.kap = '-';          label.kap = 'allocation fraction to soma'; 
+par.p_M = 25.584244825527605;         free.p_M    = 0;   units.p_M = 'J/d.cm^3';   label.p_M = '[p_M], vol-spec somatic maint'; 
+par.E_G = 7834.906339035637;         free.E_G    = 0;   units.E_G = 'J/cm^3';     label.E_G = '[E_G], spec cost for structure'; 
+par.E_Hb = 4545964.929101762;       free.E_Hb   = 0;   units.E_Hb = 'J';         label.E_Hb = 'maturity at birth'; 
+par.E_Hx = 40024979.13168743;       free.E_Hx   = 0;   units.E_Hx = 'J';         label.E_Hx = 'maturity at weaning'; 
+par.E_Hp = 63197525.47471765;       free.E_Hp   = 0;   units.E_Hp = 'J';         label.E_Hp = 'maturity at puberty'; 
+par.h_a = 1.5698265143968423e-14;         free.h_a    = 0;   units.h_a = '1/d^2';      label.h_a = 'Weibull aging acceleration'; 
+par.t_0 = 237.04630667634297;         free.t_0    = 0;   units.t_0 = 'd';          label.t_0 = 'time at start development'; 
+par.del_M = 0.5475870793118289;     free.del_M  = 0;   units.del_M = '-';        label.del_M = 'shape coefficent';
 
 %% Standard parameters
 par.T_A = 8000;         free.T_A   = 0;   units.T_A = 'K';          label.T_A = 'Arrhenius temperature'; 
@@ -36,16 +36,16 @@ par.f = 1;              free.f      = 0;    units.f = '-';              label.f 
 [par, units, label, free] = addchem(par, units, label, free, metaData.phylum, metaData.class);
 
 %% Set tier parameters
-for ts=1:length(metaData.tier_sample_list)
-    tier_sample_id = metaData.tier_sample_list{ts};
+for e=1:length(metaData.entity_list)
+    entity_id = metaData.entity_list{e};
     for p=1:length(metaData.tier_pars)
         par_name = metaData.tier_pars{p};
-        varname = [par_name '_' tier_sample_id];
+        varname = [par_name '_' entity_id];
         
-        par.(varname) = metaData.tier_par_init_values.(par_name).(tier_sample_id);
+        par.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
         free.(varname) = 1;
         units.(varname) = units.(par_name);
-        label.(varname) = [label.(par_name) ' of individual ' tier_sample_id];
+        label.(varname) = [label.(par_name) ' of diet ' entity_id];
     end
 end
 

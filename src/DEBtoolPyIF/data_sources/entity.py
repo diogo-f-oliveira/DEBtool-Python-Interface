@@ -2,7 +2,7 @@ from .base import EntityDataSourceBase
 import pandas as pd
 
 
-class TimeWeightDataSource(EntityDataSourceBase):
+class TimeWeightEntityDataSource(EntityDataSourceBase):
     TYPE = "tW"
     LABELS = ('Time since start', 'Wet weight')
     AUX_DATA_LABELS = 'Initial weight'
@@ -111,7 +111,7 @@ class TimeFeedEntityDataSource(EntityDataSourceBase):
     LABELS = ('Time since start', 'Daily food consumption')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
+    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  start_at_first=False, prefix='', name=None, bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,
@@ -178,7 +178,7 @@ class TimeCumulativeFeedEntityDataSource(EntityDataSourceBase):
     LABELS = ('Time since start', 'Cumulative food consumption during test')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
+    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  prefix='', name=None, bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,
@@ -235,12 +235,12 @@ class TimeCumulativeFeedEntityDataSource(EntityDataSourceBase):
         return my_data_code
 
 
-class TimeCH4DataSource(EntityDataSourceBase):
+class TimeCH4EntityDataSource(EntityDataSourceBase):
     TYPE = 'tCH4'
     LABELS = ('Time since start', 'Daily methane (CH4) emissions')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightDataSource,
+    def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  start_at_first=False, name=None, prefix='', bibkey='', comment='', time_unit='d', methane_unit='g/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, ind_var_unit=time_unit, dep_var_unit=methane_unit,
@@ -302,12 +302,12 @@ class TimeCH4DataSource(EntityDataSourceBase):
         return my_data_code
 
 
-class TimeCO2DataSource(EntityDataSourceBase):
+class TimeCO2EntityDataSource(EntityDataSourceBase):
     TYPE = 'tCO2'
     LABELS = ('Time since start', 'Daily carbon dioxide (CO2) emissions')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightDataSource,
+    def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  start_at_first=False, name=None, prefix='', bibkey='', comment='', time_unit='d', co2_unit='g/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, ind_var_unit=time_unit, dep_var_unit=co2_unit,
@@ -425,7 +425,7 @@ class TotalFeedIntakeEntityDataSource(EntityDataSourceBase):
     # TODO: Update with latest changes
     TYPE = 'TFI'
 
-    def __init__(self, csv_filename, id_col, feed_col, age_col, date_col, weight_data_source: TimeWeightDataSource,
+    def __init__(self, csv_filename, id_col, feed_col, age_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  name=None, bibkey='', comment=''):
         super().__init__(csv_filename, id_col, name=name)
         self.feed_col = feed_col

@@ -1,15 +1,15 @@
 from .base import GroupDataSourceBase
-from .entity import TimeWeightDataSource
+from .entity import TimeWeightEntityDataSource
 from ..utils.data_formatter import format_dict_data
 import pandas as pd
 
 
-class GroupTimeFeedDataSource(GroupDataSourceBase):
+class TimeFeedGroupDataSource(GroupDataSourceBase):
     TYPE = 'tJX_grp'
     LABELS = ('Time since start', 'Daily food consumption of group during test')
     AUX_DATA_LABELS = ('Initial weights for the individuals in the group')
 
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightDataSource,
+    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  name=None, prefix='', bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, ind_var_unit=time_unit, dep_var_unit=feed_unit,

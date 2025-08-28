@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 from src.DEBtoolPyIF.data_sources.collection import DataCollection
-from src.DEBtoolPyIF.data_sources.entity import TimeWeightDataSource
-from src.DEBtoolPyIF.data_sources.group import GroupTimeFeedDataSource
+from src.DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource
+from src.DEBtoolPyIF.data_sources.group import TimeFeedGroupDataSource
 from src.DEBtoolPyIF.multitier.procedure import MultiTierStructure
 from src.DEBtoolPyIF.utils.data_formatter import format_dict_data, format_tier_variable, format_meta_data
 
@@ -21,11 +21,11 @@ def load_data():
     prefix = 'Pen'
 
     # Data sources
-    twds = TimeWeightDataSource(f"{DATA_FOLDER}/greenbeef_1_weights.csv",
-                                id_col='sia', weight_col='weight', date_col='date',
-                                bibkey=bibkey, comment=comment)
+    twds = TimeWeightEntityDataSource(f"{DATA_FOLDER}/greenbeef_1_weights.csv",
+                                      id_col='sia', weight_col='weight', date_col='date',
+                                      bibkey=bibkey, comment=comment)
 
-    gtfds = GroupTimeFeedDataSource(f"{DATA_FOLDER}/greenbeef_1_feed_intake_pen.csv",
+    gtfds = TimeFeedGroupDataSource(f"{DATA_FOLDER}/greenbeef_1_feed_intake_pen.csv",
                                     id_col='pen', feed_col='dry_intake', date_col='date',
                                     weight_data_source=twds,
                                     prefix=prefix, bibkey=bibkey, comment=comment)

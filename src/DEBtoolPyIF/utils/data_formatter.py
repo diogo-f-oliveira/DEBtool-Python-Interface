@@ -34,7 +34,7 @@ def format_dict_data(dict_data: dict, is_string_data=False):
 def format_tier_variable(var_name, formatted_data, label, units='-', bibkey='', comment='', pars_init_access=False):
     s = f"data.{var_name} = 10; " \
         f"units.{var_name} = '-'; " \
-        f"label.{var_name} = 'Dummy variable'; "
+        f"label.{var_name} = 'Tier structure variable'; "
     if comment:
         s += f"comment.{var_name} = '{comment}'; "
     if bibkey:

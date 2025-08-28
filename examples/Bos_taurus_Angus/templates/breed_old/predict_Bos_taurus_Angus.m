@@ -1,5 +1,4 @@
 function [prdData, info] = predict_Bos_taurus_Angus(par, data, auxData)
-info = 1;
 
 %% compute temperature correction factors
 TC = tempcorr(auxData.temp.tier_pars, par.T_ref, par.T_A);
@@ -87,8 +86,8 @@ t_m = get_tm_mod('stx', pars_tm, f);           % -, scaled mean life span at T_r
 aT_m = t_m/ k_M/ TC;                           % d, mean life span at T
 
 %% Initialize group data
-for g=1:length(auxData.tiers.tier_groups.individual)
-    group_id = auxData.tiers.tier_groups.individual{g};
+for g=1:length(auxData.tiers.group_list)
+    group_id = auxData.tiers.group_list{g};
     
     tJX_grp_varname = ['tJX_grp_' group_id];
     if isfield(data, tJX_grp_varname)
@@ -103,9 +102,9 @@ L_inf = f * L_m - L_T;
 a_JX = f * w_X .* p_Am * TC / mu_X / kap_X;
 
 %% Loop through each individual and compute predictions
-ind_list = auxData.tiers.tier_subtree.male.individual;
-for i=1:length(ind_list)
-    ind_id = ind_list{i};
+sample_inds = auxData.tiers.tier_sample_inds.male;
+for i=1:length(sample_inds)
+    ind_id = auxData.tiers.ind_list{i};
     
     %% Predict individual data
     % Weight predictions
@@ -124,8 +123,8 @@ for i=1:length(ind_list)
     end
     
     %% Predict group data ind_id is part of
-    for g=1:length(auxData.tiers.groups_of_entity.(ind_id))
-        group_id = auxData.tiers.groups_of_entity.(ind_id){g};
+    for g=1:length(auxData.tiers.groups_of_ind.(ind_id))
+        group_id = auxData.tiers.groups_of_ind.(ind_id){g};
         
         % Group feed consumption predictions
         tJX_grp_varname = ['tJX_grp_' group_id];
@@ -144,11 +143,11 @@ for i=1:length(ind_list)
 end 
 
 %% Set predictions for the dummy variables
-prdData.entity_list = 10;
-prdData.tier_entities = 10;
-prdData.tier_groups = 10;
-prdData.tier_subtree = 10;
-prdData.groups_of_entity = 10;
+prdData.group_list = 10;
+prdData.ind_list = 10;
+prdData.groups_of_ind = 10;
+prdData.tier_sample_list = 10;
+prdData.tier_sample_inds = 10;
 prdData.tier_pars = 10;
 
 %% pack to output

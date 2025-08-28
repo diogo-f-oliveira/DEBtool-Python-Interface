@@ -1,9 +1,10 @@
+import numpy as np
 import pandas as pd
 from src.DEBtoolPyIF.data_sources.collection import DataCollection
-from src.DEBtoolPyIF.data_sources.individual import TimeWeightDataSource
+from src.DEBtoolPyIF.data_sources.entity import TimeWeightDataSource
 from src.DEBtoolPyIF.data_sources.group import GroupTimeFeedDataSource
 from src.DEBtoolPyIF.multitier.procedure import MultiTierStructure
-from src.DEBtoolPyIF.utils.data_formatter import format_dict_data, format_aux_data, format_meta_data
+from src.DEBtoolPyIF.utils.data_formatter import format_dict_data, format_tier_variable, format_meta_data
 
 from itertools import combinations
 import os
@@ -29,18 +30,30 @@ def load_data():
                                     weight_data_source=twds,
                                     prefix=prefix, bibkey=bibkey, comment=comment)
 
-    return DataCollection([twds, gtfds])
+    return {
+        'breed': DataCollection(tier='breed', data_sources=[]),
+        'diet': DataCollection(tier='diet', data_sources=[]),
+        'individual': DataCollection(tier='individual', data_sources=[twds, gtfds]),
+    }
 
 
 def generate_ind_tiers(data: DataCollection):
-    ind_tiers = pd.DataFrame(columns=['breed', 'diet', 'individual'])
+    ind_tiers = pd.DataFrame(
+        index=pd.MultiIndex(levels=[[], []], codes=[[], []], names=['tier', 'entity']),
+        columns=['breed', 'diet', 'individual'],
+    )
 
-    # Trial 1
-    twds = data.ind_data_sources['greenbeef_1_weights_tW']
-    ind_list = list(twds.individuals)
+    # Breed
+    ind_tiers.loc[('breed', 'male'), 'breed'] = 'male'
+    # Diets
+    for diet in ['CTRL', 'TMR']:
+        ind_tiers.loc[('diet', diet), :] = ['male', diet, np.NaN]
+    # Individuals
+    twds = data.entity_data_sources['greenbeef_1_weights_tW']
+    ind_list = list(twds.entities)
     for ind_id in ind_list:
-        ind_data = twds.get_ind_data(ind_id).iloc[0]
-        ind_tiers.loc[ind_id] = ['male', f"{ind_data['diet']}", ind_id]
+        ind_data = twds.get_entity_data(ind_id).iloc[0]
+        ind_tiers.loc[('individual', ind_id), :] = ['male', f"{ind_data['diet']}", ind_id]
 
     ind_tiers.to_csv(f'{ESTIMATION_FOLDER}/ind_tiers.csv')
     return ind_tiers
@@ -48,7 +61,7 @@ def generate_ind_tiers(data: DataCollection):
 
 def create_tier_structure():
     data = load_data()
-    ind_tiers = generate_ind_tiers(data)
+    ind_tiers = generate_ind_tiers(data['individual'])
 
     template_folders = {
         'breed': f'{BASE_TEMPLATE_FOLDER}/breed',
@@ -80,9 +93,9 @@ def create_tier_structure():
     }
 
     estimation_settings = {
-        'breed': dict(n_runs=5, results_output_mode=-3, n_steps=500, pars_init_method=2, tol_fun=1e-4),
-        'diet': dict(n_runs=5, results_output_mode=0, n_steps=500, pars_init_method=2, tol_fun=1e-4),
-        'individual': dict(n_runs=5, results_output_mode=0, n_steps=500, pars_init_method=2, tol_fun=1e-4)
+        'breed': dict(n_runs=50, results_output_mode=3, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
+        'diet': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
+        'individual': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4)
     }
     tier_output_folders = {
         'breed': 'breed',
@@ -90,7 +103,7 @@ def create_tier_structure():
         'individual': 'individual'
     }
 
-    multitier = MultiTierStructure(species_name='Bos_taurus_Angus', ind_tiers=ind_tiers, data=data,
+    multitier = MultiTierStructure(species_name='Bos_taurus_Angus', entity_vs_tier=ind_tiers, data=data,
                                    pars=initial_pars,
                                    tier_pars=tier_pars,
                                    template_folders=template_folders,
@@ -111,18 +124,18 @@ if __name__ == '__main__':
     # multitier.tiers['breed'].fetch_errors(tier_sample_list=['male'])
     # multitier.tiers['breed'].save_results()
     # save_extra_data('breed')
-    multitier.tiers['breed'].print_pars(tier_sample_list=['male'])
+    multitier.tiers['breed'].print_pars()
 
-    dy_ts_list = multitier.tiers['diet'].tier_sample_list
+    # dy_ts_list = multitier.tiers['diet'].tier_entities
     multitier.tiers['diet'].estimate(hide_output=True)
     # multitier.tiers['diet'].load_results()
     # multitier.tiers['diet'].fetch_pars(tier_sample_list=dy_ts_list)
     # multitier.tiers['diet'].fetch_errors(tier_sample_list=dy_ts_list)
     # multitier.tiers['diet'].save_results()
-    multitier.tiers['diet'].print_pars(tier_sample_list=dy_ts_list)
+    multitier.tiers['diet'].print_pars()
 
-    ind_list = multitier.tiers['individual'].tier_sample_list
+    ind_list = multitier.tiers['individual'].tier_entities
     multitier.tiers['individual'].estimate()
-    multitier.tiers['individual'].print_pars(tier_sample_list=ind_list)
+    multitier.tiers['individual'].print_pars()
 
     print('Done')

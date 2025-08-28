@@ -12,8 +12,8 @@ estim_options('max_step_number',$n_steps);
 estim_options('max_fun_evals',5e4);
 estim_options('simplex_size',0.05);
 estim_options('filter',0);
-tol_simplex = $tol_simplex;  
-estim_options('tol_simplex',tol_simplex);
+tol_fun = $tol_fun; 
+estim_options('tol_fun',tol_fun);
 
 estim_options('pars_init_method', $pars_init_method);
 estim_options('results_output', 0);
@@ -26,7 +26,7 @@ estim_options('results_output', 0);
 prev_fval = 1e10;
 i = 2;
 % full simplex without significant improvement
-while (abs(prev_fval-fval) > tol_simplex) && (i < n_runs) && ~converged
+while (abs(prev_fval-fval) > tol_fun) && (i < n_runs) && ~converged
     prev_fval = fval;
     fprintf('Run %d\n', i)
     [nsteps, converged, fval] = estim_pars;
@@ -42,12 +42,14 @@ estim_pars;
 
 %% Load data and compute predictions
 load(['results_' pets{1} '.mat']);
+
 [data, auxData, metaData, txtData, weights] = feval(['mydata_' pets{1}]);
 q = rmfield(par, 'free');
 [prdData, info] = feval(['predict_' pets{1}], q, data, auxData);
 if ~info
     fprintf('BUG!!! BIG BUG!!!')
 end
+
 
 %% Save data and predictions
 save(['results_' pets{1} '.mat'], 'metaData', 'metaPar', 'par', 'txtPar', 'data', 'prdData')

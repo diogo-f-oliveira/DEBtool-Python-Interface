@@ -5,8 +5,8 @@ info = 1;
 TC = tempcorr(auxData.temp.tier_pars, par.T_ref, par.T_A);
 
 %% Initialize group data
-for g=1:length(auxData.tiers.group_list)
-    group_id = auxData.tiers.group_list{g};
+for g=1:length(auxData.tiers.tier_groups.individual)
+    group_id = auxData.tiers.tier_groups.individual{g};
     
     tJX_grp_varname = ['tJX_grp_' group_id];
     if isfield(data, tJX_grp_varname)
@@ -14,21 +14,21 @@ for g=1:length(auxData.tiers.group_list)
     end
 end
 
-%% Iterate for each tier sample (for each diet)
-for ts=1:length(auxData.tiers.tier_sample_list)
-    tier_sample_id = auxData.tiers.tier_sample_list{ts};
+%% Iterate for each tier entity (for each diet)
+for e=1:length(auxData.tiers.entity_list)
+    diet_id = auxData.tiers.entity_list{e};
     
     %% Set tier parameters (diet parameters)
-    tier_pars = par;
+    diet_pars = par;
     for p=1:length(auxData.tiers.tier_pars)
-        tier_pars.(auxData.tiers.tier_pars{p}) = par.([auxData.tiers.tier_pars{p} '_' tier_sample_id]);
+        diet_pars.(auxData.tiers.tier_pars{p}) = par.([auxData.tiers.tier_pars{p} '_' diet_id]);
     end
     
     %% Check validity of tier parameter set
-    if ~filter_stx(tier_pars)
+    if ~filter_stx(diet_pars)
         prdData = []; info = 0; return
     end
-    vars_pull(tier_pars);  vars_pull(parscomp_st(tier_pars));
+    vars_pull(diet_pars);  vars_pull(parscomp_st(diet_pars));
         
     % Growth curve parameters
     rT_B = TC * p_M / 3 / (E_G + f * kap * p_Am / v);
@@ -37,9 +37,9 @@ for ts=1:length(auxData.tiers.tier_sample_list)
     a_JX = f * w_X .* p_Am * TC / mu_X / kap_X;
     
     %% Iterate for each individual that belongs to the tier sample
-    sample_inds = auxData.tiers.tier_sample_inds.(tier_sample_id);
-    for i=1:length(sample_inds)
-        ind_id = sample_inds{i};
+    ind_list = auxData.tiers.tier_subtree.(diet_id).individual;
+    for i=1:length(ind_list)
+        ind_id = ind_list{i};
         
         %% Predict individual data
         % Weight predictions
@@ -58,8 +58,8 @@ for ts=1:length(auxData.tiers.tier_sample_list)
         end
         
         %% Predict group data ind_id is part of
-        for g=1:length(auxData.tiers.groups_of_ind.(ind_id))
-            group_id = auxData.tiers.groups_of_ind.(ind_id){g};
+        for g=1:length(auxData.tiers.groups_of_entity.(ind_id))
+            group_id = auxData.tiers.groups_of_entity.(ind_id){g};
             
             % Group feed consumption predictions
             tJX_grp_varname = ['tJX_grp_' group_id];
@@ -79,11 +79,11 @@ for ts=1:length(auxData.tiers.tier_sample_list)
 end
 
 %% Set predictions for the dummy variables
-prdData.group_list = 10;
-prdData.ind_list = 10;
-prdData.groups_of_ind = 10;
-prdData.tier_sample_list = 10;
-prdData.tier_sample_inds = 10;
+prdData.entity_list = 10;
+prdData.tier_entities = 10;
+prdData.tier_groups = 10;
+prdData.tier_subtree = 10;
+prdData.groups_of_entity = 10;
 prdData.tier_pars = 10;
 
 end

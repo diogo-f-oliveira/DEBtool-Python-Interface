@@ -36,15 +36,16 @@ par.f = 1;              free.f      = 0;    units.f = '-';              label.f 
 [par, units, label, free] = addchem(par, units, label, free, metaData.phylum, metaData.class);
 
 %% Set tier parameters
-for ts=1:length(metaData.tier_sample_list)
-    tier_sample_id = metaData.tier_sample_list{ts};
+for e=1:length(metaData.entity_list)
+    entity_id = metaData.entity_list{e};
     for p=1:length(metaData.tier_pars)
         par_name = metaData.tier_pars{p};
-        varname = [par_name '_' tier_sample_id];
-        par.(varname) = metaData.tier_par_init_values.(par_name).(tier_sample_id);
+        varname = [par_name '_' entity_id];
+        
+        par.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
         free.(varname) = 1;
         units.(varname) = units.(par_name);
-        label.(varname) = [label.(par_name) ' of diet ' tier_sample_id];
+        label.(varname) = [label.(par_name) ' of diet ' entity_id];
     end
 end
 

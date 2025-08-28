@@ -11,14 +11,14 @@ def check_files_exist_in_folder(folder_name, files):
     return True, "All good!"
 
 
-def format_string_list_data(list_data: list, double_brackets: bool = False):
+def format_list_of_strings_in_matlab(list_data: list, double_brackets: bool = False):
     formatted_list = '{' + list_data.__repr__()[1:-1] + '}'
     if double_brackets:
         formatted_list = '{' + formatted_list + '}'
     return formatted_list
 
 
-def format_dict_data(dict_data: dict, is_string_data=False):
+def format_dict_in_matlab(dict_data: dict, is_string_data=False):
     # Return empty struct if dict is empty
     if not dict_data:
         return 'struct()'
@@ -30,8 +30,31 @@ def format_dict_data(dict_data: dict, is_string_data=False):
     formatted = formatted[:-2] + ')'
     return formatted
 
+def generate_dataset_code(var_name, formatted_data):
+    return
 
-def format_tier_variable(var_name, formatted_data, label, units='-', bibkey='', comment='', pars_init_access=False):
+
+def generate_aux_data_code(var_name, formatted_data, struct_name, label, units):
+    """
+    Generates the code for an auxiliary dataset
+    :param var_name: the name of the dataset
+    :param formatted_data: the data already formatted in MATLAB syntax
+    :param struct_name: the name of the struct where to save the auxiliary data
+    :param label: the label of the auxiliary data
+    :param units: the units of the auxiliary data
+    :return: the MATLAB code for the auxiliary data
+    """
+    formatted_aux_data = f"\n{struct_name}.{var_name} = {formatted_data}; " \
+                        f"units.{struct_name}.{var_name} = '{units}'; " \
+                        f"label.{struct_name}.{var_name} = '{label}'; \n"
+    return formatted_aux_data
+
+
+def generate_meta_data_code(var_name, formatted_data):
+    return f"metaData.{var_name} = {formatted_data}; \n"
+
+
+def generate_tier_variable_code(var_name, formatted_data, label, units='-', bibkey='', comment='', pars_init_access=False):
     s = f"data.{var_name} = 10; " \
         f"units.{var_name} = '-'; " \
         f"label.{var_name} = 'Tier structure variable'; "
@@ -39,16 +62,10 @@ def format_tier_variable(var_name, formatted_data, label, units='-', bibkey='', 
         s += f"comment.{var_name} = '{comment}'; "
     if bibkey:
         s += f"bibkey.{var_name} = '{bibkey}';"
-    s += f"\ntiers.{var_name} = {formatted_data}; " \
-         f"units.tiers.{var_name} = '{units}'; " \
-         f"label.tiers.{var_name} = '{label}'; \n"
+    s += generate_aux_data_code(var_name, formatted_data, struct_name='tiers', label=label, units=units)
     if pars_init_access:
-        s += f"metaData.{var_name} = tiers.{var_name}; % Save in metaData to use in pars_init.m"
+        s += generate_meta_data_code(var_name, formatted_data=f"tiers.{var_name}")
     return s
-
-
-def format_meta_data(var_name, formatted_data):
-    return f"metaData.{var_name} = {formatted_data}; \n"
 
 
 def is_valid_matlab_field_name(fieldname: str) -> bool:

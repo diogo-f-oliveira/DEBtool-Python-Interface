@@ -508,9 +508,9 @@ class TimeMilkEntityDataSource(EntityDataSourceBase):
         return my_data_code
 
 
-# TODO: Check if this is supposed to be time since birth, age since birth is a misnomer
 class AgeWeightTwinsEntityDataSource(EntityDataSourceBase):
     TYPE = "aW"
+    # TODO: Check if this is supposed to be time since birth, age since birth is a misnomer
     LABELS = ('Age since birth', 'Wet weight')
     AUX_DATA_LABELS = 'Number of twins'
 

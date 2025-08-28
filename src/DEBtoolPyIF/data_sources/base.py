@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ..utils.data_formatter import is_valid_matlab_field_name
+from ..utils.mydata_code_generation import is_valid_matlab_field_name
 
 
 class DataSourceBase:

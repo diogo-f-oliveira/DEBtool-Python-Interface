@@ -517,3 +517,35 @@ class AgeWeightTwinsEntityDataSource(EntityDataSourceBase):
             my_data_code = '%% Age vs Weight data \n\n' + my_data_code
 
         return my_data_code
+
+
+class DigestibilityEntityDataSource(EntityDataSourceBase):
+    TYPE = 'DMD'
+    LABELS = 'Digestibility'
+
+    def __init__(self, csv_filename, id_col, dmd_col, name=None, prefix='', bibkey='', comment='',
+                 unit='-', id_name=''):
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
+                         comment=comment, title='', id_name=id_name, dep_var_unit=unit)
+        self.dmd_col = dmd_col
+
+    def generate_mydata_code(self, entity_list='all'):
+        if entity_list == 'all':
+            entity_list = list(self.entities)
+
+        my_data_code = ''
+        for entity_id in entity_list:
+            if entity_id not in self.entities:
+                continue
+            entity_data = self.get_entity_data(entity_id)
+
+            data = entity_data[self.dmd_col].values
+
+            my_data_code += self.generate_dataset_code(id_=entity_id, data=data)
+
+            my_data_code += '\n\n'
+
+        if my_data_code:
+            my_data_code = f'%% Time vs Milk production data \n\n' + my_data_code
+
+        return my_data_code

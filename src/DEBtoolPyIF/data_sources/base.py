@@ -9,8 +9,8 @@ class DataSourceBase:
     LABELS = ''
     AUX_DATA_LABELS = ''
 
-    def __init__(self, csv_filename, id_col, name=None,
-                 ind_var_unit='', dep_var_unit='', aux_var_unit='',
+    def __init__(self, csv_filename, id_col, dep_var_unit, name=None,
+                 ind_var_unit='', aux_var_unit='',
                  prefix='', title='', bibkey='', comment='', id_name='',
                  ):
         self.csv_filename = csv_filename
@@ -29,12 +29,13 @@ class DataSourceBase:
         if name is None:
             name = csv_filename.split('/')[-1][:-4] + '_' + self.TYPE
         self.name = name
-        self._units = (ind_var_unit, dep_var_unit)
+        if ind_var_unit:
+            self._units = (ind_var_unit, dep_var_unit)
+        else:
+            self._units = dep_var_unit
         self._aux_data_units = aux_var_unit
         self.bibkey = bibkey
         self.comment = comment
-        if not title:
-            title = ' vs '.join(self.LABELS)
         self.title = title
         if id_name is None:
             id_name = self.id_col
@@ -67,7 +68,7 @@ class DataSourceBase:
         return dataset_code
 
     @staticmethod
-    def format_info(info):
+    def generate_info_matlab_code(info):
         if isinstance(info, str):
             return f"'{info}'"
         elif isinstance(info, (tuple, list)):
@@ -81,19 +82,19 @@ class DataSourceBase:
 
     @property
     def units(self):
-        return self.format_info(self._units)
+        return self.generate_info_matlab_code(self._units)
 
     @property
     def labels(self):
-        return self.format_info(self.LABELS)
+        return self.generate_info_matlab_code(self.LABELS)
 
     @property
     def aux_data_units(self):
-        return self.format_info(self._aux_data_units)
+        return self.generate_info_matlab_code(self._aux_data_units)
 
     @property
     def aux_data_labels(self):
-        return self.format_info(self.AUX_DATA_LABELS)
+        return self.generate_info_matlab_code(self.AUX_DATA_LABELS)
 
 
 class EntityDataSourceBase(DataSourceBase):

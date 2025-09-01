@@ -29,7 +29,13 @@ for e=1:length(auxData.tiers.entity_list)
         prdData = []; info = 0; return
     end
     vars_pull(diet_pars);  vars_pull(parscomp_st(diet_pars));
-        
+
+    %% Predict digestibility
+    DMD_varname = ['DMD_' diet_id];
+    if isfield(data, DMD_varname)
+        prdData.(DMD_varname) = (w_X - w_P * y_P_E / y_X_E) / w_X;
+    end
+
     % Growth curve parameters
     rT_B = TC * p_M / 3 / (E_G + f * kap * p_Am / v);
     L_inf = f * L_m - L_T;

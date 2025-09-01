@@ -86,9 +86,20 @@ pars_tm = [g; k; v_Hb; v_Hx; v_Hp; h_a; s_G];  % compose parameter vector at T_r
 t_m = get_tm_mod('stx', pars_tm, f);           % -, scaled mean life span at T_ref
 aT_m = t_m/ k_M/ TC;                           % d, mean life span at T
 
+%% Loop through each diet and make predictions
+diet_list = auxData.tiers.tier_subtree.male.diet;
+for i=1:length(diet_list)
+    diet_id = diet_list{i};
+    % Digestibility
+    DMD_varname = ['DMD_' diet_id];
+    if isfield(data, DMD_varname)
+        prdData.(DMD_varname) = (w_X - w_P * y_P_E / y_X_E) / w_X;
+    end
+end
+
 %% Initialize group data
-for g=1:length(auxData.tiers.tier_groups.individual)
-    group_id = auxData.tiers.tier_groups.individual{g};
+for j=1:length(auxData.tiers.tier_groups.individual)
+    group_id = auxData.tiers.tier_groups.individual{j};
     
     tJX_grp_varname = ['tJX_grp_' group_id];
     if isfield(data, tJX_grp_varname)
@@ -124,8 +135,8 @@ for i=1:length(ind_list)
     end
     
     %% Predict group data ind_id is part of
-    for g=1:length(auxData.tiers.groups_of_entity.(ind_id))
-        group_id = auxData.tiers.groups_of_entity.(ind_id){g};
+    for j=1:length(auxData.tiers.groups_of_entity.(ind_id))
+        group_id = auxData.tiers.groups_of_entity.(ind_id){j};
         
         % Group feed consumption predictions
         tJX_grp_varname = ['tJX_grp_' group_id];

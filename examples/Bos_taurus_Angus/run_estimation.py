@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from src.DEBtoolPyIF.data_sources.collection import DataCollection
-from src.DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource
+from src.DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource, DigestibilityEntityDataSource
 from src.DEBtoolPyIF.data_sources.group import TimeFeedGroupDataSource
 from src.DEBtoolPyIF.multitier.procedure import MultiTierStructure
 from src.DEBtoolPyIF.utils.mydata_code_generation import generate_tier_variable_code, generate_meta_data_code
@@ -21,7 +21,12 @@ def load_data():
     comment = 'Data from GreenBeef trial 1'
     prefix = 'Pen'
 
-    # Data sources
+    # Diet info data sources
+    dmdds = DigestibilityEntityDataSource(f"{DATA_FOLDER}/greenbeef_1_diet_info.csv",
+                                          id_col='diet', dmd_col='digestibility', id_name='diet',
+                                          bibkey=bibkey, comment=comment)
+
+    # Individual data sources
     twds = TimeWeightEntityDataSource(f"{DATA_FOLDER}/greenbeef_1_weights.csv",
                                       id_col='sia', weight_col='weight', date_col='date',
                                       title='Wet weight growth curve', id_name='individual',
@@ -35,7 +40,7 @@ def load_data():
 
     return {
         'breed': DataCollection(tier='breed', data_sources=[]),
-        'diet': DataCollection(tier='diet', data_sources=[]),
+        'diet': DataCollection(tier='diet', data_sources=[dmdds]),
         'individual': DataCollection(tier='individual', data_sources=[twds, gtfds]),
     }
 
@@ -75,6 +80,7 @@ def create_tier_structure():
     initial_pars = {
         'p_Am': 5000,
         'kap_X': 0.2,
+        'kap_P': 0.1,
         'p_M': 80,
         'v': 0.05,
         'kap': 0.97,
@@ -91,7 +97,7 @@ def create_tier_structure():
     # Parameters that are estimated in each tier
     tier_pars = {
         'breed': list(initial_pars.keys()),
-        'diet': ['p_Am', 'kap_X'],
+        'diet': ['p_Am', 'kap_X', 'kap_P'],
         'individual': ['p_Am', 'kap_X']
     }
 

@@ -21,6 +21,7 @@ class TimeWeightEntityDataSource(EntityDataSourceBase):
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])
 
+    # TODO: Rename to avoid confusion with get_entity_data
     def get_data(self, entity_id):
         entity_data = self.get_entity_data(entity_id).sort_values(by=self.date_col)
         initial_weight = entity_data.iloc[0][self.weight_col]
@@ -546,6 +547,6 @@ class DigestibilityEntityDataSource(EntityDataSourceBase):
             my_data_code += '\n\n'
 
         if my_data_code:
-            my_data_code = f'%% Time vs Milk production data \n\n' + my_data_code
+            my_data_code = f'%% Dry matter digestibility data \n\n' + my_data_code
 
         return my_data_code

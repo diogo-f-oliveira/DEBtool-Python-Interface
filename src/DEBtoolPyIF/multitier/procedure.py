@@ -54,11 +54,11 @@ class MultiTierStructure:
     def get_all_entities_in_tier(self, tier_name):
         return self.entity_vs_tier.loc[tier_name].index.to_list()
 
-    def entities_in_tier_below_from_entity_list(self, tier_name, tier_below, entity_list='all'):
-        entities_of_tier_below = self.entity_vs_tier.loc[tier_below, tier_name]
+    def entities_in_other_tier_from_entity_list(self, tier_name, other_tier, entity_list='all'):
+        entities_of_other_tier = self.entity_vs_tier.loc[other_tier, tier_name]
         if entity_list == 'all':
-            return entities_of_tier_below.index.to_list()
-        return entities_of_tier_below[entities_of_tier_below.isin(entity_list)].index.to_list()
+            return entities_of_other_tier.index.to_list()
+        return entities_of_other_tier[entities_of_other_tier.isin(entity_list)].index.to_list()
 
     def get_tier_index(self, tier_name):
         return self.tier_names.index(tier_name)
@@ -72,6 +72,9 @@ class MultiTierStructure:
         if tier_name == self.tier_names[-1]:
             return None
         return self.tier_names[self.get_tier_index(tier_name) + 1]
+
+    def is_tier_below(self, tier_name, other_tier):
+        return self.get_tier_index(tier_name) < self.get_tier_index(other_tier)
 
     def get_all_tiers_below(self, tier_name):
         return self.tier_names[self.get_tier_index(tier_name):]
@@ -111,18 +114,18 @@ class MultiTierStructure:
 
         return init_par_values
 
-    def get_full_pars_dict(self, tier_name, tier_sample, include_tier=False):
+    def get_full_pars_dict(self, tier_name, entity_id, include_tier=False):
         """
-        Get the values of all parameters in a given tier for a given tier sample. If include_tier is true,
+        Get the values of all parameters in a given tier for a given entity. If include_tier is true,
         then the function returns the parameter values estimated for the tier tier_name. Otherwise, it returns the
         parameter values based only on higher tiers.
         :param tier_name:
-        :param tier_sample:
+        :param entity_id:
         :param include_tier:
         :return:
         """
         pars_dict = self.pars.copy()
-        ts_tiers = self.entity_vs_tier.groupby(tier_name).get_group(tier_sample).iloc[0]
+        ts_tiers = self.entity_vs_tier.groupby(tier_name).get_group(entity_id).iloc[0]
         for t in self.tier_names:
             if self.get_tier_above(t) == tier_name:
                 break
@@ -343,8 +346,8 @@ class TierCodeGenerator:
             tier_entities_to_include = []
             tier_group_list = []
             for entity_id in entity_list:
-                te_list = self.tier_structure.entities_in_tier_below_from_entity_list(
-                    tier_name=self.tier_estimator.name, tier_below=tier_name, entity_list=[entity_id]
+                te_list = self.tier_structure.entities_in_other_tier_from_entity_list(
+                    tier_name=self.tier_estimator.name, other_tier=tier_name, entity_list=[entity_id]
                 )
                 tier_entities_to_include.extend(te_list)
                 tier_group_list.extend(tier.data.get_group_list_from_entity_list(te_list))

@@ -154,3 +154,5 @@ cython_debug/
 
 # MATLAB
 *.asv
+# Package MATLAB functions (work in progress, ignore for now)
+MATLAB/

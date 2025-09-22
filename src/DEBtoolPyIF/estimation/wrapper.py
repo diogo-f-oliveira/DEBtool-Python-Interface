@@ -7,6 +7,12 @@ class MATLABWrapper:
     # TODO: Create a method or decorator to hide output from executing MATLAB functions
 
     def __init__(self, matlab_session='start', window=False, clear_before=True):
+        self.eng = None
+        self.start_matlab_engine(matlab_session=matlab_session)
+        self.window = window
+        self.clear_before = clear_before
+
+    def start_matlab_engine(self, matlab_session):
         if matlab_session == 'start':
             self.eng = matlab.engine.start_matlab()
         elif matlab_session == 'find':
@@ -17,10 +23,10 @@ class MATLABWrapper:
                     "MATLAB command window.")
             else:
                 self.eng = matlab.engine.connect_matlab(matlab_sessions[0])
+        elif matlab_session == 'ignore':
+            self.eng = None
         else:
             self.eng = matlab.engine.connect_matlab(matlab_session)
-        self.window = window
-        self.clear_before = clear_before
 
     def apply_options_decorator(func):
         @functools.wraps(func)
@@ -57,7 +63,8 @@ class DEBtoolWrapper(MATLABWrapper):
             raise Exception(f"Species folder {self.estim_files_dir} does not exist.")
         self.species_name = species_name
         super(DEBtoolWrapper, self).__init__(matlab_session=matlab_session, window=window, clear_before=clear_before)
-        self.cd(self.estim_files_dir)
+        if self.eng is not None:
+            self.cd(self.estim_files_dir)
 
     def load_results_file(self, results_file=None):
         if results_file is None:

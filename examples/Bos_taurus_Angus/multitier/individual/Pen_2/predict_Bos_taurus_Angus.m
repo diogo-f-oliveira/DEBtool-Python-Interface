@@ -5,9 +5,9 @@ info = 1;
 TC = tempcorr(auxData.temp.tier_pars, par.T_ref, par.T_A);
 
 %% Initialize group data
-for g=1:length(auxData.tiers.group_list)
-    group_id = auxData.tiers.group_list{g};
-
+for g=1:length(auxData.tiers.tier_groups.individual)
+    group_id = auxData.tiers.tier_groups.individual{g};
+    
     tJX_grp_varname = ['tJX_grp_' group_id];
     if isfield(data, tJX_grp_varname)
         prdData.(tJX_grp_varname) = 0;
@@ -15,8 +15,8 @@ for g=1:length(auxData.tiers.group_list)
 end
 
 %% Iterate for each tier sample
-for i=1:length(auxData.tiers.ind_list)
-    ind_id = auxData.tiers.ind_list{i};
+for e=1:length(auxData.tiers.entity_list)
+    ind_id = auxData.tiers.entity_list{e};
 
     %% Set individual parameters
     ind_pars = par;
@@ -53,8 +53,8 @@ for i=1:length(auxData.tiers.ind_list)
     end
 
     %% Predict group data ind_id is part of
-    for g=1:length(auxData.tiers.groups_of_ind.(ind_id))
-        group_id = auxData.tiers.groups_of_ind.(ind_id){g};
+    for g=1:length(auxData.tiers.groups_of_entity.(ind_id))
+        group_id = auxData.tiers.groups_of_entity.(ind_id){g};
 
         % Group feed consumption predictions
         tJX_grp_varname = ['tJX_grp_' group_id];
@@ -74,11 +74,11 @@ end
 
 
 %% Set predictions for the dummy variables
-prdData.group_list = 10;
-prdData.ind_list = 10;
-prdData.groups_of_ind = 10;
-prdData.tier_sample_list = 10;
-prdData.tier_sample_inds = 10;
+prdData.entity_list = 10;
+prdData.tier_entities = 10;
+prdData.tier_groups = 10;
+prdData.tier_subtree = 10;
+prdData.groups_of_entity = 10;
 prdData.tier_pars = 10;
 
 end

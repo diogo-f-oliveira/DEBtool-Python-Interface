@@ -12,21 +12,21 @@ estim_options('max_step_number',500);
 estim_options('max_fun_evals',5e4);
 estim_options('simplex_size',0.05);
 estim_options('filter',0);
-tol_fun = 0.0001; 
-estim_options('tol_fun',tol_fun);
+tol_simplex = 0.0001; 
+estim_options('tol_simplex',tol_simplex);
 
 estim_options('pars_init_method', 2);
 estim_options('results_output', 0);
 estim_options('method', 'nm');
 [nsteps, converged, fval] = estim_pars;
 
-n_runs = 5;
+n_runs = 50;
 estim_options('pars_init_method', 1);
 estim_options('results_output', 0);
 prev_fval = 1e10;
 i = 2;
 % full simplex without significant improvement
-while (abs(prev_fval-fval) > tol_fun) && (i < n_runs) && ~converged
+while (abs(prev_fval-fval) > tol_simplex) && (i < n_runs) && ~converged
     prev_fval = fval;
     fprintf('Run %d\n', i)
     [nsteps, converged, fval] = estim_pars;
@@ -35,7 +35,7 @@ end
 
 %% Save variables, estimation figures, and HTML
 estim_options('pars_init_method', 1)
-estim_options('results_output', -3);
+estim_options('results_output', 3);
 estim_options('method', 'no');
 
 estim_pars;

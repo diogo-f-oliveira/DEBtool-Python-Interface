@@ -52,43 +52,43 @@ $group_data
 % group data types
 $group_data_types
 
-% Cell array of group_ids
-$group_list
+% Struct with form tier_groups.(tier_name) = list_of_groups_of_tier
+$tier_groups
 
-%% Individual data
-$individual_data
+%% Entity data
+$entity_data
 
-% individual data types
-$ind_data_types
+% entity data types
+$entity_data_types
 
-% Cell array of ind_ids
-$ind_list
+% Cell array of entity_ids
+$entity_list
 
-% Struct with form groups_of_ind.(ind_id) = list_of_groups_ids_ind_belongs_to
-$groups_of_ind
+% Struct with form tier_entities.(tier_name) = list_of_entities_of_tier
+$tier_entities
 
-% Cell array of tier_sample_ids
-$tier_sample_list
-
-% Struct with form 
-% tier_sample_inds.(tier_sample_id) = list_of_inds_in_tier_sample
-$tier_sample_inds
+% Struct with form groups_of_entity.(entity_id) = list_of_groups_ids_entity_belongs_to
+$groups_of_entity
+    
+% Tier subtree
+% Lists entities that are below entity_id for each tier below
+% Struct with form tier_subtree.(entity_id).(tier_name) = list_of_entities_below
+$tier_subtree
 
 %% Tier parameters
 % Cell array with tier parameters
 $tier_pars
 
-% Initial values for each tier parameter and sample
-% Struct with form tier_par_init_values.(par).(tier_sample_id) = value;
+% Initial values for each tier parameter and entity
+% Struct with form tier_par_init_values.(par).(entity_id) = value;
 $tier_par_init_values
-
 
 %% Set temperature data and remove weights for dummy variables
 weights = setweights(data, []);
 
 metaData.data_fields = fieldnames(data);
 temp = struct();
-for i = 1:length(metaData.data_fields)
+for i=1:length(metaData.data_fields)
     % Add typical temperature only to fields without specified temperature
     field = metaData.data_fields{i};
     if ~isfield(temp, field)
@@ -113,11 +113,11 @@ end
 cumulative_data_types = {'tW'};
 ind_data_weights = struct('tW', 3/20);
 
-for dt=1:length(metaData.ind_data_types)
-    data_type = metaData.ind_data_types{dt};
+for dt=1:length(metaData.entity_data_types)
+    data_type = metaData.entity_data_types{dt};
     cumulative = strcmp(data_type, cumulative_data_types);
-    for i=1:length(tiers.ind_list)
-        ind_id = tiers.ind_list{i};
+    for i=1:length(tiers.tier_entities.individual)
+        ind_id = tiers.tier_entities.individual{i};
         data_varname = [data_type '_' ind_id];
         if isfield(data, data_varname)
             weights.(data_varname) = weights.(data_varname) * ind_data_weights.(data_type);
@@ -134,10 +134,11 @@ end
 
 %% Set weights of group data
 group_data_weights = struct('tJX_grp', 5/20);
+
 for dt=1:length(metaData.group_data_types)
     data_type = metaData.group_data_types{dt};
-    for g=1:length(tiers.group_list)
-        g_id = tiers.group_list{g};
+    for g=1:length(tiers.tier_groups.individual)
+        g_id = tiers.tier_groups.individual{g};
         data_varname = [data_type '_' g_id];
     
         if isfield(data, data_varname)

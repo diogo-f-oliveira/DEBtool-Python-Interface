@@ -68,7 +68,7 @@ class DEBtoolWrapper(MATLABWrapper):
 
     def load_results_file(self, results_file=None):
         if results_file is None:
-            results_file = os.path.join(self.estim_files_dir, f"results_{self.species_name}.mat")
+            results_file = os.path.abspath(os.path.join(self.estim_files_dir, f"results_{self.species_name}.mat"))
         self.eng.eval(f"load('{results_file}');", nargout=0)
 
     def run_mydata_file(self):

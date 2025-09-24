@@ -1,7 +1,8 @@
 import pandas as pd
 
 from ..utils.mydata_code_generation import is_valid_matlab_field_name, generate_data_code, generate_aux_data_code
-from ..utils.data_conversion import convert_numeric_array_to_matlab
+from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_string_to_matlab, \
+    convert_list_of_strings_to_matlab
 
 
 class DataSourceBase:
@@ -9,31 +10,48 @@ class DataSourceBase:
     LABELS = ''
     AUX_DATA_LABELS = ''
 
-    def __init__(self, csv_filename, id_col, dep_var_unit, name=None,
-                 ind_var_unit='', aux_var_unit='',
-                 prefix='', title='', bibkey='', comment='', id_name='',
+    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+                 indep_var_col: str = None, indep_var_unit: str = '', aux_datasource=None,
+                 prefix: str = '', title: str = '', bibkey: str = '', comment: str = '', id_name: str = '',
                  ):
         self.csv_filename = csv_filename
         self.id_col = id_col
+        # Set dependent data
+        self.dep_var_col = dep_var_col
+        self.dep_var_unit = dep_var_unit
         # Load dataframe
         self.df = pd.read_csv(self.csv_filename)
+        # Check if dependent variable column exists in df
+        if dep_var_col not in self.df.columns:
+            raise Exception(f'Column {dep_var_col} not found in {self.csv_filename}.')
 
-        # Set ids as string and add prefix
+        # Drop rows where data is missing
+        # TODO: Think about cases where this is not good to do. DEBtool can handle nan values for example for
+        #  multivariate datasets, so maybe we should not do this.
+        columns_to_check_for_na = [id_col, dep_var_col]
+        if indep_var_col is not None:
+            columns_to_check_for_na += [indep_var_col]
+        self.df.dropna(subset=columns_to_check_for_na, how='any', inplace=True)
+
+        # Set ids as string and add prefix to id column
         self.df[self.id_col] = self.df[self.id_col].astype(str)
         self.prefix = prefix
         if self.prefix:
             self.df[self.id_col] = f"{self.prefix}_" + self.df[self.id_col]
-        # Check if ids are valid
+        # TODO: Check if ids are valid
+
+        # Set independent variable
+        self.indep_var_col = indep_var_col
+        self.indep_var_unit = indep_var_unit
+
+        # Set aux data variable
+        self.aux_datasource = aux_datasource
 
         # Set the name and info of the datasource
         if name is None:
             name = csv_filename.split('/')[-1][:-4] + '_' + self.TYPE
         self.name = name
-        if ind_var_unit:
-            self._units = (ind_var_unit, dep_var_unit)
-        else:
-            self._units = dep_var_unit
-        self._aux_data_units = aux_var_unit
+
         self.bibkey = bibkey
         self.comment = comment
         self.title = title
@@ -55,13 +73,16 @@ class DataSourceBase:
     def generate_mydata_code(self, entity_list='all'):
         return
 
-    def generate_dataset_code(self, id_, data, converted_aux_data=None, auxdata_struct_name=''):
+    def generate_dataset_code(self, id_, data, converted_aux_data: str = None, auxdata_struct_name=''):
         converted_data = convert_numeric_array_to_matlab(data)
         var_name = f"{self.TYPE}_{id_}"
+        title = '' if self.is_zero_variate else f"{self.title}, {self.id_name} {id_}"
         dataset_code = generate_data_code(var_name=var_name, converted_data=converted_data, units=self.units,
                                           label=self.labels, bibkey=self.bibkey, comment=self.comment,
-                                          title=f"{self.title}, {self.id_name} {id_}", )
-        if converted_aux_data:
+                                          title=title)
+        if converted_aux_data is not None:
+            if not auxdata_struct_name:
+                raise Exception('Struct name is required when auxiliary data is provided.')
             dataset_code += generate_aux_data_code(var_name=var_name, converted_data=converted_aux_data,
                                                    struct_name=auxdata_struct_name, label=self.aux_data_labels,
                                                    units=self.aux_data_units)
@@ -70,27 +91,36 @@ class DataSourceBase:
     @staticmethod
     def generate_info_matlab_code(info):
         if isinstance(info, str):
-            return f"'{info}'"
+            return convert_string_to_matlab(info)
         elif isinstance(info, (tuple, list)):
-            formatted_units = '{'
-            for unit in info:
-                formatted_units += f"'{unit}', "
-            return formatted_units[:-2] + '}'
+            return convert_list_of_strings_to_matlab(info)
         else:
             raise TypeError(f'Unexpected type {type(info)}. Units and Labels should be either a string or a tuple or '
                             f'list of strings.')
 
     @property
     def units(self):
-        return self.generate_info_matlab_code(self._units)
+        if self.is_zero_variate:
+            units = (self.indep_var_unit, self.dep_var_unit)
+        else:
+            units = self.dep_var_unit
+        return self.generate_info_matlab_code(units)
+
+    @property
+    def is_zero_variate(self):
+        return self.indep_var_col is None
 
     @property
     def labels(self):
         return self.generate_info_matlab_code(self.LABELS)
 
     @property
+    def has_aux_data(self):
+        return self.aux_datasource is not None
+
+    @property
     def aux_data_units(self):
-        return self.generate_info_matlab_code(self._aux_data_units)
+        return self.generate_info_matlab_code(self.aux_datasource.dep_var_unit)
 
     @property
     def aux_data_labels(self):
@@ -98,14 +128,16 @@ class DataSourceBase:
 
 
 class EntityDataSourceBase(DataSourceBase):
-
-    def __init__(self, csv_filename, id_col, name=None,
-                 prefix='', bibkey='', comment='', title='', id_name='',
-                 ind_var_unit='', dep_var_unit='', aux_var_unit='',
+    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+                 indep_var_col: str = None, indep_var_unit: str = '', aux_datasource: DataSourceBase = None,
+                 prefix: str = '', bibkey: str = '', comment: str = '', title: str = '', id_name: str = '',
                  ):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         dep_var_col=dep_var_col, dep_var_unit=dep_var_unit,
+                         indep_var_col=indep_var_col, indep_var_unit=indep_var_unit,
+                         aux_datasource=aux_datasource,
                          prefix=prefix, bibkey=bibkey, comment=comment, title=title, id_name=id_name,
-                         ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
+                         )
 
         # Find the ids of all individuals
         # TODO: use sanitize function instead of just replacing spaces?
@@ -113,19 +145,41 @@ class EntityDataSourceBase(DataSourceBase):
 
     def get_entity_data(self, entity_id):
         if entity_id not in self.entities:
-            raise Exception('Invalid ind_id, individual not found in the dataset')
+            raise Exception(f'Invalid entity ID. Entity {entity_id} not found in the dataset.')
         return self.groupbys.get_group(entity_id)
+
+
+class ZeroVariateEntityDataSource(EntityDataSourceBase):
+    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+                 aux_datasource: DataSourceBase = None,
+                 prefix: str = '', bibkey: str = '', comment: str = '', id_name: str = '',
+                 ):
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         dep_var_col=dep_var_col, dep_var_unit=dep_var_unit,
+                         aux_datasource=aux_datasource,
+                         prefix=prefix, bibkey=bibkey, comment=comment, id_name=id_name,
+                         )
+        # Set id_col as the index of the dataframe
+        self.df.set_index(id_col, inplace=True)
+
+    def get_entity_data(self, entity_id):
+        if entity_id not in self.entities:
+            raise Exception(f'Invalid entity ID. Entity {entity_id} not found in the dataset.')
+        return self.df.loc[entity_id, self.dep_var_col]
 
 
 class GroupDataSourceBase(DataSourceBase):
 
-    def __init__(self, csv_filename, id_col, name=None,
-                 prefix='', bibkey='', comment='', title='', id_name='',
-                 ind_var_unit='', dep_var_unit='', aux_var_unit='',
+    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+                 indep_var_col: str = None, indep_var_unit: str = '', aux_datasource: DataSourceBase = None,
+                 prefix: str = '', bibkey: str = '', comment: str = '', title: str = '', id_name: str = '',
                  ):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         dep_var_col=dep_var_col, dep_var_unit=dep_var_unit,
+                         indep_var_col=indep_var_col, indep_var_unit=indep_var_unit,
+                         aux_datasource=aux_datasource,
                          prefix=prefix, bibkey=bibkey, comment=comment, title=title, id_name=id_name,
-                         ind_var_unit=ind_var_unit, dep_var_unit=dep_var_unit, aux_var_unit=aux_var_unit)
+                         )
 
         # Find the ids of all groups
         self.groups = {str(ci).replace(' ', '_') for ci in self.df[self.id_col].unique()}
@@ -146,5 +200,18 @@ class GroupDataSourceBase(DataSourceBase):
 
     def get_group_data(self, group_id):
         if group_id not in self.groups:
-            raise Exception('Invalid group_id, group not found in the dataset')
+            raise Exception(f'Invalid Group ID. Group {group_id} not found in the dataset.')
         return self.groupbys.get_group(group_id)
+
+
+class ZeroVariateGroupDataSourceBase(DataSourceBase):
+
+    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+                 aux_datasource: str = None,
+                 prefix: str = '', bibkey: str = '', comment: str = '', id_name: str = '',
+                 ):
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         dep_var_col=dep_var_col, dep_var_unit=dep_var_unit,
+                         aux_datasource=aux_datasource,
+                         prefix=prefix, bibkey=bibkey, comment=comment, id_name=id_name,
+                         )

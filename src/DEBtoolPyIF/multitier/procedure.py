@@ -278,13 +278,13 @@ class TierEstimator:
         for tier_name in self.tier_structure.get_all_tiers_below(self.name):
             # Entity data
             tier = self.tier_structure.tiers[tier_name]
-            for e_id in tier.data._entities:
+            for e_id in tier.data.entities:
                 for dt in tier.data.entity_data_types:
                     varname = f'{dt}_{e_id}'
                     if varname in estimation_errors:
                         self.entity_data_errors.loc[(tier_name, e_id), dt] = estimation_errors[varname]
             # Group data
-            for g_id in tier.data._groups:
+            for g_id in tier.data.groups:
                 for dt in tier.data.group_data_types:
                     varname = f'{dt}_{g_id}'
                     if varname in estimation_errors:
@@ -325,7 +325,7 @@ class TierCodeGenerator:
 
         complete, missing_file = self.check_all_files_exist(self.tier_estimator.template_folder)
         if not complete:
-            raise Exception(f"Missing template file for {missing_file}.")
+            raise Exception(f"Missing template file for tier {self.tier_estimator.name}: {missing_file}.")
 
     def check_all_files_exist(self, folder):
         files = [f"{tf}_{self.tier_estimator.tier_structure.species_name}.m" for tf in self.FILES_NEEDED]

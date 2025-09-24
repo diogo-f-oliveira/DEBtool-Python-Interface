@@ -16,7 +16,7 @@ def generate_data_code(var_name: str, converted_data: str, units: str, label: st
                        bibkey=None):
     data_code = f"data.{var_name} = {converted_data};\n" \
                 f"units.{var_name} = {units}; " \
-                + f"label.{var_name} = {label}; "
+                + f"label.{var_name} = {convert_string_to_matlab(label)}; "
     if comment:
         data_code += f"comment.{var_name} = '{comment}'; "
     if title:
@@ -39,7 +39,7 @@ def generate_aux_data_code(var_name, converted_data, struct_name, label, units):
     """
     aux_data_code = f"\n{struct_name}.{var_name} = {converted_data};\n" \
                     f"units.{struct_name}.{var_name} = {units}; " \
-                    f"label.{struct_name}.{var_name} = {label}; \n"
+                    f"label.{struct_name}.{var_name} = {convert_string_to_matlab(label)}; \n"
     return aux_data_code
 
 
@@ -52,15 +52,23 @@ def generate_dummy_variable_data_code(var_name, label, comment='', bibkey=''):
                               label=label, comment=comment, bibkey=bibkey)
 
 
+def generate_dummy_variable_code(var_name, formatted_data, label, struct_name: str, units='-', bibkey='', comment='',
+                                 pars_init_access=False):
+    s = generate_dummy_variable_data_code(var_name=var_name, label=label,
+                                          comment=comment, bibkey=bibkey)
+
+    s += generate_aux_data_code(var_name, formatted_data, struct_name=struct_name,
+                                label=label, units=convert_string_to_matlab(units))
+    if pars_init_access:
+        s += generate_meta_data_code(var_name, formatted_data=f"{struct_name}.{var_name}")
+    return s
+
+
 def generate_tier_variable_code(var_name, formatted_data, label, units='-', bibkey='', comment='',
                                 pars_init_access=False):
-    s = generate_dummy_variable_data_code(var_name=var_name, label=label, comment=comment, bibkey=bibkey)
-
-    s += generate_aux_data_code(var_name, formatted_data, struct_name='tiers',
-                                label=convert_string_to_matlab(label), units=convert_string_to_matlab(units))
-    if pars_init_access:
-        s += generate_meta_data_code(var_name, formatted_data=f"tiers.{var_name}")
-    return s
+    return generate_dummy_variable_code(var_name=var_name, formatted_data=formatted_data, label=label,
+                                        struct_name='tiers', units=units, bibkey=bibkey, comment=comment,
+                                        pars_init_access=pars_init_access)
 
 
 def is_valid_matlab_field_name(fieldname: str) -> bool:

@@ -14,9 +14,13 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  name=None, time_unit='d', feed_unit='kg',
                  prefix='', bibkey='', comment='', title='', id_name=''):
-        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
-                         comment=comment, title=title, id_name=id_name, ind_var_unit=time_unit, dep_var_unit=feed_unit,
-                         aux_var_unit=weight_data_source._units[1])
+        super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
+                         dep_var_col=feed_col, dep_var_unit=feed_unit,
+                         indep_var_col=date_col, indep_var_unit=time_unit,
+                         aux_datasource=weight_data_source,
+                         prefix=prefix, bibkey=bibkey,
+                         comment=comment, title=title, id_name=id_name,
+                         )
         self.feed_col = feed_col
         self.date_col = date_col
         self.df[self.date_col] = pd.to_datetime(self.df[self.date_col])

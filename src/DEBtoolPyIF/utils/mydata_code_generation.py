@@ -16,7 +16,7 @@ def generate_data_code(var_name: str, converted_data: str, units: str, label: st
                        bibkey=None):
     data_code = f"data.{var_name} = {converted_data};\n" \
                 f"units.{var_name} = {units}; " \
-                + f"label.{var_name} = {convert_string_to_matlab(label)}; "
+                + f"label.{var_name} = {label}; "
     if comment:
         data_code += f"comment.{var_name} = '{comment}'; "
     if title:
@@ -39,35 +39,38 @@ def generate_aux_data_code(var_name, converted_data, struct_name, label, units):
     """
     aux_data_code = f"\n{struct_name}.{var_name} = {converted_data};\n" \
                     f"units.{struct_name}.{var_name} = {units}; " \
-                    f"label.{struct_name}.{var_name} = {convert_string_to_matlab(label)}; \n"
+                    f"label.{struct_name}.{var_name} = {label}; \n"
     return aux_data_code
 
 
-def generate_meta_data_code(var_name, formatted_data):
-    return f"metaData.{var_name} = {formatted_data}; \n"
+def generate_meta_data_code(var_name, converted_data):
+    return f"metaData.{var_name} = {converted_data}; \n"
 
 
-def generate_dummy_variable_data_code(var_name, label, comment='', bibkey=''):
-    return generate_data_code(var_name=var_name, converted_data='10', units=convert_string_to_matlab('-'),
-                              label=label, comment=comment, bibkey=bibkey)
+def generate_dummy_variable_data_code(var_name, comment='', bibkey=''):
+    return generate_data_code(var_name=var_name, converted_data='10',
+                              units=convert_string_to_matlab('-'),
+                              label=convert_string_to_matlab('Dummy variable'),
+                              comment=comment, bibkey=bibkey)
 
 
-def generate_dummy_variable_code(var_name, formatted_data, label, struct_name: str, units='-', bibkey='', comment='',
-                                 pars_init_access=False):
-    s = generate_dummy_variable_data_code(var_name=var_name, label=label,
-                                          comment=comment, bibkey=bibkey)
+def generate_dummy_variable_code(var_name, struct_name: str, converted_data, converted_label, converted_units,
+                                 bibkey='', comment='', pars_init_access=False):
+    s = generate_dummy_variable_data_code(var_name=var_name, comment=comment, bibkey=bibkey)
 
-    s += generate_aux_data_code(var_name, formatted_data, struct_name=struct_name,
-                                label=label, units=convert_string_to_matlab(units))
+    s += generate_aux_data_code(var_name, converted_data, struct_name=struct_name,
+                                label=converted_label, units=converted_units)
     if pars_init_access:
-        s += generate_meta_data_code(var_name, formatted_data=f"{struct_name}.{var_name}")
+        s += generate_meta_data_code(var_name, converted_data=f"{struct_name}.{var_name}")
     return s
 
 
-def generate_tier_variable_code(var_name, formatted_data, label, units='-', bibkey='', comment='',
+def generate_tier_variable_code(var_name, converted_data, label, units='-', bibkey='', comment='',
                                 pars_init_access=False):
-    return generate_dummy_variable_code(var_name=var_name, formatted_data=formatted_data, label=label,
-                                        struct_name='tiers', units=units, bibkey=bibkey, comment=comment,
+    return generate_dummy_variable_code(var_name=var_name, converted_data=converted_data,
+                                        converted_label=convert_string_to_matlab(label),
+                                        converted_units=convert_string_to_matlab(units),
+                                        struct_name='tiers', bibkey=bibkey, comment=comment,
                                         pars_init_access=pars_init_access)
 
 

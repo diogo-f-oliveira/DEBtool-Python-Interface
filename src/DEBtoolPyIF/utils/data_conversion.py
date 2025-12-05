@@ -2,7 +2,7 @@ import numpy as np
 
 
 def convert_string_to_matlab(string: str) -> str:
-    return string.__repr__()
+    return f"'{string}'"
 
 
 def convert_numeric_array_to_matlab(array: [int, float, np.array]):

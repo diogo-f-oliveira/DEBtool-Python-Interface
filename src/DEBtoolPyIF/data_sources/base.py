@@ -101,9 +101,9 @@ class DataSourceBase:
     @property
     def units(self):
         if self.is_zero_variate:
-            units = (self.indep_var_unit, self.dep_var_unit)
-        else:
             units = self.dep_var_unit
+        else:
+            units = (self.indep_var_unit, self.dep_var_unit)
         return self.generate_info_matlab_code(units)
 
     @property

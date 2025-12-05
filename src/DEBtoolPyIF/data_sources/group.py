@@ -9,7 +9,7 @@ import pandas as pd
 class TimeFeedGroupDataSource(GroupDataSourceBase):
     TYPE = 'tJX_grp'
     LABELS = ('Time since start', 'Daily food consumption of group during test')
-    AUX_DATA_LABELS = ('Initial weights for the individuals in the group')
+    AUX_DATA_LABELS = 'Initial weights for the individuals in the group'
 
     def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  name=None, time_unit='d', feed_unit='kg',

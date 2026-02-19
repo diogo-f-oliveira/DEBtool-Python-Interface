@@ -1,6 +1,12 @@
-# Python Interface for DEBtool
+# DEBtool-Python-Interface
 
-A Python Interface for the MATLAB package DEBtool, a package with tools for Dynamic Energy Budget models.
+`DEBtoolPyIF` is a Python package that interfaces with the MATLAB package DEBtool for Dynamic Energy Budget (DEB) model parameter estimation.
+
+The package currently focuses on two capabilities:
+- Template-driven generation of DEBtool species files (`mydata`, `pars_init`, `predict`, `run`) following DEBtool naming and structure conventions.
+- A multitier estimation workflow to estimate DEB parameters across hierarchical levels (for example, individual and higher-level entities).
+
+The project is under active development (`0.x`), with the multitier workflow being the most mature part of the package.
 
 ## Installation
 
@@ -27,3 +33,10 @@ If you are having trouble installing the MATLAB Engine API for Python, you can t
 cd "matlabroot\extern\engines\python"
 python -m pip install .
 ```
+
+## Citation
+
+If you use the multitier methodology implemented in this package, please cite:
+
+> Oliveira, D.F, Marques, G.M., Carolino, N., Pais, J.,Sousa, J.M.C., Domingos, T., 2024. A multi-tier methodology for the estimation of individual-specific parameters of DEB models. Ecological Modelling 494, 110779. 
+> https://doi.org/10.1016/j.ecolmodel.2024.110779

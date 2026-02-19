@@ -13,42 +13,42 @@ from ..utils.data_conversion import convert_list_of_strings_to_matlab, convert_d
 
 class MultiTierStructure:
     def __init__(self, species_name: str, entity_vs_tier: pd.DataFrame, data: dict[str, DataCollection], pars: dict,
-                 tier_pars: dict, template_folders: dict, output_folder: str, estimation_settings: dict,
-                 tier_output_folders: dict, matlab_session=None):
+                 tier_pars: dict, template_folder: str, output_folder: str, estimation_settings: dict,
+                 matlab_session=None):
         self.data = data
         self.species_name = species_name
         self.entity_vs_tier = entity_vs_tier
         self.tier_names = list(self.entity_vs_tier.columns)
+        self.template_folder = template_folder
         self.output_folder = output_folder
         self.pars = pars
         self.tier_pars = tier_pars
         self.tiers = {}
-        self.build_tiers(estimation_settings=estimation_settings, template_folders=template_folders,
-                         tier_output_folders=tier_output_folders)
+        self.build_tiers(estimation_settings=estimation_settings)
         self.estimation_runner = EstimationRunner(estim_files_dir=self.output_folder, species_name=self.species_name,
                                                   matlab_session=matlab_session)
 
-    def build_tiers(self, estimation_settings, template_folders, tier_output_folders):
+    def build_tiers(self, estimation_settings):
+        os.makedirs(self.output_folder, exist_ok=True)
+        # Save entity vs tier dataframe in output folder for reference
+        self.entity_vs_tier.to_csv(os.path.join(self.output_folder, "entity_vs_tier.csv"))
 
         # Create estimators for each name
         for tier_name in self.tier_names:
-            if tier_name not in template_folders:
-                raise Exception(f"Template folder for name {tier_name} is not defined.")
+            template_folder = os.path.join(self.template_folder, tier_name)
+            if not os.path.isdir(template_folder):
+                raise Exception(f"Template folder for tier {tier_name} not found at: {template_folder}")
             tier_pars_str = ' '.join(self.tier_pars[tier_name])
             if not all([p in self.pars for p in self.tier_pars[tier_name]]):
                 raise Exception(f"Cannot estimate tier pars {tier_pars_str} for {tier_name} tier as they"
                                 f" are not all estimated in the previous tier.")
-            # Create output folder for name estimation
-            if tier_name not in tier_output_folders:
-                tier_output_folder = f"{self.output_folder}/{tier_name}"
-            else:
-                tier_output_folder = f"{self.output_folder}/{tier_output_folders[tier_name]}"
+            tier_output_folder = os.path.join(self.output_folder, tier_name)
 
             os.makedirs(tier_output_folder, exist_ok=True)
             self.tiers[tier_name] = TierEstimator(tier_structure=self,
                                                   tier_name=tier_name,
                                                   tier_pars=self.tier_pars[tier_name],
-                                                  template_folder=template_folders[tier_name],
+                                                  template_folder=template_folder,
                                                   output_folder=tier_output_folder,
                                                   estimation_settings=estimation_settings[tier_name])
 

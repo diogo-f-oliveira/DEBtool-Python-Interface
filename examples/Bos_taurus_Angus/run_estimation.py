@@ -1,146 +1,25 @@
-import numpy as np
-import pandas as pd
-
-from examples.Bos_taurus_Angus.plotting import plot_weight, plot_group_feed_intake
-from src.DEBtoolPyIF.data_sources.collection import DataCollection
-from src.DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource, DigestibilityEntityDataSource
-from src.DEBtoolPyIF.data_sources.group import TimeFeedGroupDataSource
-from src.DEBtoolPyIF.multitier.procedure import MultiTierStructure
-from src.DEBtoolPyIF.notebook.multitier_visualizers import TierVisualizer
-from src.DEBtoolPyIF.utils.mydata_code_generation import generate_tier_variable_code, generate_meta_data_code
-from src.DEBtoolPyIF.utils.data_conversion import convert_dict_to_matlab
-
-from itertools import combinations
-import seaborn as sns
-import os
-
-DATA_FOLDER = 'data'
-ESTIMATION_FOLDER = 'multitier'
-BASE_TEMPLATE_FOLDER = 'templates'
+from examples.Bos_taurus_Angus.data import load_data
+from examples.Bos_taurus_Angus.tier_structure import create_tier_structure
 
 
-def load_data():
-    # <====     GREENBEEF TRIAL 1   ======>
-    bibkey = 'GreenBeefTrial1'
-    comment = 'Data from GreenBeef trial 1'
-    prefix = 'Pen'
-
-    # Diet info data sources
-    dmdds = DigestibilityEntityDataSource(f"{DATA_FOLDER}/greenbeef_1_diet_info.csv",
-                                          id_col='diet', dmd_col='digestibility', id_name='diet',
-                                          bibkey=bibkey, comment=comment)
-
-    # Individual data sources
-    twds = TimeWeightEntityDataSource(f"{DATA_FOLDER}/greenbeef_1_weights.csv",
-                                      id_col='sia', weight_col='weight', date_col='date',
-                                      title='Wet weight growth curve', id_name='individual',
-                                      bibkey=bibkey, comment=comment)
-
-    gtfds = TimeFeedGroupDataSource(f"{DATA_FOLDER}/greenbeef_1_feed_intake_pen.csv",
-                                    id_col='pen', feed_col='dry_intake', date_col='date',
-                                    weight_data_source=twds,
-                                    title='Daily feed consumption',
-                                    prefix=prefix, bibkey=bibkey, comment=comment)
-
-    return {
-        'breed': DataCollection(tier='breed', data_sources=[]),
-        'diet': DataCollection(tier='diet', data_sources=[dmdds]),
-        'individual': DataCollection(tier='individual', data_sources=[twds, gtfds]),
-    }
+def load_estimation_results(multitier):
+    """Load estimation results for all tiers in the multitier structure."""
+    for tier_name in multitier.tiers.keys():
+        multitier.tiers[tier_name].load_results()
 
 
-def generate_ind_tiers(data: DataCollection):
-    ind_tiers = pd.DataFrame(
-        index=pd.MultiIndex(levels=[[], []], codes=[[], []], names=['tier', 'entity']),
-        columns=['breed', 'diet', 'individual'],
-    )
-
-    # Breed
-    ind_tiers.loc[('breed', 'male'), 'breed'] = 'male'
-    # Diets
-    for diet in ['CTRL', 'TMR']:
-        ind_tiers.loc[('diet', diet), :] = ['male', diet, np.nan]
-    # Individuals
-    twds = data.entity_data_sources['greenbeef_1_weights_tW']
-    ind_list = list(twds.entities)
-    for ind_id in ind_list:
-        ind_data = twds.get_entity_data(ind_id).iloc[0]
-        ind_tiers.loc[('individual', ind_id), :] = ['male', f"{ind_data['diet']}", ind_id]
-
-    ind_tiers.to_csv(f'{ESTIMATION_FOLDER}/ind_tiers.csv')
-    return ind_tiers
-
-
-def create_tier_structure(matlab_session):
-    data = load_data()
-    ind_tiers = generate_ind_tiers(data['individual'])
-
-    template_folders = {
-        'breed': f'{BASE_TEMPLATE_FOLDER}/breed',
-        'diet': f'{BASE_TEMPLATE_FOLDER}/diet',
-        'individual': f'{BASE_TEMPLATE_FOLDER}/individual'
-    }
-    # Initial parameter values for first tier 'breed'. Used with pars_init_method=2
-    initial_pars = {
-        'p_Am': 5000,
-        'kap_X': 0.2,
-        'kap_P': 0.1,
-        'p_M': 80,
-        'v': 0.05,
-        'kap': 0.97,
-        'E_G': 7800,
-        'E_Hb': 2e+6,
-        'E_Hx': 2e+7,
-        'E_Hp': 6e+7,
-        'h_a': 5e-10,
-        't_0': 80,
-        'del_M': 0.15,
-        'p_Am_f': 4500,
-        'E_Hp_f': 6e+7,
-    }
-    # Parameters that are estimated in each tier
-    tier_pars = {
-        'breed': list(initial_pars.keys()),
-        'diet': ['p_Am', 'kap_X', 'kap_P'],
-        'individual': ['p_Am', 'kap_X']
-    }
-
-    estimation_settings = {
-        'breed': dict(n_runs=50, results_output_mode=3, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
-        'diet': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
-        'individual': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4)
-    }
-    tier_output_folders = {
-        'breed': 'breed',
-        'diet': 'diet',
-        'individual': 'individual'
-    }
-
-    multitier = MultiTierStructure(species_name='Bos_taurus_Angus', entity_vs_tier=ind_tiers, data=data,
-                                   pars=initial_pars,
-                                   tier_pars=tier_pars,
-                                   template_folders=template_folders,
-                                   output_folder=ESTIMATION_FOLDER,
-                                   estimation_settings=estimation_settings,
-                                   tier_output_folders=tier_output_folders,
-                                   matlab_session=matlab_session)
-
-    return multitier
+def run_estimation(multitier):
+    """Run estimation for all tiers in the multitier structure."""
+    for tier_name in multitier.tiers.keys():
+        print(f"Running estimation for tier: {tier_name}")
+        multitier.tiers[tier_name].run_estimation()
 
 
 if __name__ == '__main__':
-    multitier = create_tier_structure(matlab_session='ignore')
+    # Create data and multitier structure and run the minimal example
+    data = load_data('examples/Bos_taurus_Angus/data')
+    multitier = create_tier_structure(data, matlab_session='ignore')
 
-    # multitier.tiers['breed'].estimate(hide_output=True, save_results=True)
-    multitier.tiers['breed'].load_results()
-    # multitier.tiers['breed'].print_pars()
 
-    # multitier.tiers['diet'].estimate(hide_output=True, save_results=True)
-    multitier.tiers['diet'].load_results()
-    # multitier.tiers['diet'].print_pars()
-
-    multitier.tiers['individual'].load_results()
-    # multitier.tiers['individual'].estimate(hide_output=True, save_results=True)
-    # multitier.tiers['individual'].print_pars()
 
     print('Done')

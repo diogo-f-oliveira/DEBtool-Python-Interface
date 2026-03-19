@@ -35,7 +35,7 @@ def generate_entity_vs_tier_df(data: DataCollection) -> pd.DataFrame:
     return entity_vs_tier_df
 
 
-def create_tier_structure(data, matlab_session=None) -> MultiTierStructure:
+def create_tier_structure(data, matlab_session='auto') -> MultiTierStructure:
     """Create and return a MultiTierStructure from example data."""
     entity_vs_tier_df = generate_entity_vs_tier_df(data['individual'])
 
@@ -63,18 +63,11 @@ def create_tier_structure(data, matlab_session=None) -> MultiTierStructure:
         'individual': ['p_Am', 'kap_X']
     }
 
-    estimation_settings = {
-        'breed': dict(n_runs=50, results_output_mode=3, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
-        'diet': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
-        'individual': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4)
-    }
-
     multitier = MultiTierStructure(species_name='Bos_taurus_Angus', entity_vs_tier=entity_vs_tier_df, data=data,
                                    pars=initial_pars,
                                    tier_pars=tier_pars,
                                    template_folder=BASE_TEMPLATE_FOLDER,
                                    output_folder=ESTIMATION_FOLDER,
-                                   estimation_settings=estimation_settings,
                                    matlab_session=matlab_session)
 
     return multitier

@@ -10,11 +10,12 @@ from ..utils.mydata_code_generation import check_files_exist_in_folder, generate
     generate_meta_data_code
 from ..utils.data_conversion import convert_list_of_strings_to_matlab, convert_dict_to_matlab
 
+# TODO: Use Path objects instead of strings for file paths and folders, and add type hints for these.
 
 class MultiTierStructure:
     def __init__(self, species_name: str, entity_vs_tier: pd.DataFrame, data: dict[str, DataCollection], pars: dict,
                  tier_pars: dict, template_folder: str, output_folder: str, estimation_settings: dict,
-                 matlab_session=None):
+                 matlab_session='auto'):
         self.data = data
         self.species_name = species_name
         self.entity_vs_tier = entity_vs_tier
@@ -291,15 +292,15 @@ class TierEstimator:
                         self.group_data_errors.loc[(tier_name, g_id), dt] = estimation_errors[varname]
 
     def save_results(self):
-        self.pars_df.to_csv(f"{self.output_folder}/{self.name}_pars.csv")
-        self.entity_data_errors.to_csv(f"{self.output_folder}/{self.name}_entity_data_errors.csv")
-        self.group_data_errors.to_csv(f"{self.output_folder}/{self.name}_group_data_errors.csv")
+        self.pars_df.to_csv(f"{self.output_folder}/pars.csv")
+        self.entity_data_errors.to_csv(f"{self.output_folder}/entity_data_errors.csv")
+        self.group_data_errors.to_csv(f"{self.output_folder}/group_data_errors.csv")
 
     def load_results(self):
-        self.pars_df = pd.read_csv(f"{self.output_folder}/{self.name}_pars.csv", index_col='entity')
-        self.entity_data_errors = pd.read_csv(f"{self.output_folder}/{self.name}_entity_data_errors.csv",
+        self.pars_df = pd.read_csv(f"{self.output_folder}/pars.csv", index_col='entity')
+        self.entity_data_errors = pd.read_csv(f"{self.output_folder}/entity_data_errors.csv",
                                               index_col=['tier', 'entity'])
-        self.group_data_errors = pd.read_csv(f"{self.output_folder}/{self.name}_group_data_errors.csv",
+        self.group_data_errors = pd.read_csv(f"{self.output_folder}/group_data_errors.csv",
                                              index_col=['tier', 'group'])
 
     def print_results(self):

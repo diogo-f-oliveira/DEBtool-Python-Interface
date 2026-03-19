@@ -34,6 +34,7 @@ Current discovery contract:
 - A folder under `examples/` is treated as an integration-test example when it contains:
   - `data.py`
   - `tier_structure.py`
+  - `estimation.py`
   - `data/`
 
 Current example interface expected by the tests:
@@ -41,6 +42,7 @@ Current example interface expected by the tests:
 - `load_data(...)` returns a non-empty `dict[str, DataCollection]`
 - `examples/<example>/tier_structure.py` defines `create_tier_structure(data, matlab_session='auto')`
 - `create_tier_structure(...)` returns a `MultiTierStructure`
+- `examples/<example>/estimation.py` defines `run_multitier_estimation(multitier)`
 
 Current integration coverage:
 - `test_example_data_loading.py`
@@ -51,20 +53,25 @@ Current integration coverage:
   - checks that `create_tier_structure()` exists
   - checks that it returns a `MultiTierStructure`
   - checks for core attributes used by the workflow: `tier_names` and `tiers`
+- `test_estimation_procedure.py`
+  - runs the example estimation workflow end to end using the example's own `run_multitier_estimation()` helper
+  - redirects outputs to a temporary folder so tests verify fresh artifacts without mutating committed example results
+  - checks that each tier writes `pars.csv`, `entity_data_errors.csv`, and `group_data_errors.csv`
+  - checks that those CSVs are non-empty and preserve the expected saved index names and data columns
 
-## Estimation procedure stubs
+## Estimation procedure tests
 
-`test_estimation_procedure.py` is intentionally a placeholder for full end-to-end estimation tests.
+`test_estimation_procedure.py` contains real MATLAB-backed integration tests.
 
 These tests are marked:
 - `integration`
 - `slow`
 - `matlab`
 
-The intended future scope is:
-- run the estimation workflow end to end for each example
-- verify expected output files and naming conventions in the produced multitier folders
-- define and test the expected behavior when MATLAB tooling or a MATLAB session is unavailable
+Current assumptions:
+- the example exposes `estimation.py` with `run_multitier_estimation(multitier)`
+- `create_tier_structure(data, matlab_session='auto')` is the supported way to acquire a MATLAB session for the test
+- output verification happens in a temporary folder instead of the example's committed `multitier/` folder
 
 ## Example-specific context
 
@@ -74,12 +81,12 @@ There is currently one example workflow:
 From that example, the current integration assumptions are:
 - `data.py` builds three `DataCollection` objects keyed by tier name: `breed`, `diet`, and `individual`
 - `tier_structure.py` builds the `entity_vs_tier` table and instantiates `MultiTierStructure`
-- `run_estimation.py` shows the intended top-level workflow shape for running or loading estimation results
+- `estimation.py` provides the top-level workflow helpers for running or loading estimation results
 
 ## Guidance for future changes
 
 When adding a new example:
-- follow the same `examples/<name>/data.py`, `examples/<name>/tier_structure.py`, and `examples/<name>/data/` layout if you want it picked up automatically by integration tests
+- follow the same `examples/<name>/data.py`, `examples/<name>/tier_structure.py`, `examples/<name>/estimation.py`, and `examples/<name>/data/` layout if you want it picked up automatically by integration tests
 - keep `load_data()` and `create_tier_structure()` signatures aligned with the existing examples unless the integration contract is intentionally being changed
 
 When changing `DataCollection`:

@@ -1,7 +1,9 @@
-import pandas as pd
-from string import Template
-import os
 import shutil
+from copy import deepcopy
+from pathlib import Path
+from string import Template
+
+import pandas as pd
 from tabulate import tabulate
 
 from ..data_sources.collection import DataCollection
@@ -10,48 +12,44 @@ from ..utils.mydata_code_generation import check_files_exist_in_folder, generate
     generate_meta_data_code
 from ..utils.data_conversion import convert_list_of_strings_to_matlab, convert_dict_to_matlab
 
-# TODO: Use Path objects instead of strings for file paths and folders, and add type hints for these.
-
 class MultiTierStructure:
     def __init__(self, species_name: str, entity_vs_tier: pd.DataFrame, data: dict[str, DataCollection], pars: dict,
-                 tier_pars: dict, template_folder: str, output_folder: str, estimation_settings: dict,
-                 matlab_session='auto'):
+                 tier_pars: dict, template_folder: str | Path, output_folder: str | Path, matlab_session='auto'):
         self.data = data
         self.species_name = species_name
         self.entity_vs_tier = entity_vs_tier
         self.tier_names = list(self.entity_vs_tier.columns)
-        self.template_folder = template_folder
-        self.output_folder = output_folder
+        self.template_folder = Path(template_folder)
+        self.output_folder = Path(output_folder)
         self.pars = pars
         self.tier_pars = tier_pars
         self.tiers = {}
-        self.build_tiers(estimation_settings=estimation_settings)
+        self.build_tiers()
         self.estimation_runner = EstimationRunner(estim_files_dir=self.output_folder, species_name=self.species_name,
                                                   matlab_session=matlab_session)
 
-    def build_tiers(self, estimation_settings):
-        os.makedirs(self.output_folder, exist_ok=True)
+    def build_tiers(self):
+        self.output_folder.mkdir(parents=True, exist_ok=True)
         # Save entity vs tier dataframe in output folder for reference
-        self.entity_vs_tier.to_csv(os.path.join(self.output_folder, "entity_vs_tier.csv"))
+        self.entity_vs_tier.to_csv(self.output_folder / "entity_vs_tier.csv")
 
         # Create estimators for each name
         for tier_name in self.tier_names:
-            template_folder = os.path.join(self.template_folder, tier_name)
-            if not os.path.isdir(template_folder):
+            template_folder = self.template_folder / tier_name
+            if not template_folder.is_dir():
                 raise Exception(f"Template folder for tier {tier_name} not found at: {template_folder}")
             tier_pars_str = ' '.join(self.tier_pars[tier_name])
             if not all([p in self.pars for p in self.tier_pars[tier_name]]):
                 raise Exception(f"Cannot estimate tier pars {tier_pars_str} for {tier_name} tier as they"
                                 f" are not all estimated in the previous tier.")
-            tier_output_folder = os.path.join(self.output_folder, tier_name)
+            tier_output_folder = self.output_folder / tier_name
 
-            os.makedirs(tier_output_folder, exist_ok=True)
+            tier_output_folder.mkdir(parents=True, exist_ok=True)
             self.tiers[tier_name] = TierEstimator(tier_structure=self,
                                                   tier_name=tier_name,
                                                   tier_pars=self.tier_pars[tier_name],
                                                   template_folder=template_folder,
-                                                  output_folder=tier_output_folder,
-                                                  estimation_settings=estimation_settings[tier_name])
+                                                  output_folder=tier_output_folder)
 
     def get_all_entities_in_tier(self, tier_name):
         return self.entity_vs_tier.loc[tier_name].index.to_list()
@@ -150,8 +148,8 @@ class MultiTierStructure:
 class TierEstimator:
     OUTPUT_FILES = ['pars', 'ind_data_errors', 'group_data_errors', 'tier_errors']
 
-    def __init__(self, tier_structure: MultiTierStructure, tier_name, tier_pars: list, template_folder: str,
-                 output_folder: str, estimation_settings: dict, extra_info='', extra_pseudo_data=None):
+    def __init__(self, tier_structure: MultiTierStructure, tier_name, tier_pars: list, template_folder: str | Path,
+                 output_folder: str | Path, extra_info='', extra_pseudo_data=None):
         if extra_pseudo_data is None:
             extra_pseudo_data = {}
         self.tier_structure = tier_structure
@@ -160,9 +158,9 @@ class TierEstimator:
         self.pars_df = None
         self.tier_entities = self.tier_structure.get_all_entities_in_tier(self.name)
         self.tier_groups = list(self.tier_structure.data[tier_name].groups)
-        self.template_folder = template_folder
-        self.output_folder = output_folder
-        self.estimation_settings = estimation_settings
+        self.template_folder = Path(template_folder)
+        self.output_folder = Path(output_folder)
+        self.estimation_settings = None
         self.pseudo_data = extra_pseudo_data
         # TODO: Extra info should be a dictionary with the data, and we should have a separate variable with the
         #  formatted version
@@ -218,7 +216,20 @@ class TierEstimator:
         self.pars_df = pd.DataFrame(columns=self.tier_pars, index=self.tier_entities)
         self.pars_df.index.name = 'entity'
 
-    def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True):
+    def set_estimation_settings(self, estimation_settings):
+        if estimation_settings is None:
+            self.estimation_settings = None
+            return
+
+        self.estimation_settings = deepcopy(estimation_settings)
+
+    def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True,
+                 estimation_settings=None):
+        if estimation_settings is not None:
+            self.set_estimation_settings(estimation_settings)
+        if self.estimation_settings is None:
+            raise ValueError(f"Estimation settings must be provided for tier '{self.name}' before estimation.")
+
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
 
@@ -238,8 +249,8 @@ class TierEstimator:
 
         for group_name, entity_list in zip(folder_names, list_of_tier_entity_lists):
             # Create estimation folder and set it in TierCodeGenerator and EstimationRunner objects
-            output_folder = f"{self.output_folder}/{group_name}"
-            os.makedirs(output_folder, exist_ok=True)
+            output_folder = self.output_folder / group_name
+            output_folder.mkdir(parents=True, exist_ok=True)
             self.tier_structure.estimation_runner.estim_files_dir = output_folder
             self.code_generator.output_folder = output_folder
             # Generate estimation files
@@ -292,15 +303,15 @@ class TierEstimator:
                         self.group_data_errors.loc[(tier_name, g_id), dt] = estimation_errors[varname]
 
     def save_results(self):
-        self.pars_df.to_csv(f"{self.output_folder}/pars.csv")
-        self.entity_data_errors.to_csv(f"{self.output_folder}/entity_data_errors.csv")
-        self.group_data_errors.to_csv(f"{self.output_folder}/group_data_errors.csv")
+        self.pars_df.to_csv(self.output_folder / "pars.csv")
+        self.entity_data_errors.to_csv(self.output_folder / "entity_data_errors.csv")
+        self.group_data_errors.to_csv(self.output_folder / "group_data_errors.csv")
 
     def load_results(self):
-        self.pars_df = pd.read_csv(f"{self.output_folder}/pars.csv", index_col='entity')
-        self.entity_data_errors = pd.read_csv(f"{self.output_folder}/entity_data_errors.csv",
+        self.pars_df = pd.read_csv(self.output_folder / "pars.csv", index_col='entity')
+        self.entity_data_errors = pd.read_csv(self.output_folder / "entity_data_errors.csv",
                                               index_col=['tier', 'entity'])
-        self.group_data_errors = pd.read_csv(f"{self.output_folder}/group_data_errors.csv",
+        self.group_data_errors = pd.read_csv(self.output_folder / "group_data_errors.csv",
                                              index_col=['tier', 'group'])
 
     def print_results(self):
@@ -334,9 +345,11 @@ class TierCodeGenerator:
         return complete, missing_file
 
     def generate_mydata_file(self, entity_list, pseudo_data_weight=0.1):
-        mydata_template = open(
-            f'{self.tier_estimator.template_folder}/mydata_{self.tier_estimator.tier_structure.species_name}.m', 'r')
-        mydata_out = open(f'{self.output_folder}/mydata_{self.tier_estimator.tier_structure.species_name}.m', 'w')
+        template_path = (
+            self.tier_estimator.template_folder /
+            f"mydata_{self.tier_estimator.tier_structure.species_name}.m"
+        )
+        output_path = self.output_folder / f"mydata_{self.tier_estimator.tier_structure.species_name}.m"
 
         entity_mydata_code_list = []
         group_mydata_code_list = []
@@ -449,57 +462,56 @@ class TierCodeGenerator:
                 {p: convert_dict_to_matlab(init_values) for p, init_values in tier_par_init_values.items()})
         )
 
-        src = Template(mydata_template.read())
-        result = src.substitute(
-            entity_data=entity_data_code,
-            group_data=group_data_code,
-            entity_data_types=entity_data_types_code,
-            group_data_types=group_data_types_code,
-            entity_list=entity_list_code,
-            tier_entities=tier_entities_code,
-            tier_groups=tier_groups_code,
-            tier_subtree=tier_subtree_code,
-            groups_of_entity=groups_of_entity_code,
-            tier_pars=tier_pars_code,
-            tier_par_init_values=tier_par_init_values_code,
-            extra_info=self.tier_estimator.extra_info,
-            pseudo_data_weight=pseudo_data_weight
-        )
-        print(result, file=mydata_out)
-        mydata_out.close()
-        mydata_template.close()
+        with template_path.open('r') as mydata_template, output_path.open('w') as mydata_out:
+            src = Template(mydata_template.read())
+            result = src.substitute(
+                entity_data=entity_data_code,
+                group_data=group_data_code,
+                entity_data_types=entity_data_types_code,
+                group_data_types=group_data_types_code,
+                entity_list=entity_list_code,
+                tier_entities=tier_entities_code,
+                tier_groups=tier_groups_code,
+                tier_subtree=tier_subtree_code,
+                groups_of_entity=groups_of_entity_code,
+                tier_pars=tier_pars_code,
+                tier_par_init_values=tier_par_init_values_code,
+                extra_info=self.tier_estimator.extra_info,
+                pseudo_data_weight=pseudo_data_weight
+            )
+            print(result, file=mydata_out)
 
     def generate_pars_init_file(self, entity_list):
         # TODO: Use multitier.ind_list_from_tier_sample_list()
         if entity_list == 'all':
             entity_list = self.tier_estimator.tier_structure.get_all_entities_in_tier(self.tier_estimator.name)
         pars_dict = self.tier_estimator.tier_structure.get_full_pars_dict(self.tier_estimator.name, entity_list[0])
-        pars_init_template = open(
-            f'{self.tier_estimator.template_folder}/pars_init_{self.tier_estimator.tier_structure.species_name}.m',
-            'r')
-        pars_init_out = open(f'{self.output_folder}/pars_init_{self.tier_estimator.tier_structure.species_name}.m', 'w')
+        template_path = (
+            self.tier_estimator.template_folder /
+            f"pars_init_{self.tier_estimator.tier_structure.species_name}.m"
+        )
+        output_path = self.output_folder / f"pars_init_{self.tier_estimator.tier_structure.species_name}.m"
 
-        src = Template(pars_init_template.read())
-        result = src.substitute(**pars_dict)
-
-        print(result, file=pars_init_out)
-        pars_init_out.close()
-        pars_init_template.close()
+        with template_path.open('r') as pars_init_template, output_path.open('w') as pars_init_out:
+            src = Template(pars_init_template.read())
+            result = src.substitute(**pars_dict)
+            print(result, file=pars_init_out)
 
     def generate_predict_file(self):
         shutil.copy(
-            src=f"{self.tier_estimator.template_folder}/predict_{self.tier_estimator.tier_structure.species_name}.m",
-            dst=f"{self.output_folder}")
+            src=self.tier_estimator.template_folder / f"predict_{self.tier_estimator.tier_structure.species_name}.m",
+            dst=self.output_folder)
 
     def generate_run_file(self):
-        run_template = open(
-            f'{self.tier_estimator.template_folder}/run_{self.tier_estimator.tier_structure.species_name}.m', 'r')
-        run_out = open(f'{self.output_folder}/run_{self.tier_estimator.tier_structure.species_name}.m', 'w')
-        src = Template(run_template.read())
-        result = src.substitute(self.tier_estimator.estimation_settings)
-        print(result, file=run_out)
-        run_out.close()
-        run_template.close()
+        template_path = (
+            self.tier_estimator.template_folder /
+            f"run_{self.tier_estimator.tier_structure.species_name}.m"
+        )
+        output_path = self.output_folder / f"run_{self.tier_estimator.tier_structure.species_name}.m"
+        with template_path.open('r') as run_template, output_path.open('w') as run_out:
+            src = Template(run_template.read())
+            result = src.substitute(self.tier_estimator.estimation_settings)
+            print(result, file=run_out)
 
     def generate_code(self, entity_list, pseudo_data_weight=0.1):
         self.generate_mydata_file(entity_list=entity_list, pseudo_data_weight=pseudo_data_weight)

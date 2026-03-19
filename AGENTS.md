@@ -26,7 +26,11 @@
   - `conda run -n debtoolpyif_dev python -m pytest tests/integration -m integration -q`
 - When feasible, run:
   - `conda run -n debtoolpyif_dev python -m pytest -q`
-
+- Keep unit tests fast and isolated from example folders and MATLAB.
+- Keep integration tests aligned with the shared example workflow contract under `examples/`.
+- When changing `examples/` structure, `load_data`, `create_tier_structure`, or `DataCollection` semantics, review and update both unit and integration tests together.
+- See `tests/README.md` for the detailed testing strategy, current example contract, and planned estimation-test scope.
+  
 ## Code Change Guidelines
 - Keep path handling robust and cross-platform (`os.path.join` or `pathlib`).
 - Avoid introducing breaking API changes without updating:

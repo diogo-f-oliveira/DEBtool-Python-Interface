@@ -5,15 +5,22 @@ import os
 
 class MATLABWrapper:
     # TODO: Create a method or decorator to hide output from executing MATLAB functions
+    AUTO_SESSION = 'auto'
 
-    def __init__(self, matlab_session='start', window=False, clear_before=True):
+    def __init__(self, matlab_session=AUTO_SESSION, window=False, clear_before=True):
         self.eng = None
         self.start_matlab_engine(matlab_session=matlab_session)
         self.window = window
         self.clear_before = clear_before
 
     def start_matlab_engine(self, matlab_session):
-        if matlab_session == 'start':
+        if matlab_session == self.AUTO_SESSION:
+            matlab_sessions = matlab.engine.find_matlab()
+            if matlab_sessions:
+                self.eng = matlab.engine.connect_matlab(matlab_sessions[0])
+            else:
+                self.eng = matlab.engine.start_matlab()
+        elif matlab_session == 'start':
             self.eng = matlab.engine.start_matlab()
         elif matlab_session == 'find':
             matlab_sessions = matlab.engine.find_matlab()
@@ -56,7 +63,8 @@ class MATLABWrapper:
 
 
 class DEBtoolWrapper(MATLABWrapper):
-    def __init__(self, estim_files_dir, species_name, matlab_session=None, window=False, clear_before=True):
+    def __init__(self, estim_files_dir, species_name, matlab_session=MATLABWrapper.AUTO_SESSION, window=False,
+                 clear_before=True):
         self.estim_files_dir = os.path.abspath(estim_files_dir)
         # Check folder exists
         if not os.path.isdir(self.estim_files_dir):

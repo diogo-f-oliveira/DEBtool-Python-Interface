@@ -5,9 +5,22 @@ import os
 
 class MATLABWrapper:
     # TODO: Create a method or decorator to hide output from executing MATLAB functions
+    AUTO_SESSION = 'auto'
 
-    def __init__(self, matlab_session='start', window=False, clear_before=True):
-        if matlab_session == 'start':
+    def __init__(self, matlab_session=AUTO_SESSION, window=False, clear_before=True):
+        self.eng = None
+        self.start_matlab_engine(matlab_session=matlab_session)
+        self.window = window
+        self.clear_before = clear_before
+
+    def start_matlab_engine(self, matlab_session):
+        if matlab_session == self.AUTO_SESSION:
+            matlab_sessions = matlab.engine.find_matlab()
+            if matlab_sessions:
+                self.eng = matlab.engine.connect_matlab(matlab_sessions[0])
+            else:
+                self.eng = matlab.engine.start_matlab()
+        elif matlab_session == 'start':
             self.eng = matlab.engine.start_matlab()
         elif matlab_session == 'find':
             matlab_sessions = matlab.engine.find_matlab()
@@ -17,15 +30,14 @@ class MATLABWrapper:
                     "MATLAB command window.")
             else:
                 self.eng = matlab.engine.connect_matlab(matlab_sessions[0])
+        elif matlab_session == 'ignore':
+            self.eng = None
         else:
             self.eng = matlab.engine.connect_matlab(matlab_session)
-        self.window = window
-        self.clear_before = clear_before
 
     def apply_options_decorator(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            # Apply the options just like in the original apply_options method
             if self.window:
                 self.open_matlab_window()
             if self.clear_before:
@@ -51,18 +63,20 @@ class MATLABWrapper:
 
 
 class DEBtoolWrapper(MATLABWrapper):
-    def __init__(self, estim_filer_dir, species_name, matlab_session=None, window=False, clear_before=True):
-        self.estim_files_dir = os.path.abspath(estim_filer_dir)
+    def __init__(self, estim_files_dir, species_name, matlab_session=MATLABWrapper.AUTO_SESSION, window=False,
+                 clear_before=True):
+        self.estim_files_dir = os.path.abspath(estim_files_dir)
         # Check folder exists
         if not os.path.isdir(self.estim_files_dir):
             raise Exception(f"Species folder {self.estim_files_dir} does not exist.")
         self.species_name = species_name
         super(DEBtoolWrapper, self).__init__(matlab_session=matlab_session, window=window, clear_before=clear_before)
-        self.cd(self.estim_files_dir)
+        if self.eng is not None:
+            self.cd(self.estim_files_dir)
 
     def load_results_file(self, results_file=None):
         if results_file is None:
-            results_file = os.path.join(self.estim_files_dir, f"results_{self.species_name}.mat")
+            results_file = os.path.abspath(os.path.join(self.estim_files_dir, f"results_{self.species_name}.mat"))
         self.eng.eval(f"load('{results_file}');", nargout=0)
 
     def run_mydata_file(self):

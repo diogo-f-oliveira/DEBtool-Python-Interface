@@ -9,7 +9,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
     BOUND_FACTOR = 20
     REQUIRED_FILES = ('mydata', 'pars_init', 'predict')
 
-    def __init__(self, species_folder, species_name, matlab_session=None, window=False):
+    def __init__(self, species_folder, species_name, matlab_session=DEBtoolWrapper.AUTO_SESSION, window=False):
         """
         Initialize the problem class for a given species.
         @param species_folder: The folder with the files needed to run DEB models and compute the loss function
@@ -19,7 +19,7 @@ class DEBModelParametrizationProblem(DEBtoolWrapper):
         """
         # Check that the folder has the correct files
 
-        super().__init__(estim_filer_dir=species_folder, species_name=species_name, matlab_session=matlab_session,
+        super().__init__(estim_files_dir=species_folder, species_name=species_name, matlab_session=matlab_session,
                          window=window, clear_before=True)
 
         self.set_instance(species_folder, species_name)

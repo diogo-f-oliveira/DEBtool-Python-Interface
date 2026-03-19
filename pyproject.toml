@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=70.0"]
+requires = ["setuptools>=78.1.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "DEBtoolPyIF"
-version = "0.0.5"
+version = "0.1.0"
 authors = [
     { name = "Diogo F. Oliveira", email = "diogo.miguel.oliveira@tecnico.ulisboa.pt" },
 ]
@@ -23,8 +23,7 @@ keywords = ["Dynamic Energy Budget", "DEB", "DEBtool"]
 dependencies = [
     'numpy<=1.26.4',
     'pandas>=1.2.0',
-    'tabulate>=0.9.0',
-    'setuptools>=70.0.0'
+    'tabulate>=0.9.0'
 ]
 
 [tool.setuptools]
@@ -33,6 +32,7 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["DEBtoolPyIF*"]
+exclude = ["DEBtoolPyIF.add_my_pet*"]
 
 [project.urls]
 Homepage = "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface"

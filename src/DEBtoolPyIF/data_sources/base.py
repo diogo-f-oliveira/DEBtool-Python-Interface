@@ -204,7 +204,7 @@ class GroupDataSourceBase(DataSourceBase):
         return self.groupbys.get_group(group_id)
 
 
-class ZeroVariateGroupDataSourceBase(DataSourceBase):
+class ZeroVariateGroupDataSourceBase(GroupDataSourceBase):
 
     def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
                  aux_datasource: str = None,

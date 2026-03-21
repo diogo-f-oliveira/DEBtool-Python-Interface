@@ -1,13 +1,15 @@
-import os
 import re
+from pathlib import Path
+
 from .data_conversion import convert_string_to_matlab
 
 
 def check_files_exist_in_folder(folder_name, files):
+    folder_path = Path(folder_name)
     if not isinstance(files, (list, tuple)):
         files = (files,)
     for f in files:
-        if not os.path.exists(f"{folder_name}/{f}"):
+        if not (folder_path / f).exists():
             return False, f
     return True, "All good!"
 

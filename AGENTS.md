@@ -37,6 +37,7 @@
   - example scripts in `examples/`
   - integration tests in `tests/integration/`
 - For changes affecting DEBtool generated files, preserve naming and expected DEBtool/add-my-pet conventions unless explicitly requested.
+- When generating MATLAB numeric arrays, preserve missing and infinite values as MATLAB-compatible `NaN`, `Inf`, and `-Inf` tokens; do not coerce or drop them.
 - Prefer small, targeted patches and keep public constructor signatures explicit.
 
 ## References

@@ -21,18 +21,42 @@ def test_convert_string_to_matlab(value, expected):
 
 
 @pytest.mark.parametrize(
-    ("value", "expected"),
+    ("value", "format_codes", "expected"),
     [
-        (5, 5),
-        (3.2, 3.2),
-        (np.array(7), 7),
-        (np.array([[0, 1], [2, 3]]), "[0 1; 2 3]"),
-        (np.array([[1.5, 2.0]]), "[1.5 2.0]"),
-        (np.array([[1], [2]]), "[1; 2]"),
+        (5, None, 5),
+        (3.2, None, 3.2),
+        (np.array(7), None, 7),
+        (np.array([[0, 1], [2, 3]]), None, "[0 1; 2 3]"),
+        (np.array([[1.5, 2.0]]), None, "[1.5 2.0]"),
+        (np.array([[1], [2]]), None, "[1; 2]"),
+        (np.nan, None, "NaN"),
+        (np.array(np.nan), None, "NaN"),
+        (np.inf, None, "Inf"),
+        (-np.inf, None, "-Inf"),
+        (np.array([[1.0, np.nan], [np.inf, -np.inf]]), None, "[1.0 NaN; Inf -Inf]"),
+        (3.14159, ".2f", "3.14"),
+        (np.array(3.14159), ".3f", "3.142"),
+        (np.array([[1.234, 5.678], [9.876, 1.234]]), ".1f", "[1.2 5.7; 9.9 1.2]"),
+        (np.nan, ".2f", "NaN"),
+        (
+            np.array([[1.234, 5.678], [9.876, 1.234]]),
+            [".1f", ".0f"],
+            "[1.2 6; 9.9 1]",
+        ),
+        (
+            np.array([[1.234, np.nan], [np.inf, 1.234]]),
+            [".1f", ".0f"],
+            "[1.2 NaN; Inf 1]",
+        ),
     ],
 )
-def test_convert_numeric_array_to_matlab_supported_shapes(value, expected):
-    assert convert_numeric_array_to_matlab(value) == expected
+def test_convert_numeric_array_to_matlab_supported_shapes(value, format_codes, expected):
+    assert convert_numeric_array_to_matlab(value, format_codes=format_codes) == expected
+
+
+def test_convert_numeric_array_to_matlab_rejects_wrong_number_of_column_formats():
+    with pytest.raises(ValueError, match="Expected 2 format codes, got 1"):
+        convert_numeric_array_to_matlab(np.array([[1.0, 2.0]]), format_codes=[".1f"])
 
 
 @pytest.mark.parametrize(

@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 import numpy as np
 
 
@@ -5,20 +7,53 @@ def convert_string_to_matlab(string: str) -> str:
     return f"'{string}'"
 
 
-def convert_numeric_array_to_matlab(array: [int, float, np.array]):
-    # TODO: Argument for number of decimal places (per column?)
+def _format_numeric_value(value, format_code: str | None = None):
+    if np.isnan(value):
+        return "NaN"
+    if np.isposinf(value):
+        return "Inf"
+    if np.isneginf(value):
+        return "-Inf"
+    if format_code is None:
+        return value
+    return format(value, format_code)
+
+
+def convert_numeric_array_to_matlab(
+    array: int | float | np.ndarray,
+    format_codes: str | Sequence[str] | None = None,
+):
     if np.size(array) == 1: # Covers case for int and float
         if isinstance(array, np.ndarray):
-            return array.item()
-        else:
-            return array
+            return _format_numeric_value(array.item(), format_codes)
+        return _format_numeric_value(array, format_codes)
+    
+    if isinstance(format_codes, str) or format_codes is None:
+        column_format_codes = format_codes
     else:
-        rows = []
-        for row in array:  # flatten higher dims into 2D
-            row_str = " ".join(str(x) for x in row)
-            rows.append(row_str)
-        matlab_code = "; ".join(rows)
-        return f"[{matlab_code}]"
+        column_format_codes = list(format_codes)
+        n_cols = np.asarray(array).shape[1]
+        if len(column_format_codes) != n_cols:
+            raise ValueError(
+                f"Expected {n_cols} format codes, got {len(column_format_codes)}."
+            )
+
+    rows = []
+    for row in array:
+        if column_format_codes is None:
+            row_str = " ".join(str(_format_numeric_value(x)) for x in row)
+        elif isinstance(column_format_codes, str):
+            row_str = " ".join(
+                str(_format_numeric_value(x, column_format_codes)) for x in row
+            )
+        else:
+            row_str = " ".join(
+                str(_format_numeric_value(x, fmt))
+                for x, fmt in zip(row, column_format_codes)
+            )
+        rows.append(row_str)
+    matlab_code = "; ".join(rows)
+    return f"[{matlab_code}]"
 
 
 def convert_list_of_strings_to_matlab(list_data: list, double_brackets: bool = False):

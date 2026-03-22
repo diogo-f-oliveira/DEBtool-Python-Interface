@@ -58,8 +58,8 @@ class TierVisualizer:
         ax_idx = 0
         for p_id in pars_entity_list:
             pars = self.tier_structure.get_full_pars_dict(tier_name=pars_tier, entity_id=p_id, include_tier=True)
-            data_entity_list = self.tier_structure.entities_in_other_tier_from_entity_list(
-                tier_name=pars_tier, other_tier=data_tier, entity_list=[p_id]
+            data_entity_list = self.tier_structure.entity_hierarchy.map_entities(
+                source_tier=pars_tier, target_tier=data_tier, entity_list=[p_id]
             )
 
             for d_id in data_entity_list:
@@ -89,8 +89,8 @@ class TierVisualizer:
             data_entity_pars_dict = {}
             pars_entity_list = []
             for d_id in data_entity_list:
-                pars_entity_of_data_entity = self.tier_structure.entities_in_other_tier_from_entity_list(
-                    tier_name=data_tier, other_tier=pars_tier, entity_list=[d_id]
+                pars_entity_of_data_entity = self.tier_structure.entity_hierarchy.map_entities(
+                    source_tier=data_tier, target_tier=pars_tier, entity_list=[d_id]
                 )[0]
                 pars_dict = self.tier_structure.get_full_pars_dict(tier_name=pars_tier,
                                                                    entity_id=pars_entity_of_data_entity,
@@ -119,9 +119,9 @@ class TierVisualizer:
                 if data_type in data_collection.entity_data_types:
 
                     # Create subplots
-                    if self.tier_structure.is_tier_below(tier_name=tier_name, other_tier=data_tier):
-                        n_subplots = len(self.tier_structure.entities_in_other_tier_from_entity_list(
-                            tier_name=tier_name, other_tier=data_tier, entity_list=selected_entity_list
+                    if self.tier_structure.entity_hierarchy.is_tier_below(tier_name=tier_name, other_tier=data_tier):
+                        n_subplots = len(self.tier_structure.entity_hierarchy.map_entities(
+                            source_tier=tier_name, target_tier=data_tier, entity_list=selected_entity_list
                         ))
                     else:
                         n_subplots = len(selected_entity_list)
@@ -141,9 +141,9 @@ class TierVisualizer:
                 elif data_type in data_collection.group_data_types:
                     if tier_name == data_tier:
                         data_entity_list = list(selected_entity_list)
-                    elif self.tier_structure.is_tier_below(tier_name=tier_name, other_tier=data_tier):
-                        data_entity_list = self.tier_structure.entities_in_other_tier_from_entity_list(
-                            tier_name=tier_name, other_tier=data_tier, entity_list=selected_entity_list
+                    elif self.tier_structure.entity_hierarchy.is_tier_below(tier_name=tier_name, other_tier=data_tier):
+                        data_entity_list = self.tier_structure.entity_hierarchy.map_entities(
+                            source_tier=tier_name, target_tier=data_tier, entity_list=selected_entity_list
                         )
                     else:
                         print('Behaviour is not defined for plotting predictions of a group data source of a tier '

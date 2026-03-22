@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import pandas as pd
 
@@ -191,6 +191,15 @@ class TierHierarchy:
         self._require_known_entity(tier_name, entity_id)
         return self.entity_to_matlab_id[tier_name][entity_id]
 
+    def get_entity_at_tier(self, tier_name: str, entity_id: str, target_tier: str) -> str:
+        self._require_known_entity(tier_name, entity_id)
+        self._require_known_tier(target_tier)
+        if self.get_tier_index(target_tier) > self.get_tier_index(tier_name):
+            raise TierHierarchyError(
+                f"Tier '{target_tier}' is below '{tier_name}', so '{entity_id}' has no single ancestor there."
+            )
+        return self.get_path(tier_name, entity_id)[target_tier]
+
     def get_children(self, tier_name: str, entity_id: str) -> Tuple[str, ...]:
         self._require_known_entity(tier_name, entity_id)
         child_tier = self.get_child_tier(tier_name)
@@ -244,6 +253,13 @@ class TierHierarchy:
         self._require_known_tier(tier_name)
         return self.tier_names.index(tier_name)
 
+    def is_tier_below(self, tier_name: str, other_tier: str) -> bool:
+        return self.get_tier_index(tier_name) < self.get_tier_index(other_tier)
+
+    def get_all_tiers_below(self, tier_name: str) -> Tuple[str, ...]:
+        tier_index = self.get_tier_index(tier_name)
+        return self.tier_names[tier_index:]
+
     def get_parent_tier(self, tier_name: str) -> Optional[str]:
         tier_index = self.get_tier_index(tier_name)
         if tier_index == 0:
@@ -271,6 +287,46 @@ class TierHierarchy:
         dataframe = pd.DataFrame.from_records(self.to_records())
         dataframe.set_index(["tier", "entity"], inplace=True)
         return dataframe[list(self.tier_names)]
+
+    def map_entities(
+            self,
+            source_tier: str,
+            target_tier: str,
+            entity_list: Union[Sequence[str], str] = "all",
+    ) -> Tuple[str, ...]:
+        self._require_known_tier(source_tier)
+        self._require_known_tier(target_tier)
+
+        if entity_list == "all":
+            normalized_entities = list(self.get_entities(source_tier))
+        elif isinstance(entity_list, str):
+            normalized_entities = [self._validate_entity_id(entity_list, tier_name=source_tier)]
+            self._require_known_entity(source_tier, normalized_entities[0])
+        else:
+            normalized_entities = [self._validate_entity_id(entity_id, tier_name=source_tier) for entity_id in entity_list]
+            for entity_id in normalized_entities:
+                self._require_known_entity(source_tier, entity_id)
+
+        if source_tier == target_tier:
+            return tuple(normalized_entities)
+
+        source_index = self.get_tier_index(source_tier)
+        target_index = self.get_tier_index(target_tier)
+
+        if target_index < source_index:
+            ordered_entities: List[str] = []
+            for entity_id in normalized_entities:
+                mapped_entity = self.get_entity_at_tier(source_tier, entity_id, target_tier)
+                if mapped_entity not in ordered_entities:
+                    ordered_entities.append(mapped_entity)
+            return tuple(ordered_entities)
+
+        source_entities = set(normalized_entities)
+        ordered_descendants: List[str] = []
+        for entity_id in self.get_entities(target_tier):
+            if self.get_entity_at_tier(target_tier, entity_id, source_tier) in source_entities:
+                ordered_descendants.append(entity_id)
+        return tuple(ordered_descendants)
 
     def _build_children_index(self) -> Dict[str, Dict[str, Tuple[str, ...]]]:
         children_index: Dict[str, Dict[str, Tuple[str, ...]]] = {

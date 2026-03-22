@@ -8,17 +8,18 @@ from tabulate import tabulate
 
 from ..data_sources.collection import DataCollection
 from ..estimation.runner import EstimationRunner
+from .hierarchy import TierHierarchy
 from ..utils.mydata_code_generation import check_files_exist_in_folder, generate_tier_variable_code, \
     generate_meta_data_code
 from ..utils.data_conversion import convert_list_of_strings_to_matlab, convert_dict_to_matlab
 
 class MultiTierStructure:
-    def __init__(self, species_name: str, entity_vs_tier: pd.DataFrame, data: dict[str, DataCollection], pars: dict,
+    def __init__(self, species_name: str, entity_hierarchy: TierHierarchy, data: dict[str, DataCollection], pars: dict,
                  tier_pars: dict, template_folder: str | Path, output_folder: str | Path, matlab_session='auto'):
         self.data = data
         self.species_name = species_name
-        self.entity_vs_tier = entity_vs_tier
-        self.tier_names = list(self.entity_vs_tier.columns)
+        self.entity_hierarchy = entity_hierarchy
+        self.tier_names = list(self.entity_hierarchy.tier_names)
         self.template_folder = Path(template_folder)
         self.output_folder = Path(output_folder)
         self.pars = pars
@@ -30,8 +31,8 @@ class MultiTierStructure:
 
     def build_tiers(self):
         self.output_folder.mkdir(parents=True, exist_ok=True)
-        # Save entity vs tier dataframe in output folder for reference
-        self.entity_vs_tier.to_csv(self.output_folder / "entity_vs_tier.csv")
+        # Save materialized path view of the hierarchy in output folder for reference
+        self.entity_hierarchy.to_dataframe().to_csv(self.output_folder / "entity_vs_tier.csv")
 
         # Create estimators for each name
         for tier_name in self.tier_names:
@@ -51,41 +52,8 @@ class MultiTierStructure:
                                                   template_folder=template_folder,
                                                   output_folder=tier_output_folder)
 
-    def get_all_entities_in_tier(self, tier_name):
-        return self.entity_vs_tier.loc[tier_name].index.to_list()
-
-    def entities_in_other_tier_from_entity_list(self, tier_name, other_tier, entity_list='all'):
-        if entity_list == 'all':
-            entity_list = self.entity_vs_tier.loc[tier_name].index.to_list()
-        if tier_name == other_tier:
-            return entity_list
-        elif self.is_tier_below(tier_name, other_tier):
-            tier_match = self.entity_vs_tier.loc[other_tier, tier_name]
-            return tier_match[tier_match.isin(entity_list)].index.to_list()
-        else:
-            return self.entity_vs_tier.loc[tier_name, other_tier].loc[entity_list].unique().tolist()
-
-    def get_tier_index(self, tier_name):
-        return self.tier_names.index(tier_name)
-
-    def get_tier_above(self, tier_name):
-        if tier_name == self.tier_names[0]:
-            return None
-        return self.tier_names[self.get_tier_index(tier_name) - 1]
-
-    def get_tier_below(self, tier_name):
-        if tier_name == self.tier_names[-1]:
-            return None
-        return self.tier_names[self.get_tier_index(tier_name) + 1]
-
-    def is_tier_below(self, tier_name, other_tier):
-        return self.get_tier_index(tier_name) < self.get_tier_index(other_tier)
-
-    def get_all_tiers_below(self, tier_name):
-        return self.tier_names[self.get_tier_index(tier_name):]
-
     def get_pars_from_tier_above(self, tier_name):
-        return self.tiers[self.get_tier_above(tier_name)].pars_df
+        return self.tiers[self.entity_hierarchy.get_parent_tier(tier_name)].pars_df
 
     def get_init_par_values(self, tier_name, entity_list='all'):
         """
@@ -96,10 +64,10 @@ class MultiTierStructure:
         :return: a DataFrame with initial values of tier parameters for all tier samples.
         """
         if entity_list == 'all':
-            entity_list = self.get_all_entities_in_tier(tier_name)
+            entity_list = list(self.entity_hierarchy.get_entities(tier_name))
         init_par_values = pd.DataFrame(columns=self.tier_pars[tier_name], index=entity_list)
 
-        prev_tier = self.get_tier_above(tier_name)
+        prev_tier = self.entity_hierarchy.get_parent_tier(tier_name)
         # Case for top tier
         if prev_tier is None:
             for ts_id in entity_list:
@@ -108,7 +76,7 @@ class MultiTierStructure:
         else:
             prev_tier_par_values = self.get_pars_from_tier_above(tier_name)
             for ts_id in entity_list:
-                prev_ts_id = self.entity_vs_tier.groupby(tier_name).get_group(ts_id)[prev_tier].iloc[0]
+                prev_ts_id = self.entity_hierarchy.get_entity_at_tier(tier_name, ts_id, prev_tier)
                 for par in self.tier_pars[tier_name]:
                     # Use pseudo data if available
                     if par in self.tiers[tier_name].pseudo_data:
@@ -130,9 +98,9 @@ class MultiTierStructure:
         :return:
         """
         pars_dict = self.pars.copy()
-        ts_tiers = self.entity_vs_tier.groupby(tier_name).get_group(entity_id).iloc[0]
+        ts_tiers = self.entity_hierarchy.get_path(tier_name, entity_id)
         for t in self.tier_names:
-            if self.get_tier_above(t) == tier_name:
+            if self.entity_hierarchy.get_parent_tier(t) == tier_name:
                 break
             if not include_tier and t == tier_name:
                 continue
@@ -156,7 +124,7 @@ class TierEstimator:
         self.name = tier_name
         self.tier_pars = tier_pars
         self.pars_df = None
-        self.tier_entities = self.tier_structure.get_all_entities_in_tier(self.name)
+        self.tier_entities = list(self.tier_structure.entity_hierarchy.get_entities(self.name))
         self.tier_groups = list(self.tier_structure.data[tier_name].groups)
         self.template_folder = Path(template_folder)
         self.output_folder = Path(output_folder)
@@ -172,7 +140,7 @@ class TierEstimator:
         entity_data_types = set()
         group_list = []
         group_data_types = set()
-        for tier_name in self.tier_structure.get_all_tiers_below(self.name):
+        for tier_name in self.tier_structure.entity_hierarchy.get_all_tiers_below(self.name):
             # Entity data
             tier_entities = self.tier_structure.data[tier_name].entities
             entity_list.extend([(tier_name, entity_id) for entity_id in tier_entities])
@@ -197,15 +165,15 @@ class TierEstimator:
 
     @property
     def tier_index(self):
-        return self.tier_structure.get_tier_index(self.name)
+        return self.tier_structure.entity_hierarchy.get_tier_index(self.name)
 
     @property
     def tier_below(self):
-        return self.tier_structure.get_tier_below(self.name)
+        return self.tier_structure.entity_hierarchy.get_child_tier(self.name)
 
     @property
     def tier_above(self):
-        return self.tier_structure.get_tier_above(self.name)
+        return self.tier_structure.entity_hierarchy.get_parent_tier(self.name)
 
     @property
     def estimation_complete(self):
@@ -287,7 +255,7 @@ class TierEstimator:
     def fetch_errors(self):
         estimation_errors = self.tier_structure.estimation_runner.fetch_errors_from_mat_file()
 
-        for tier_name in self.tier_structure.get_all_tiers_below(self.name):
+        for tier_name in self.tier_structure.entity_hierarchy.get_all_tiers_below(self.name):
             # Entity data
             tier = self.tier_structure.tiers[tier_name]
             for e_id in tier.data.entities:
@@ -359,15 +327,15 @@ class TierCodeGenerator:
         tier_groups = {}
         tier_subtree = {entity_id: {} for entity_id in entity_list}
         groups_of_entity = {}
-        for tier_name in self.tier_structure.get_all_tiers_below(self.tier_estimator.name):
+        for tier_name in self.tier_structure.entity_hierarchy.get_all_tiers_below(self.tier_estimator.name):
             tier = self.tier_structure.tiers[tier_name]
 
             # Get list of entities and groups to include in the estimation
             tier_entities_to_include = set()
             tier_groups_to_include = set()
             for entity_id in entity_list:
-                te_list = self.tier_structure.entities_in_other_tier_from_entity_list(
-                    tier_name=self.tier_estimator.name, other_tier=tier_name, entity_list=[entity_id]
+                te_list = self.tier_structure.entity_hierarchy.map_entities(
+                    source_tier=self.tier_estimator.name, target_tier=tier_name, entity_list=[entity_id]
                 )
                 tier_entities_to_include.update(te_list)
                 tier_groups_to_include.update(tier.data.get_group_list_from_entity_list(te_list))
@@ -484,7 +452,7 @@ class TierCodeGenerator:
     def generate_pars_init_file(self, entity_list):
         # TODO: Use multitier.ind_list_from_tier_sample_list()
         if entity_list == 'all':
-            entity_list = self.tier_estimator.tier_structure.get_all_entities_in_tier(self.tier_estimator.name)
+            entity_list = list(self.tier_estimator.tier_structure.entity_hierarchy.get_entities(self.tier_estimator.name))
         pars_dict = self.tier_estimator.tier_structure.get_full_pars_dict(self.tier_estimator.name, entity_list[0])
         template_path = (
             self.tier_estimator.template_folder /

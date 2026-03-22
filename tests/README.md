@@ -80,7 +80,7 @@ There is currently one example workflow:
 
 From that example, the current integration assumptions are:
 - `data.py` builds three `DataCollection` objects keyed by tier name: `breed`, `diet`, and `individual`
-- `tier_structure.py` builds the `entity_vs_tier` table and instantiates `MultiTierStructure`
+- `tier_structure.py` builds a `TierHierarchy` and instantiates `MultiTierStructure`
 - `estimation.py` provides the top-level workflow helpers for running or loading estimation results
 
 ## Guidance for future changes

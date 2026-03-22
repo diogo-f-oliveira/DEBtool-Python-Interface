@@ -1,8 +1,7 @@
-import numpy as np
-import pandas as pd
 from pathlib import Path
 
 from DEBtoolPyIF.data_sources.collection import DataCollection
+from DEBtoolPyIF.multitier import TierHierarchy
 from DEBtoolPyIF.multitier.procedure import MultiTierStructure
 
 
@@ -13,31 +12,20 @@ BASE_TEMPLATE_FOLDER = str(HERE / 'templates')
 TIER_NAMES = ['breed', 'diet', 'individual']
 
 
-def generate_entity_vs_tier_df(data: DataCollection) -> pd.DataFrame:
-    """Create the entity_vs_tier DataFrame used by the example."""
-    entity_vs_tier_df = pd.DataFrame(
-        index=pd.MultiIndex(levels=[[], []], codes=[[], []], names=['tier', 'entity']),
-        columns=TIER_NAMES,
-    )
-
-    # Breed
-    entity_vs_tier_df.loc[('breed', 'male'), 'breed'] = 'male'
-    # Diets
-    for diet in ['CTRL', 'TMR']:
-        entity_vs_tier_df.loc[('diet', diet), :] = ['male', diet, np.nan]
-    # Individuals
+def generate_entity_hierarchy(data: DataCollection) -> TierHierarchy:
+    """Create the TierHierarchy used by the example."""
+    paths = []
     twds = data.entity_data_sources['greenbeef_1_weights_tW']
     ind_list = list(twds.entities)
     for ind_id in ind_list:
         ind_data = twds.get_entity_data(ind_id).iloc[0]
-        entity_vs_tier_df.loc[('individual', ind_id), :] = ['male', f"{ind_data['diet']}", ind_id]
-
-    return entity_vs_tier_df
+        paths.append({'breed': 'male', 'diet': f"{ind_data['diet']}", 'individual': ind_id})
+    return TierHierarchy.from_paths(tier_names=TIER_NAMES, paths=paths)
 
 
 def create_tier_structure(data, matlab_session='auto') -> MultiTierStructure:
     """Create and return a MultiTierStructure from example data."""
-    entity_vs_tier_df = generate_entity_vs_tier_df(data['individual'])
+    entity_hierarchy = generate_entity_hierarchy(data['individual'])
 
     initial_pars = {
         'p_Am': 5000,
@@ -63,7 +51,7 @@ def create_tier_structure(data, matlab_session='auto') -> MultiTierStructure:
         'individual': ['p_Am', 'kap_X']
     }
 
-    multitier = MultiTierStructure(species_name='Bos_taurus_Angus', entity_vs_tier=entity_vs_tier_df, data=data,
+    multitier = MultiTierStructure(species_name='Bos_taurus_Angus', entity_hierarchy=entity_hierarchy, data=data,
                                    pars=initial_pars,
                                    tier_pars=tier_pars,
                                    template_folder=BASE_TEMPLATE_FOLDER,

@@ -32,5 +32,6 @@ def test_create_tier_structure_has_core_multitier_attributes(
     tier_structure = tier_module.create_tier_structure(data, matlab_session="ignore")
 
     assert hasattr(tier_structure, "tier_names")
+    assert hasattr(tier_structure, "entity_hierarchy")
     assert hasattr(tier_structure, "tiers")
     assert isinstance(tier_structure.tiers, dict)

@@ -107,6 +107,7 @@ def test_add_data_sources_and_mappings(sample_datacollection):
 
     # get_group_list_from_entity_list (subset)
     assert dc.get_group_list_from_entity_list(['b']) == ['g1']
+    assert dc.get_group_list_from_entity_list(('b',)) == ['g1']
 
 
 def test_get_entity_data_concat_and_none():

@@ -104,6 +104,7 @@ class DataCollection:
             return []
         if entity_list == 'all':
             return self.groups
+        entity_list = list(entity_list)
         return sorted(self.entity_vs_group_df.loc[entity_list].dropna(axis=1, how='all').columns)
 
     def get_data_source_of_entity(self, entity_id, data_type):

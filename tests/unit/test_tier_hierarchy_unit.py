@@ -44,6 +44,11 @@ def test_tier_hierarchy_returns_ordered_paths_and_descendants(hierarchy):
     }
     assert hierarchy.get_descendants("breed", "male", "individual") == ("PT1", "PT2", "PT3")
     assert hierarchy.get_descendants("diet", "CTRL", "individual") == ("PT1", "PT2")
+    assert hierarchy.is_tier_below("diet", "individual") is True
+    assert hierarchy.is_tier_below("individual", "diet") is False
+    assert hierarchy.get_all_tiers_below("diet") == ("diet", "individual")
+    assert hierarchy.map_entities("diet", "individual", ["CTRL"]) == ("PT1", "PT2")
+    assert hierarchy.map_entities("individual", "diet", ["PT1", "PT2", "PT3"]) == ("CTRL", "TMR")
 
 
 def test_tier_hierarchy_can_be_built_from_complete_paths():

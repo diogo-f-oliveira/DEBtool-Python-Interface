@@ -1,6 +1,6 @@
 import pytest
 
-from DEBtoolPyIF.multitier.procedure import MultiTierStructure
+from DEBtoolPyIF.multitier import MultiTierStructure
 
 
 @pytest.mark.integration

@@ -3,7 +3,7 @@ import ipywidgets as widgets
 import numpy as np
 from IPython.display import display, clear_output
 
-from ..multitier.procedure import MultiTierStructure
+from ..multitier import MultiTierStructure
 from ..data_sources.collection import DataCollection
 
 

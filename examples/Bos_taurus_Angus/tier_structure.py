@@ -1,8 +1,7 @@
 from pathlib import Path
 
 from DEBtoolPyIF.data_sources.collection import DataCollection
-from DEBtoolPyIF.multitier import TierHierarchy
-from DEBtoolPyIF.multitier.procedure import MultiTierStructure
+from DEBtoolPyIF.multitier import MultiTierStructure, TierHierarchy
 
 
 HERE = Path(__file__).resolve().parent

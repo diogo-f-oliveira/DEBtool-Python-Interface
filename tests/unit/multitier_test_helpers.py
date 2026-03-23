@@ -55,6 +55,30 @@ class FakeMixedTierData:
         return list(self.group_to_entities[group_id])
 
 
+class FakeSummaryBreedTierData:
+    def __init__(self):
+        self.groups = []
+        self.entities = ["male"]
+        self.entity_data_types = ["obs"]
+        self.group_data_types = []
+
+
+class FakeSummaryDietTierData:
+    def __init__(self):
+        self.groups = ["CTRL_group", "TMR_group"]
+        self.entities = ["CTRL", "TMR"]
+        self.entity_data_types = ["obs"]
+        self.group_data_types = ["group_obs"]
+
+
+class FakeSummaryIndividualTierData:
+    def __init__(self):
+        self.groups = ["Pen_2", "Pen_3"]
+        self.entities = ["PT20", "PT21"]
+        self.entity_data_types = ["obs"]
+        self.group_data_types = ["group_obs"]
+
+
 class FakeRunner:
     def __init__(self):
         self.estim_files_dir = None
@@ -133,6 +157,30 @@ class FakeMixedTierStructure:
         )
 
 
+class FakeSummaryTierStructure:
+    def __init__(self):
+        self.species_name = "Test_species"
+        self.data = {
+            "breed": FakeSummaryBreedTierData(),
+            "diet": FakeSummaryDietTierData(),
+            "individual": FakeSummaryIndividualTierData(),
+        }
+        self.estimation_runner = FakeRunner()
+        self.tiers = {}
+        self.entity_hierarchy = TierHierarchy(
+            tier_names=["breed", "diet", "individual"],
+            entities={
+                "breed": ["male"],
+                "diet": ["CTRL", "TMR"],
+                "individual": ["PT20", "PT21"],
+            },
+            parents={
+                "diet": {"CTRL": "male", "TMR": "male"},
+                "individual": {"PT20": "CTRL", "PT21": "TMR"},
+            },
+        )
+
+
 @pytest.fixture
 def template_folder(tmp_path):
     folder = tmp_path / "templates"
@@ -181,5 +229,19 @@ def build_mixed_tier_estimator(template_folder: Path):
         output_folder=str(template_folder / "mixed_output"),
     )
     tier_structure.tiers["tier_1"] = tier
+    tier.code_generator.generate_code = lambda entity_list, pseudo_data_weight=0.1: None
+    return tier
+
+
+def build_summary_tier_estimator(template_folder: Path):
+    tier_structure = FakeSummaryTierStructure()
+    tier = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="breed",
+        tier_pars=["par_a", "par_b"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "summary_output"),
+    )
+    tier_structure.tiers["breed"] = tier
     tier.code_generator.generate_code = lambda entity_list, pseudo_data_weight=0.1: None
     return tier

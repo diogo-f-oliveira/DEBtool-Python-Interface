@@ -9,6 +9,7 @@ from DEBtoolPyIF.multitier import TierEstimator
 from tests.unit.multitier_test_helpers import (
     build_grouped_tier_estimator,
     build_mixed_tier_estimator,
+    build_summary_tier_estimator,
     build_tier_estimator,
 )
 
@@ -24,7 +25,13 @@ def test_save_results_writes_backward_compatible_csvs_and_metadata(template_fold
         estimation_settings=estimation_settings,
     )
 
-    expected_files = {"pars.csv", "entity_data_errors.csv", "group_data_errors.csv", "result_metadata.json"}
+    expected_files = {
+        "pars.csv",
+        "entity_data_errors.csv",
+        "group_data_errors.csv",
+        "result_metadata.json",
+        "result_summary.json",
+    }
     assert set(TierEstimator.OUTPUT_FILES) == expected_files
     for filename in expected_files:
         assert (tier.output_folder / filename).is_file()
@@ -50,6 +57,16 @@ def test_save_results_writes_backward_compatible_csvs_and_metadata(template_fold
     assert metadata["estimation_iterations"][0]["estimation_end_time"] is not None
     assert metadata["estimation_iterations"][0]["elapsed_duration_seconds"] >= 0
     assert metadata["estimation_iterations"][0]["success"] is True
+
+    summary = json.loads((tier.output_folder / "result_summary.json").read_text(encoding="utf-8"))
+    assert summary["tier_name"] == "tier_1"
+    assert summary["species_name"] == "Test_species"
+    assert summary["n_tier_entities"] == 1
+    assert summary["n_tier_groups"] == 1
+    assert summary["tier_parameters"] == ["par_a"]
+    assert summary["mean_estimated_parameters"] == {"par_a": 1.23}
+    assert "tier_1" in summary["mean_entity_errors_by_tier"]
+    assert "tier_1" in summary["mean_group_errors_by_tier"]
 
 
 def test_load_results_restores_saved_metadata_and_tables(template_folder):
@@ -182,3 +199,110 @@ def test_save_and_load_results_preserve_mixed_group_and_entity_iteration_metadat
         "group",
         "entity",
     ]
+
+
+def test_save_results_writes_compact_result_summary_json(template_folder):
+    tier = build_summary_tier_estimator(template_folder)
+    tier.estim_start_time = pd.Timestamp("2024-01-01T00:00:00")
+    tier.estim_end_time = pd.Timestamp("2024-01-01T00:02:00")
+    tier.pars_df.loc["male", "par_a"] = 1.5
+    tier.pars_df.loc["male", "par_b"] = 2.5
+    tier.entity_data_errors = pd.DataFrame(
+        {
+            "obs_a": [1.0, 2.0, 4.0, 8.0, 12.0],
+            "obs_b": [3.0, None, 6.0, 10.0, None],
+        },
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("breed", "male"),
+                ("diet", "CTRL"),
+                ("diet", "TMR"),
+                ("individual", "PT20"),
+                ("individual", "PT21"),
+            ],
+            names=["tier", "entity"],
+        ),
+    )
+    tier.group_data_errors = pd.DataFrame(
+        {
+            "group_obs": [5.0, 7.0, 9.0],
+        },
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("diet", "CTRL_group"),
+                ("individual", "Pen_2"),
+                ("individual", "Pen_3"),
+            ],
+            names=["tier", "group"],
+        ),
+    )
+
+    tier.save_results()
+
+    summary = json.loads((tier.output_folder / "result_summary.json").read_text(encoding="utf-8"))
+    assert summary["tier_name"] == "breed"
+    assert summary["species_name"] == "Test_species"
+    assert summary["n_tier_entities"] == 1
+    assert summary["n_tier_groups"] == 0
+    assert summary["tier_parameters"] == ["par_a", "par_b"]
+    assert summary["elapsed_duration_seconds"] == 120.0
+    assert summary["mean_estimated_parameters"] == {"par_a": 1.5, "par_b": 2.5}
+    assert summary["mean_entity_errors_by_tier"] == {
+        "breed": 2.0,
+        "diet": 4.0,
+        "individual": 10.0,
+    }
+    assert summary["mean_group_errors_by_tier"] == {
+        "breed": None,
+        "diet": 5.0,
+        "individual": 8.0,
+    }
+    assert tier.result_summary == summary
+
+
+def test_load_results_reconstructs_result_summary_after_loading(template_folder):
+    tier = build_summary_tier_estimator(template_folder)
+    tier.estim_start_time = pd.Timestamp("2024-01-01T00:00:00")
+    tier.estim_end_time = pd.Timestamp("2024-01-01T00:02:00")
+    tier.pars_df.loc["male", "par_a"] = 1.5
+    tier.pars_df.loc["male", "par_b"] = 2.5
+    tier.entity_data_errors = pd.DataFrame(
+        {
+            "obs_a": [1.0, 2.0, 4.0, 8.0, 12.0],
+            "obs_b": [3.0, None, 6.0, 10.0, None],
+        },
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("breed", "male"),
+                ("diet", "CTRL"),
+                ("diet", "TMR"),
+                ("individual", "PT20"),
+                ("individual", "PT21"),
+            ],
+            names=["tier", "entity"],
+        ),
+    )
+    tier.group_data_errors = pd.DataFrame(
+        {
+            "group_obs": [5.0, 7.0, 9.0],
+        },
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("diet", "CTRL_group"),
+                ("individual", "Pen_2"),
+                ("individual", "Pen_3"),
+            ],
+            names=["tier", "group"],
+        ),
+    )
+    tier.save_results()
+
+    expected_summary = tier.build_result_summary()
+    (tier.output_folder / "result_summary.json").unlink()
+
+    loaded_tier = build_summary_tier_estimator(template_folder)
+    loaded_tier.load_results()
+
+    assert loaded_tier.result_summary == expected_summary
+    rebuilt_summary = loaded_tier.build_result_summary()
+    assert rebuilt_summary == expected_summary

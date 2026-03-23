@@ -127,7 +127,8 @@ class TierEstimator:
       ``(tier, group)``. This remains unchanged for backward compatibility.
     - ``result_metadata.json`` stores stable tier metadata for machine-readable loading, including tier identity,
       output folder, entities, groups, estimated parameters, estimation settings actually used, persisted timestamps,
-      and elapsed duration in seconds.
+      overall elapsed duration in seconds, and per-iteration timing records for each group or entity estimation
+      performed within the tier.
 
     Generated MATLAB files such as ``mydata_<species>.m``, ``pars_init_<species>.m``, ``predict_<species>.m``, and
     ``run_<species>.m`` may also exist in the tier folder or nested estimation subfolders. Those files are execution
@@ -186,6 +187,7 @@ class TierEstimator:
         self.code_generator = TierCodeGenerator(tier=self)
         self.estim_start_time = None
         self.estim_end_time = None
+        self.estimation_iterations = []
         self.result_metadata = None
 
     @property
@@ -229,22 +231,38 @@ class TierEstimator:
 
         print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
+        self.estimation_iterations = []
 
         # TODO: Add option to only estimate for some tier samples not all that exist in the tier
         # Get list of tier samples or groups
         # If there is only one entity in the tier, then do not create a subfolder
         if len(self.tier_entities) == 1:
-            folder_names = ['']
-            list_of_tier_entity_lists = [self.tier_entities]
+            estimation_targets = [{
+                "target_type": "entity",
+                "target_name": self.tier_entities[0],
+                "folder_name": "",
+                "entity_list": list(self.tier_entities),
+            }]
         # Check if the tier has groups
         elif len(self.tier_groups):
-            folder_names = self.tier_groups
-            list_of_tier_entity_lists = [self.data.get_entity_list_of_group(g_id) for g_id in self.tier_groups]
+            estimation_targets = [{
+                "target_type": "group",
+                "target_name": group_name,
+                "folder_name": group_name,
+                "entity_list": list(self.data.get_entity_list_of_group(group_name)),
+            } for group_name in self.tier_groups]
         else:
-            folder_names = self.tier_entities
-            list_of_tier_entity_lists = [[entity_id] for entity_id in self.tier_entities]
+            estimation_targets = [{
+                "target_type": "entity",
+                "target_name": entity_id,
+                "folder_name": entity_id,
+                "entity_list": [entity_id],
+            } for entity_id in self.tier_entities]
 
-        for group_name, entity_list in zip(folder_names, list_of_tier_entity_lists):
+        for estimation_target in estimation_targets:
+            group_name = estimation_target["folder_name"]
+            entity_list = estimation_target["entity_list"]
+            iteration_start_time = pd.Timestamp.now()
             # Create estimation folder and set it in TierCodeGenerator and EstimationRunner objects
             output_folder = self.output_folder / group_name
             output_folder.mkdir(parents=True, exist_ok=True)
@@ -255,9 +273,19 @@ class TierEstimator:
 
             # Run estimation for name sample
             success = self.tier_structure.estimation_runner.run_estimation(hide_output=hide_output)
+            iteration_end_time = pd.Timestamp.now()
+            self.estimation_iterations.append(self.build_estimation_iteration_metadata(
+                target_type=estimation_target["target_type"],
+                target_name=estimation_target["target_name"],
+                entity_list=entity_list,
+                output_folder=output_folder,
+                start_time=iteration_start_time,
+                end_time=iteration_end_time,
+                success=success,
+            ))
             if not success:
                 print(f"Estimation for {self.name} tier with parameters {' '.join(self.tier_pars)} failed for tier "
-                      f"entity or group {group_name}.")
+                      f"entity or group {estimation_target['target_name']}.")
                 continue
 
             # Fetch and store results
@@ -334,6 +362,25 @@ class TierEstimator:
             return None
         return (self.estim_end_time - self.estim_start_time).total_seconds()
 
+    @staticmethod
+    def get_duration_seconds(start_time, end_time):
+        if start_time is None or end_time is None:
+            return None
+        return (end_time - start_time).total_seconds()
+
+    def build_estimation_iteration_metadata(self, target_type, target_name, entity_list, output_folder,
+                                            start_time, end_time, success):
+        return self._serialize_metadata_value({
+            "estimation_target_type": target_type,
+            "estimation_target_name": target_name,
+            "entity_list": list(entity_list),
+            "output_folder": str(Path(output_folder).resolve()),
+            "estimation_start_time": start_time,
+            "estimation_end_time": end_time,
+            "elapsed_duration_seconds": self.get_duration_seconds(start_time, end_time),
+            "success": success,
+        })
+
     def build_result_metadata(self):
         metadata = {
             "schema_version": self.RESULT_SCHEMA_VERSION,
@@ -348,6 +395,7 @@ class TierEstimator:
             "estimation_start_time": self.estim_start_time,
             "estimation_end_time": self.estim_end_time,
             "elapsed_duration_seconds": self.get_elapsed_duration_seconds(),
+            "estimation_iterations": deepcopy(self.estimation_iterations),
         }
         return self._serialize_metadata_value(metadata)
 
@@ -377,6 +425,16 @@ class TierEstimator:
         self.estimation_settings = deepcopy(metadata.get("estimation_settings"))
         self.estim_start_time = self._deserialize_timestamp(metadata.get("estimation_start_time"))
         self.estim_end_time = self._deserialize_timestamp(metadata.get("estimation_end_time"))
+        self.estimation_iterations = []
+        for iteration in metadata.get("estimation_iterations", []):
+            loaded_iteration = deepcopy(iteration)
+            loaded_iteration["estimation_start_time"] = self._deserialize_timestamp(
+                loaded_iteration.get("estimation_start_time")
+            )
+            loaded_iteration["estimation_end_time"] = self._deserialize_timestamp(
+                loaded_iteration.get("estimation_end_time")
+            )
+            self.estimation_iterations.append(loaded_iteration)
 
     def save_results(self):
         self.output_folder.mkdir(parents=True, exist_ok=True)
@@ -402,6 +460,7 @@ class TierEstimator:
             self.estimation_settings = None
             self.estim_start_time = None
             self.estim_end_time = None
+            self.estimation_iterations = []
             return
         self._apply_result_metadata(metadata)
 

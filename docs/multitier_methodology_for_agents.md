@@ -3,7 +3,10 @@
 This document explains the multitier DEB estimation methodology implemented in `DEBtoolPyIF`, focusing only on the concepts and package behavior that matter for implementation and maintenance. It is based on:
 
 - `docs/references/Oliveira_et_al_2024_multitier_DEB.pdf`
-- `src/DEBtoolPyIF/multitier/procedure.py`
+- `src/DEBtoolPyIF/multitier/structure.py`
+- `src/DEBtoolPyIF/multitier/tier_estimation.py`
+- `src/DEBtoolPyIF/multitier/codegen.py`
+- `src/DEBtoolPyIF/multitier/results.py`
 - `src/DEBtoolPyIF/data_sources/collection.py`
 - `examples/Bos_taurus_Angus/`
 
@@ -36,7 +39,9 @@ A tier is a hierarchical level of statistical universes. Typical examples are:
 
 The order matters. The package assumes tiers are listed from most general to most specific.
 
-In code, the tier order is the column order of `entity_vs_tier` passed to `MultiTierStructure`.
+In code, tier order is semantic and always runs from most general to most specific. In the
+current implementation, `MultiTierStructure` takes a `TierHierarchy` as `entity_hierarchy`, and
+the order comes from `entity_hierarchy.tier_names`.
 
 ### Statistical Universe
 
@@ -109,15 +114,29 @@ If tiers are estimated out of order, lower tiers lose their intended initializat
 
 ## Package Data Model
 
-### `entity_vs_tier`
+### `TierHierarchy` And `entity_vs_tier`
 
-`entity_vs_tier` is the backbone of the hierarchy.
+Conceptually, the hierarchy is a tree of entities across ordered tiers. The most direct way to
+think about it is:
 
-It is a DataFrame whose:
+- each entity belongs to one tier,
+- each non-root entity has exactly one parent in the tier above,
+- entities may exist in any tier even if they have no children below,
+- a path is a contiguous lineage from the root to any existing entity, not necessarily to the
+  deepest tier.
+
+This means a top-tier entity such as `female` may legitimately exist with no descendant diet or
+individual entities. That is still a valid hierarchy and must not be treated as malformed.
+
+In the current package code, `MultiTierStructure` stores this hierarchy as `entity_hierarchy`.
+For transparency and debugging, it also exports a materialized-path view as `entity_vs_tier.csv`.
+
+`entity_vs_tier` is a DataFrame whose:
 
 - index is a `MultiIndex` with levels `('tier', 'entity')`,
 - columns are the ordered tier names,
-- row values map each entity to the corresponding universe in every tier above or at its own level.
+- row values map each entity to the corresponding universe in every tier above or at its own level,
+  leaving tiers below that entity empty.
 
 For the Angus example:
 
@@ -125,11 +144,19 @@ For the Angus example:
 - diet row: `CTRL -> male / CTRL`,
 - individual row: `animal_id -> male / diet / animal_id`.
 
-The package uses this table to answer:
+For a hierarchy with an entity that terminates early, a valid row could also look like:
+
+- sex row: `female -> female / NaN / NaN`.
+
+The exported table is useful for inspection, but the live code now answers these questions through
+`TierHierarchy`:
 
 - which entities belong to a tier,
 - which lower-tier entities belong to a higher-tier entity,
 - which higher-tier universe an entity inherits parameter values from.
+
+This table should therefore be read as a materialized-path view of the hierarchy, not as evidence
+that every path must reach the deepest tier.
 
 ### `DataCollection`
 
@@ -142,18 +169,27 @@ There is one `DataCollection` per tier. It provides:
 
 This means the hierarchy and the data are separate concerns:
 
-- `entity_vs_tier` describes relationships across tiers,
+- `TierHierarchy` is the canonical hierarchy object,
+- `entity_vs_tier.csv` is a derived materialized-path export,
 - `DataCollection` describes available observations inside each tier.
 
 ## How `MultiTierStructure` Encodes The Method
 
-`MultiTierStructure` is the orchestration object.
+`MultiTierStructure` is the orchestration object. It owns estimation flow and parameter inheritance,
+but the actual entity relationships live in `entity_hierarchy`.
+
+In the current package layout, the multitier implementation is split by responsibility:
+
+- `structure.py` contains `MultiTierStructure`,
+- `tier_estimation.py` contains `TierEstimator`,
+- `codegen.py` contains `TierCodeGenerator`,
+- `results.py` contains result metadata serialization and save/load helpers.
 
 Important responsibilities:
 
 - preserve tier order,
 - create one `TierEstimator` per tier,
-- expose hierarchy navigation helpers,
+- delegate hierarchy navigation to `entity_hierarchy`,
 - compute initialization values and inherited parameter dictionaries,
 - keep a shared `EstimationRunner` for MATLAB execution.
 
@@ -163,13 +199,13 @@ Key methods:
   - validates template folders,
   - creates per-tier output folders,
   - instantiates `TierEstimator`.
-- `entities_in_other_tier_from_entity_list()`
-  - maps a list of entities in one tier to related entities in another tier.
 - `get_init_par_values()`
   - top tier: uses `pars`,
-  - lower tiers: uses the estimate from the tier above unless pseudo-data overrides it.
+  - lower tiers: uses `entity_hierarchy` to locate the parent entity in the tier above, unless
+    pseudo-data overrides it.
 - `get_full_pars_dict()`
-  - assembles the fixed parameter set visible to the current tier's MATLAB templates.
+  - uses `entity_hierarchy.get_path(...)` to assemble the fixed parameter context visible to the
+    current tier's MATLAB templates.
 
 ## How A Tier Is Estimated
 
@@ -184,7 +220,8 @@ Each estimator holds:
 - `entity_data_errors` and `group_data_errors`: prediction errors collected after estimation,
 - template/output folders,
 - optional pseudo-data overrides,
-- estimation settings for the MATLAB run.
+- estimation settings for the MATLAB run,
+- estimation timestamps and iteration records used by the result metadata helpers in `results.py`.
 
 ### Estimation Granularity
 
@@ -205,8 +242,10 @@ When estimating tier `T`, the generated MATLAB inputs include observations from:
 
 The code path is `TierCodeGenerator.generate_mydata_file()`, which:
 
-- walks `get_all_tiers_below(self.tier_estimator.name)`,
+- walks `entity_hierarchy.get_all_tiers_below(self.tier_estimator.name)`,
 - gathers relevant entities and groups per tier,
+- uses `entity_hierarchy.map_entities(...)` to map the current estimation entities to the related
+  entities in each lower tier,
 - records subtree membership in `tier_subtree`,
 - emits both the actual data variables and the tier-structure helper variables needed by the MATLAB templates.
 
@@ -324,7 +363,13 @@ It also shows that lower-tier `predict` files are hierarchy-aware. For example, 
 When changing multitier code or examples, preserve these invariants:
 
 - Tier order is semantic, not cosmetic.
-  - Columns in `entity_vs_tier` must run from most general to most specific.
+  - `entity_hierarchy.tier_names` must run from most general to most specific.
+  - The exported `entity_vs_tier.csv` should reflect that same order.
+- Hierarchy paths are contiguous, but they do not need to reach the deepest tier.
+  - An entity may exist at any tier without having descendants below it.
+- Non-root entities have exactly one parent in the tier above.
+  - If the same entity needs to belong to two different parents, it is not a valid tree node and
+    should be represented as two distinct entities or with a different model.
 - Lower tiers depend on higher-tier results.
   - A tier should not assume estimates exist unless the tier above has already been run or loaded.
 - `tier_pars` must be a subset of parameters known in higher tiers or base `pars`.
@@ -342,8 +387,12 @@ When changing multitier code or examples, preserve these invariants:
 
 Common implementation failures are:
 
-- malformed `entity_vs_tier`,
+- malformed `TierHierarchy`,
   - causes wrong inheritance, wrong subtree selection, or empty tier runs;
+- stale assumptions that `entity_vs_tier` is the source of truth,
+  - causes refactors to reintroduce duplicated hierarchy logic into `MultiTierStructure`;
+- assuming every path must reach the deepest tier,
+  - incorrectly drops valid entities that legitimately have no descendants;
 - choosing tier parameters that are not identifiable from the data available at that tier and below,
   - causes unstable or biologically implausible fits;
 - forgetting that lower-tier templates depend on helper variables generated in `mydata`,
@@ -369,7 +418,10 @@ If a proposed change does not make these answers clearer or safer, it is probabl
 ## Source Pointers
 
 - Paper methodology: `docs/references/Oliveira_et_al_2024_multitier_DEB.pdf`
-- Orchestration: `src/DEBtoolPyIF/multitier/procedure.py`
+- Structure and orchestration: `src/DEBtoolPyIF/multitier/structure.py`
+- Per-tier estimation flow: `src/DEBtoolPyIF/multitier/tier_estimation.py`
+- MATLAB file generation: `src/DEBtoolPyIF/multitier/codegen.py`
+- Result persistence: `src/DEBtoolPyIF/multitier/results.py`
 - Data container behavior: `src/DEBtoolPyIF/data_sources/collection.py`
 - Example hierarchy: `examples/Bos_taurus_Angus/tier_structure.py`
 - Example data loading: `examples/Bos_taurus_Angus/data.py`

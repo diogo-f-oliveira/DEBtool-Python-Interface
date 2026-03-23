@@ -56,7 +56,13 @@ def test_estimation_runs_end_to_end_for_example(estimated_multitier):
                 f"{tier_name}: {tier_output_folder}"
             )
 
-        for filename in ("pars.csv", "entity_data_errors.csv", "group_data_errors.csv", "result_metadata.json"):
+        for filename in (
+            "pars.csv",
+            "entity_data_errors.csv",
+            "group_data_errors.csv",
+            "result_metadata.json",
+            "result_summary.json",
+        ):
             assert (tier_output_folder / filename).is_file(), (
                 f"Expected tier output file missing for {tier_name}: {filename}"
             )
@@ -109,3 +115,16 @@ def test_estimation_outputs_expected_result_files(estimated_multitier):
         assert all(iteration["estimation_start_time"] is not None for iteration in metadata["estimation_iterations"])
         assert all(iteration["estimation_end_time"] is not None for iteration in metadata["estimation_iterations"])
         assert all(iteration["elapsed_duration_seconds"] is not None for iteration in metadata["estimation_iterations"])
+
+        summary = json.loads((tier_output_folder / "result_summary.json").read_text(encoding="utf-8"))
+        assert summary["tier_name"] == tier_name
+        assert summary["species_name"] == multitier.species_name
+        assert summary["n_tier_entities"] == len(tier.tier_entities)
+        assert summary["n_tier_groups"] == len(tier.tier_groups)
+        assert summary["tier_parameters"] == tier.tier_pars
+        assert summary["elapsed_duration_seconds"] == metadata["elapsed_duration_seconds"]
+        expected_mean_parameters = {}
+        for parameter_name in tier.tier_pars:
+            parameter_mean = pd.to_numeric(tier.pars_df[parameter_name], errors="coerce").dropna().mean()
+            expected_mean_parameters[parameter_name] = None if pd.isna(parameter_mean) else parameter_mean
+        assert summary["mean_estimated_parameters"] == expected_mean_parameters

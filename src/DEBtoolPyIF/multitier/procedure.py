@@ -233,31 +233,7 @@ class TierEstimator:
         self.estim_start_time = pd.Timestamp.now()
         self.estimation_iterations = []
 
-        # TODO: Add option to only estimate for some tier samples not all that exist in the tier
-        # Get list of tier samples or groups
-        # If there is only one entity in the tier, then do not create a subfolder
-        if len(self.tier_entities) == 1:
-            estimation_targets = [{
-                "target_type": "entity",
-                "target_name": self.tier_entities[0],
-                "folder_name": "",
-                "entity_list": list(self.tier_entities),
-            }]
-        # Check if the tier has groups
-        elif len(self.tier_groups):
-            estimation_targets = [{
-                "target_type": "group",
-                "target_name": group_name,
-                "folder_name": group_name,
-                "entity_list": list(self.data.get_entity_list_of_group(group_name)),
-            } for group_name in self.tier_groups]
-        else:
-            estimation_targets = [{
-                "target_type": "entity",
-                "target_name": entity_id,
-                "folder_name": entity_id,
-                "entity_list": [entity_id],
-            } for entity_id in self.tier_entities]
+        estimation_targets = self.get_estimation_targets()
 
         for estimation_target in estimation_targets:
             group_name = estimation_target["folder_name"]
@@ -298,6 +274,43 @@ class TierEstimator:
             self.print_results()
         if save_results:
             self.save_results()
+
+    def get_estimation_targets(self):
+        # TODO: Add option to only estimate for some tier samples not all that exist in the tier
+        # If there is only one entity in the tier, then do not create a subfolder
+        if len(self.tier_entities) == 1:
+            return [{
+                "target_type": "entity",
+                "target_name": self.tier_entities[0],
+                "folder_name": "",
+                "entity_list": list(self.tier_entities),
+            }]
+
+        estimation_targets = []
+        grouped_entities = set()
+
+        for group_name in self.tier_groups:
+            entity_list = list(self.data.get_entity_list_of_group(group_name))
+            estimation_targets.append({
+                "target_type": "group",
+                "target_name": group_name,
+                "folder_name": group_name,
+                "entity_list": entity_list,
+            })
+            grouped_entities.update(entity_list)
+
+        ungrouped_entities = [
+            entity_id for entity_id in self.tier_entities
+            if entity_id not in grouped_entities
+        ]
+        estimation_targets.extend([{
+            "target_type": "entity",
+            "target_name": entity_id,
+            "folder_name": entity_id,
+            "entity_list": [entity_id],
+        } for entity_id in ungrouped_entities])
+
+        return estimation_targets
 
     def fetch_pars(self, entity_list):
         pars = self.tier_structure.estimation_runner.fetch_pars_from_mat_file()

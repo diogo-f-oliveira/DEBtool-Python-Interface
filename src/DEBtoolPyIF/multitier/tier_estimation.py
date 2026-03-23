@@ -24,6 +24,11 @@ class TierEstimator:
       output folder, entities, groups, estimated parameters, estimation settings actually used, persisted timestamps,
       overall elapsed duration in seconds, and per-iteration timing records for each group or entity estimation
       performed within the tier.
+    - ``result_summary.json`` stores a compact structured summary for quick inspection and loading. It includes:
+      ``tier_name``, ``species_name``, ``n_tier_entities``, ``n_tier_groups``, ordered ``tier_parameters``,
+      ``elapsed_duration_seconds``, ``mean_estimated_parameters`` as a parameter-to-mean mapping, and aggregated
+      ``mean_entity_errors_by_tier`` / ``mean_group_errors_by_tier`` mappings for each tier at or below the current
+      tier.
 
     Generated MATLAB files such as ``mydata_<species>.m``, ``pars_init_<species>.m``, ``predict_<species>.m``, and
     ``run_<species>.m`` may also exist in the tier folder or nested estimation subfolders. Those files are execution
@@ -31,12 +36,14 @@ class TierEstimator:
     """
 
     RESULT_METADATA_FILE = "result_metadata.json"
+    RESULT_SUMMARY_FILE = "result_summary.json"
     RESULT_SCHEMA_VERSION = 1
     OUTPUT_FILE_DESCRIPTIONS = {
         "pars.csv": "Estimated tier parameters indexed by entity.",
         "entity_data_errors.csv": "Entity-level data errors indexed by tier and entity.",
         "group_data_errors.csv": "Group-level data errors indexed by tier and group.",
         RESULT_METADATA_FILE: "Tier result metadata and timing persisted as JSON.",
+        RESULT_SUMMARY_FILE: "Compact structured tier summary persisted as JSON.",
     }
     OUTPUT_FILES = list(OUTPUT_FILE_DESCRIPTIONS)
 
@@ -85,6 +92,7 @@ class TierEstimator:
         self.estim_end_time = None
         self.estimation_iterations = []
         self.result_metadata = None
+        self.result_summary = None
 
     @property
     def data(self):
@@ -287,6 +295,9 @@ class TierEstimator:
 
     def build_result_metadata(self):
         return results.build_result_metadata(self)
+
+    def build_result_summary(self):
+        return results.build_result_summary(self)
 
     def _load_result_metadata(self):
         return results.load_result_metadata(self)

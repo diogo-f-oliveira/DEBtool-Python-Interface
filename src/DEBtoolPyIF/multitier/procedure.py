@@ -1,5 +1,6 @@
 import json
 import shutil
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from string import Template
@@ -223,7 +224,7 @@ class TierEstimator:
         self.estimation_settings = deepcopy(estimation_settings)
 
     def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True,
-                 estimation_settings=None):
+                 estimation_settings=None, entity_list='all'):
         if estimation_settings is not None:
             self.set_estimation_settings(estimation_settings)
         if self.estimation_settings is None:
@@ -233,7 +234,7 @@ class TierEstimator:
         self.estim_start_time = pd.Timestamp.now()
         self.estimation_iterations = []
 
-        estimation_targets = self.get_estimation_targets()
+        estimation_targets = self.get_estimation_targets(entity_list=entity_list)
 
         for estimation_target in estimation_targets:
             group_name = estimation_target["folder_name"]
@@ -275,22 +276,54 @@ class TierEstimator:
         if save_results:
             self.save_results()
 
-    def get_estimation_targets(self):
-        # TODO: Add option to only estimate for some tier samples not all that exist in the tier
+    def get_estimation_targets(self, entity_list='all'):
+        if entity_list in (None, 'all'):
+            requested_entities = list(self.tier_entities)
+        else:
+            requested_entities = list(dict.fromkeys(entity_list))
+            invalid_entities = [entity_id for entity_id in requested_entities if entity_id not in self.tier_entities]
+            if invalid_entities:
+                invalid_entities_str = ", ".join(invalid_entities)
+                raise ValueError(
+                    f"Cannot estimate tier '{self.name}' for unknown entities: {invalid_entities_str}."
+                )
+            if not requested_entities:
+                raise ValueError(f"Cannot estimate tier '{self.name}' with an empty entity list.")
+
         # If there is only one entity in the tier, then do not create a subfolder
         if len(self.tier_entities) == 1:
             return [{
                 "target_type": "entity",
                 "target_name": self.tier_entities[0],
                 "folder_name": "",
-                "entity_list": list(self.tier_entities),
+                "entity_list": list(requested_entities),
             }]
 
         estimation_targets = []
         grouped_entities = set()
+        requested_entities_set = set(requested_entities)
 
         for group_name in self.tier_groups:
             entity_list = list(self.data.get_entity_list_of_group(group_name))
+            if not requested_entities_set.intersection(entity_list):
+                continue
+
+            requested_group_entities = [entity_id for entity_id in entity_list if entity_id in requested_entities_set]
+            additional_group_entities = [
+                entity_id for entity_id in entity_list if entity_id not in requested_entities_set
+            ]
+            if additional_group_entities:
+                additional_entities_str = ", ".join(additional_group_entities)
+                requested_entities_str = ", ".join(requested_group_entities)
+                warnings.warn(
+                    f"Requested estimation for {requested_entities_str} in group '{group_name}' also requires "
+                    f"estimating other entities in that group: {additional_entities_str}.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                # TODO: Support true partial estimation within grouped runs by updating the generated MATLAB templates
+                # so shared group data can be included without forcing all entities in the group into the same run.
+
             estimation_targets.append({
                 "target_type": "group",
                 "target_name": group_name,
@@ -300,7 +333,7 @@ class TierEstimator:
             grouped_entities.update(entity_list)
 
         ungrouped_entities = [
-            entity_id for entity_id in self.tier_entities
+            entity_id for entity_id in requested_entities
             if entity_id not in grouped_entities
         ]
         estimation_targets.extend([{

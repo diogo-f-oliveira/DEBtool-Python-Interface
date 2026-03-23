@@ -29,6 +29,7 @@ def discover_examples() -> list[str]:
 
 
 EXAMPLE_NAMES = discover_examples()
+ESTIMATION_RESULTS_CACHE = {}
 
 
 def pytest_generate_tests(metafunc):
@@ -68,3 +69,46 @@ def import_example_estimation_module():
         return import_module(f"examples.{example_name}.estimation")
 
     return _import
+
+
+@pytest.fixture
+def estimated_multitier(
+    example_name,
+    examples_root,
+    import_example_data_module,
+    import_example_tier_module,
+    import_example_estimation_module,
+    tmp_path_factory,
+):
+    cache_key = example_name
+    if cache_key in ESTIMATION_RESULTS_CACHE:
+        return ESTIMATION_RESULTS_CACHE[cache_key]
+
+    pytest.importorskip("matlab.engine")
+
+    data_module = import_example_data_module(example_name)
+    tier_module = import_example_tier_module(example_name)
+    estimation_module = import_example_estimation_module(example_name)
+
+    output_folder = tmp_path_factory.mktemp(f"{example_name}_multitier_outputs")
+    original_output_folder = tier_module.ESTIMATION_FOLDER
+    tier_module.ESTIMATION_FOLDER = str(output_folder)
+
+    try:
+        data = data_module.load_data(str(examples_root / example_name / "data"))
+
+        try:
+            multitier = tier_module.create_tier_structure(data, matlab_session="auto")
+        except Exception as exc:
+            pytest.skip(f"MATLAB-backed estimation setup is unavailable: {exc}")
+
+        estimation_module.run_multitier_estimation(
+            multitier,
+            estimation_settings=estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
+        )
+
+        result = (multitier, Path(output_folder))
+        ESTIMATION_RESULTS_CACHE[cache_key] = result
+        return result
+    finally:
+        tier_module.ESTIMATION_FOLDER = original_output_folder

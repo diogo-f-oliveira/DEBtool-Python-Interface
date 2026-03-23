@@ -1,54 +1,11 @@
+import json
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 
-ESTIMATION_RESULTS_CACHE = {}
 GENERATED_MATLAB_FILE_PREFIXES = ("mydata", "pars_init", "predict", "run")
-
-
-@pytest.fixture
-def estimated_multitier(
-    example_name,
-    examples_root,
-    import_example_data_module,
-    import_example_tier_module,
-    import_example_estimation_module,
-    tmp_path_factory,
-):
-    cache_key = example_name
-    if cache_key in ESTIMATION_RESULTS_CACHE:
-        return ESTIMATION_RESULTS_CACHE[cache_key]
-
-    pytest.importorskip("matlab.engine")
-
-    data_module = import_example_data_module(example_name)
-    tier_module = import_example_tier_module(example_name)
-    estimation_module = import_example_estimation_module(example_name)
-
-    output_folder = tmp_path_factory.mktemp(f"{example_name}_multitier_outputs")
-    original_output_folder = tier_module.ESTIMATION_FOLDER
-    tier_module.ESTIMATION_FOLDER = str(output_folder)
-
-    try:
-        data = data_module.load_data(str(examples_root / example_name / "data"))
-
-        try:
-            multitier = tier_module.create_tier_structure(data, matlab_session="auto")
-        except Exception as exc:
-            pytest.skip(f"MATLAB-backed estimation setup is unavailable: {exc}")
-
-        estimation_module.run_multitier_estimation(
-            multitier,
-            estimation_settings=estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
-        )
-
-        result = (multitier, Path(output_folder))
-        ESTIMATION_RESULTS_CACHE[cache_key] = result
-        return result
-    finally:
-        tier_module.ESTIMATION_FOLDER = original_output_folder
 
 
 def _assert_non_empty_csv(csv_path: Path) -> pd.DataFrame:
@@ -99,7 +56,7 @@ def test_estimation_runs_end_to_end_for_example(estimated_multitier):
                 f"{tier_name}: {tier_output_folder}"
             )
 
-        for filename in ("pars.csv", "entity_data_errors.csv", "group_data_errors.csv"):
+        for filename in ("pars.csv", "entity_data_errors.csv", "group_data_errors.csv", "result_metadata.json"):
             assert (tier_output_folder / filename).is_file(), (
                 f"Expected tier output file missing for {tier_name}: {filename}"
             )
@@ -130,3 +87,25 @@ def test_estimation_outputs_expected_result_files(estimated_multitier):
         group_errors_df = pd.read_csv(tier_output_folder / "group_data_errors.csv", index_col=["tier", "group"])
         assert list(group_errors_df.index.names) == ["tier", "group"]
         assert list(group_errors_df.columns) == list(tier.group_data_errors.columns)
+
+        metadata = json.loads((tier_output_folder / "result_metadata.json").read_text(encoding="utf-8"))
+        assert metadata["tier_name"] == tier_name
+        assert metadata["species_name"] == multitier.species_name
+        assert metadata["output_folder"] == str(tier_output_folder.resolve())
+        assert metadata["tier_entities"] == tier.tier_entities
+        assert metadata["tier_groups"] == tier.tier_groups
+        assert metadata["tier_parameters"] == tier.tier_pars
+        assert metadata["estimation_settings"] == tier.estimation_settings
+        assert metadata["estimation_start_time"] is not None
+        assert metadata["estimation_end_time"] is not None
+        assert metadata["elapsed_duration_seconds"] is not None
+        if len(tier.tier_entities) == 1:
+            expected_iteration_count = 1
+        elif len(tier.tier_groups):
+            expected_iteration_count = len(tier.tier_groups)
+        else:
+            expected_iteration_count = len(tier.tier_entities)
+        assert len(metadata["estimation_iterations"]) == expected_iteration_count
+        assert all(iteration["estimation_start_time"] is not None for iteration in metadata["estimation_iterations"])
+        assert all(iteration["estimation_end_time"] is not None for iteration in metadata["estimation_iterations"])
+        assert all(iteration["elapsed_duration_seconds"] is not None for iteration in metadata["estimation_iterations"])

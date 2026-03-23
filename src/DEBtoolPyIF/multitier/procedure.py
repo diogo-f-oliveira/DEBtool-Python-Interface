@@ -1,3 +1,4 @@
+import json
 import shutil
 from copy import deepcopy
 from pathlib import Path
@@ -114,7 +115,34 @@ class MultiTierStructure:
 
 
 class TierEstimator:
-    OUTPUT_FILES = ['pars', 'ind_data_errors', 'group_data_errors', 'tier_errors']
+    """
+    Per-tier output contract after an estimation run.
+
+    Stable machine-readable result files written directly in each tier output folder:
+    - ``pars.csv`` stores estimated tier parameters indexed by entity. This remains unchanged for backward
+      compatibility.
+    - ``entity_data_errors.csv`` stores entity-level data errors for this tier and descendant tiers, indexed by
+      ``(tier, entity)``. This remains unchanged for backward compatibility.
+    - ``group_data_errors.csv`` stores group-level data errors for this tier and descendant tiers, indexed by
+      ``(tier, group)``. This remains unchanged for backward compatibility.
+    - ``result_metadata.json`` stores stable tier metadata for machine-readable loading, including tier identity,
+      output folder, entities, groups, estimated parameters, estimation settings actually used, persisted timestamps,
+      and elapsed duration in seconds.
+
+    Generated MATLAB files such as ``mydata_<species>.m``, ``pars_init_<species>.m``, ``predict_<species>.m``, and
+    ``run_<species>.m`` may also exist in the tier folder or nested estimation subfolders. Those files are execution
+    artifacts for the current workflow, not part of the stable result-file schema.
+    """
+
+    RESULT_METADATA_FILE = "result_metadata.json"
+    RESULT_SCHEMA_VERSION = 1
+    OUTPUT_FILE_DESCRIPTIONS = {
+        "pars.csv": "Estimated tier parameters indexed by entity.",
+        "entity_data_errors.csv": "Entity-level data errors indexed by tier and entity.",
+        "group_data_errors.csv": "Group-level data errors indexed by tier and group.",
+        RESULT_METADATA_FILE: "Tier result metadata and timing persisted as JSON.",
+    }
+    OUTPUT_FILES = list(OUTPUT_FILE_DESCRIPTIONS)
 
     def __init__(self, tier_structure: MultiTierStructure, tier_name, tier_pars: list, template_folder: str | Path,
                  output_folder: str | Path, extra_info='', extra_pseudo_data=None):
@@ -158,6 +186,7 @@ class TierEstimator:
         self.code_generator = TierCodeGenerator(tier=self)
         self.estim_start_time = None
         self.estim_end_time = None
+        self.result_metadata = None
 
     @property
     def data(self):
@@ -270,10 +299,93 @@ class TierEstimator:
                     if varname in estimation_errors:
                         self.group_data_errors.loc[(tier_name, g_id), dt] = estimation_errors[varname]
 
+    @staticmethod
+    def _serialize_metadata_value(value):
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, pd.Timestamp):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {str(key): TierEstimator._serialize_metadata_value(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [TierEstimator._serialize_metadata_value(item) for item in value]
+        if hasattr(value, "item") and not isinstance(value, (str, bytes)):
+            try:
+                return value.item()
+            except (AttributeError, TypeError, ValueError):
+                pass
+        if value is None:
+            return None
+        try:
+            if pd.isna(value):
+                return None
+        except TypeError:
+            pass
+        return value
+
+    @staticmethod
+    def _deserialize_timestamp(value):
+        if value in (None, ""):
+            return None
+        return pd.Timestamp(value)
+
+    def get_elapsed_duration_seconds(self):
+        if self.estim_start_time is None or self.estim_end_time is None:
+            return None
+        return (self.estim_end_time - self.estim_start_time).total_seconds()
+
+    def build_result_metadata(self):
+        metadata = {
+            "schema_version": self.RESULT_SCHEMA_VERSION,
+            "stable_output_files": list(self.OUTPUT_FILES),
+            "tier_name": self.name,
+            "species_name": self.tier_structure.species_name,
+            "output_folder": str(self.output_folder.resolve()),
+            "tier_entities": list(self.tier_entities),
+            "tier_groups": list(self.tier_groups),
+            "tier_parameters": list(self.tier_pars),
+            "estimation_settings": deepcopy(self.estimation_settings),
+            "estimation_start_time": self.estim_start_time,
+            "estimation_end_time": self.estim_end_time,
+            "elapsed_duration_seconds": self.get_elapsed_duration_seconds(),
+        }
+        return self._serialize_metadata_value(metadata)
+
+    def _load_result_metadata(self):
+        metadata_path = self.output_folder / self.RESULT_METADATA_FILE
+        if not metadata_path.is_file():
+            return None
+        with metadata_path.open("r", encoding="utf-8") as metadata_file:
+            return json.load(metadata_file)
+
+    def _apply_result_metadata(self, metadata):
+        metadata = deepcopy(metadata)
+        if metadata.get("tier_name") not in (None, self.name):
+            raise ValueError(
+                f"Cannot load results for tier '{self.name}' from metadata for tier '{metadata['tier_name']}'."
+            )
+        if metadata.get("species_name") not in (None, self.tier_structure.species_name):
+            raise ValueError(
+                "Cannot load multitier results because the stored species name does not match the active "
+                f"tier structure ('{metadata['species_name']}' != '{self.tier_structure.species_name}')."
+            )
+
+        self.result_metadata = metadata
+        self.tier_entities = list(metadata.get("tier_entities", self.tier_entities))
+        self.tier_groups = list(metadata.get("tier_groups", self.tier_groups))
+        self.tier_pars = list(metadata.get("tier_parameters", self.tier_pars))
+        self.estimation_settings = deepcopy(metadata.get("estimation_settings"))
+        self.estim_start_time = self._deserialize_timestamp(metadata.get("estimation_start_time"))
+        self.estim_end_time = self._deserialize_timestamp(metadata.get("estimation_end_time"))
+
     def save_results(self):
+        self.output_folder.mkdir(parents=True, exist_ok=True)
         self.pars_df.to_csv(self.output_folder / "pars.csv")
         self.entity_data_errors.to_csv(self.output_folder / "entity_data_errors.csv")
         self.group_data_errors.to_csv(self.output_folder / "group_data_errors.csv")
+        self.result_metadata = self.build_result_metadata()
+        with (self.output_folder / self.RESULT_METADATA_FILE).open("w", encoding="utf-8") as metadata_file:
+            json.dump(self.result_metadata, metadata_file, indent=2, sort_keys=True)
 
     def load_results(self):
         self.pars_df = pd.read_csv(self.output_folder / "pars.csv", index_col='entity')
@@ -281,6 +393,17 @@ class TierEstimator:
                                               index_col=['tier', 'entity'])
         self.group_data_errors = pd.read_csv(self.output_folder / "group_data_errors.csv",
                                              index_col=['tier', 'group'])
+        self.tier_pars = list(self.pars_df.columns)
+        self.tier_entities = list(self.pars_df.index)
+
+        metadata = self._load_result_metadata()
+        if metadata is None:
+            self.result_metadata = None
+            self.estimation_settings = None
+            self.estim_start_time = None
+            self.estim_end_time = None
+            return
+        self._apply_result_metadata(metadata)
 
     def print_results(self):
         df = pd.concat([self.group_data_errors.groupby(level='tier').mean(),

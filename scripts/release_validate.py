@@ -56,6 +56,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Keep temporary validation outputs even when the run succeeds.",
     )
+    parser.add_argument(
+        "--estimation-settings",
+        choices=("fast", "end-to-end"),
+        default="fast",
+        help="Select which example estimation settings to use during validation.",
+    )
     return parser.parse_args()
 
 
@@ -315,8 +321,14 @@ def run_example(example_path: Path, repo_root: Path, output_root: Path) -> dict:
     tier_module = importlib.import_module(f"examples.{example_name}.tier_structure")
     estimation_module = importlib.import_module(f"examples.{example_name}.estimation")
 
-    if not hasattr(estimation_module, "FAST_TEST_ESTIMATION_SETTINGS"):
-        fail(f"Example {example_name} does not expose FAST_TEST_ESTIMATION_SETTINGS")
+    estimation_mode = os.environ["RELEASE_VALIDATE_ESTIMATION_MODE"]
+    settings_attr = {
+        "fast": "FAST_TEST_ESTIMATION_SETTINGS",
+        "end-to-end": "END_TO_END_ESTIMATION_SETTINGS",
+    }[estimation_mode]
+    if not hasattr(estimation_module, settings_attr):
+        fail(f"Example {example_name} does not expose {settings_attr}")
+    estimation_settings = getattr(estimation_module, settings_attr)
 
     output_folder = output_root / example_name
     output_folder.mkdir(parents=True, exist_ok=True)
@@ -329,11 +341,12 @@ def run_example(example_path: Path, repo_root: Path, output_root: Path) -> dict:
         multitier = tier_module.create_tier_structure(data, matlab_session="auto")
         estimation_module.run_multitier_estimation(
             multitier,
-            estimation_settings=estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
+            estimation_settings=estimation_settings,
         )
         tier_summaries = verify_outputs(multitier, output_folder)
         return {
             "example_name": example_name,
+            "estimation_mode": estimation_mode,
             "output_folder": str(output_folder.resolve()),
             "tier_summaries": tier_summaries,
         }
@@ -374,7 +387,7 @@ if __name__ == "__main__":
     return runner_path
 
 
-def run_examples(repo_root: Path, env_name: str, staging_root: Path) -> dict[str, Any]:
+def run_examples(repo_root: Path, env_name: str, staging_root: Path, estimation_settings: str) -> dict[str, Any]:
     print_section("Run Examples")
     output_root = staging_root / "example_outputs"
     output_root.mkdir(parents=True, exist_ok=True)
@@ -382,6 +395,7 @@ def run_examples(repo_root: Path, env_name: str, staging_root: Path) -> dict[str
     env = os.environ.copy()
     env["RELEASE_VALIDATE_REPO_ROOT"] = str(repo_root)
     env["RELEASE_VALIDATE_OUTPUT_ROOT"] = str(output_root)
+    env["RELEASE_VALIDATE_ESTIMATION_MODE"] = estimation_settings
 
     result = run_command(
         conda_python_command(env_name) + [str(runner_path)],
@@ -399,7 +413,7 @@ def print_example_summary(example_results: dict[str, Any]) -> None:
     package_path = example_results["package_path"]
     print(f"Installed package path: {package_path}")
     for example in example_results["examples"]:
-        print(f"Example {example['example_name']}: OK")
+        print(f"Example {example['example_name']} ({example['estimation_mode']}): OK")
         print(f"  Output folder: {example['output_folder']}")
         for tier in example["tier_summaries"]:
             print(f"  Tier {tier['tier_name']}: verified {', '.join(tier['verified_files'])}")
@@ -428,6 +442,7 @@ def main() -> int:
     print(f"Package: {package_name}")
     print(f"Version: {version}")
     print(f"Target env: {args.env_name}")
+    print(f"Estimation settings: {args.estimation_settings}")
     print(f"Examples discovered: {', '.join(example.name for example in examples)}")
     print(f"Staging root: {staging_root}")
 
@@ -437,7 +452,7 @@ def main() -> int:
         uninstall_previous_version(repo_root, args.env_name, package_name)
         install_wheel(repo_root, args.env_name, wheel_path)
         confirm_installed_version(repo_root, args.env_name, package_name, version)
-        example_results = run_examples(repo_root, args.env_name, staging_root)
+        example_results = run_examples(repo_root, args.env_name, staging_root, args.estimation_settings)
         print_section("Verification Summary")
         print_example_summary(example_results)
         success = True

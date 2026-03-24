@@ -1,0 +1,92 @@
+from DEBtoolPyIF import (
+    DEBModelParametrizationProblem,
+    DataCollection,
+    EstimationRunner,
+    MATLABWrapper,
+    MultiTierStructure,
+    TierEstimator,
+    TierHierarchy,
+    TierHierarchyError,
+)
+from DEBtoolPyIF.data_sources import (
+    AgeWeightTwinsEntityDataSource,
+    DataSourceBase,
+    DigestibilityEntityDataSource,
+    EntityDataSourceBase,
+    GroupDataSourceBase,
+    TimeCH4EntityDataSource,
+    TimeCO2EntityDataSource,
+    TimeFeedGroupDataSource,
+    TimeMilkEntityDataSource,
+    TimeWeightEntityDataSource,
+    WeightEntityDataSource,
+    ZeroVariateEntityDataSource,
+    ZeroVariateGroupDataSourceBase,
+)
+from DEBtoolPyIF.estimation import (
+    DEBModelParametrizationProblem as EstimationProblemFromSubpackage,
+    DEBtoolWrapper,
+    EstimationRunner as EstimationRunnerFromSubpackage,
+    MATLABWrapper as MATLABWrapperFromSubpackage,
+)
+from DEBtoolPyIF.multitier import (
+    MultiTierStructure as MultiTierStructureFromSubpackage,
+    TierEstimator as TierEstimatorFromSubpackage,
+    TierHierarchy as TierHierarchyFromSubpackage,
+    TierHierarchyError as TierHierarchyErrorFromSubpackage,
+)
+from DEBtoolPyIF.notebook import TierVisualizer
+
+
+def test_root_public_api_exports_expected_symbols():
+    assert DataCollection.__name__ == "DataCollection"
+    assert TierHierarchy.__name__ == "TierHierarchy"
+    assert TierHierarchyError.__name__ == "TierHierarchyError"
+    assert MultiTierStructure.__name__ == "MultiTierStructure"
+    assert TierEstimator.__name__ == "TierEstimator"
+    assert MATLABWrapper.__name__ == "MATLABWrapper"
+    assert EstimationRunner.__name__ == "EstimationRunner"
+    assert DEBModelParametrizationProblem.__name__ == "DEBModelParametrizationProblem"
+
+
+def test_subpackage_public_api_exports_expected_symbols():
+    exported_data_source_classes = {
+        DataSourceBase,
+        EntityDataSourceBase,
+        GroupDataSourceBase,
+        ZeroVariateEntityDataSource,
+        ZeroVariateGroupDataSourceBase,
+        TimeWeightEntityDataSource,
+        WeightEntityDataSource,
+        TimeCH4EntityDataSource,
+        TimeCO2EntityDataSource,
+        TimeMilkEntityDataSource,
+        AgeWeightTwinsEntityDataSource,
+        DigestibilityEntityDataSource,
+        TimeFeedGroupDataSource,
+    }
+
+    assert len(exported_data_source_classes) == 13
+    assert MATLABWrapperFromSubpackage is MATLABWrapper
+    assert EstimationRunnerFromSubpackage is EstimationRunner
+    assert EstimationProblemFromSubpackage is DEBModelParametrizationProblem
+    assert issubclass(DEBtoolWrapper, MATLABWrapper)
+    assert TierHierarchyFromSubpackage is TierHierarchy
+    assert TierHierarchyErrorFromSubpackage is TierHierarchyError
+    assert MultiTierStructureFromSubpackage is MultiTierStructure
+    assert TierEstimatorFromSubpackage is TierEstimator
+    assert TierVisualizer.__name__ == "TierVisualizer"
+
+
+def test_root_exported_hierarchy_types_work_without_matlab():
+    hierarchy = TierHierarchy.from_paths(
+        tier_names=["breed", "diet", "individual"],
+        paths=[
+            {"breed": "male", "diet": "CTRL", "individual": "PT1"},
+            {"breed": "male", "diet": "TMR", "individual": "PT2"},
+        ],
+    )
+
+    assert hierarchy.root_tier == "breed"
+    assert hierarchy.get_entities("diet") == ("CTRL", "TMR")
+    assert hierarchy.get_parent("diet", "CTRL") == "male"

@@ -1,0 +1,121 @@
+{
+  "elapsed_duration_seconds": 103.061071,
+  "estimation_end_time": "2026-03-24T00:12:10.623841",
+  "estimation_iterations": [
+    {
+      "elapsed_duration_seconds": 26.316152,
+      "entity_list": [
+        "PT424401157",
+        "PT433843806",
+        "PT624139868",
+        "PT833653644",
+        "PT933843912"
+      ],
+      "estimation_end_time": "2026-03-24T00:10:53.879924",
+      "estimation_start_time": "2026-03-24T00:10:27.563772",
+      "estimation_target_name": "Pen_2",
+      "estimation_target_type": "group",
+      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\individual\\Pen_2",
+      "success": 1.0
+    },
+    {
+      "elapsed_duration_seconds": 25.345214,
+      "entity_list": [
+        "PT333842562",
+        "PT524401180",
+        "PT533987885",
+        "PT833653649",
+        "PT933843894"
+      ],
+      "estimation_end_time": "2026-03-24T00:11:19.392180",
+      "estimation_start_time": "2026-03-24T00:10:54.046966",
+      "estimation_target_name": "Pen_3",
+      "estimation_target_type": "group",
+      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\individual\\Pen_3",
+      "success": 1.0
+    },
+    {
+      "elapsed_duration_seconds": 25.431931,
+      "entity_list": [
+        "PT224401177",
+        "PT524956505",
+        "PT533843896",
+        "PT924401183",
+        "PT933602927"
+      ],
+      "estimation_end_time": "2026-03-24T00:11:44.961639",
+      "estimation_start_time": "2026-03-24T00:11:19.529708",
+      "estimation_target_name": "Pen_4",
+      "estimation_target_type": "group",
+      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\individual\\Pen_4",
+      "success": 1.0
+    },
+    {
+      "elapsed_duration_seconds": 25.362159,
+      "entity_list": [
+        "PT033634130",
+        "PT233843883",
+        "PT333653651",
+        "PT533358890",
+        "PT724523831"
+      ],
+      "estimation_end_time": "2026-03-24T00:12:10.471320",
+      "estimation_start_time": "2026-03-24T00:11:45.109161",
+      "estimation_target_name": "Pen_5",
+      "estimation_target_type": "group",
+      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\individual\\Pen_5",
+      "success": 1.0
+    }
+  ],
+  "estimation_settings": {
+    "n_runs": 10,
+    "n_steps": 500,
+    "pars_init_method": 2,
+    "results_output_mode": 0,
+    "tol_simplex": 0.0001
+  },
+  "estimation_start_time": "2026-03-24T00:10:27.562770",
+  "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\individual",
+  "schema_version": 1,
+  "species_name": "Bos_taurus_Angus",
+  "stable_output_files": [
+    "pars.csv",
+    "entity_data_errors.csv",
+    "group_data_errors.csv",
+    "result_metadata.json",
+    "result_summary.json"
+  ],
+  "tier_entities": [
+    "PT033634130",
+    "PT533987885",
+    "PT933602927",
+    "PT724523831",
+    "PT624139868",
+    "PT224401177",
+    "PT533843896",
+    "PT833653649",
+    "PT433843806",
+    "PT524401180",
+    "PT333842562",
+    "PT233843883",
+    "PT524956505",
+    "PT924401183",
+    "PT533358890",
+    "PT933843894",
+    "PT833653644",
+    "PT933843912",
+    "PT333653651",
+    "PT424401157"
+  ],
+  "tier_groups": [
+    "Pen_2",
+    "Pen_3",
+    "Pen_4",
+    "Pen_5"
+  ],
+  "tier_name": "individual",
+  "tier_parameters": [
+    "p_Am",
+    "kap_X"
+  ]
+}

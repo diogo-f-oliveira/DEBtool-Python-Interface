@@ -16,9 +16,27 @@ END_TO_END_ESTIMATION_SETTINGS = {
 
 
 def load_estimation_results(multitier):
-    """Load estimation results for all tiers in the multitier structure."""
-    for tier_name in multitier.tiers.keys():
-        multitier.tiers[tier_name].load_results()
+    """
+    Load estimation results for all tiers in the multitier structure.
+
+    Returns a per-tier summary with the loaded metadata and timing information so callers can inspect the saved
+    estimation outputs without needing to manually walk each tier object.
+    """
+    loaded_results = {}
+    for tier_name in multitier.tier_names:
+        tier = multitier.tiers[tier_name]
+        tier.load_results()
+        loaded_results[tier_name] = {
+            'result_metadata': tier.result_metadata,
+            'estimation_settings': tier.estimation_settings,
+            'estimation_start_time': tier.estim_start_time,
+            'estimation_end_time': tier.estim_end_time,
+            'elapsed_duration_seconds': (
+                None if tier.result_metadata is None else tier.result_metadata.get('elapsed_duration_seconds')
+            ),
+            'estimation_iterations': list(tier.estimation_iterations),
+        }
+    return loaded_results
 
 
 def run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION_SETTINGS):
@@ -37,6 +55,7 @@ if __name__ == '__main__':
     # Create data and multitier structure and run the minimal example
     data = load_data('examples/Bos_taurus_Angus/data')
     multitier = create_tier_structure(data, matlab_session='auto')
+    # run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION_SETTINGS)
     run_multitier_estimation(multitier, estimation_settings=END_TO_END_ESTIMATION_SETTINGS)
 
     print('Done')

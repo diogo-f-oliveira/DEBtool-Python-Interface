@@ -8,6 +8,24 @@ The package currently focuses on two capabilities:
 
 The project is under active development (`0.x`), with the multitier workflow being the most mature part of the package.
 
+## Quick Start Imports
+
+For the main multitier workflow, the package now exposes a curated top-level API:
+
+```python
+from DEBtoolPyIF import DataCollection, MultiTierStructure, TierEstimator, TierHierarchy
+```
+
+Concrete observation types remain grouped under `DEBtoolPyIF.data_sources`:
+
+```python
+from DEBtoolPyIF.data_sources import (
+    DigestibilityEntityDataSource,
+    TimeFeedGroupDataSource,
+    TimeWeightEntityDataSource,
+)
+```
+
 ## Installation
 
 You can install DEBtoolPyIF using pip:

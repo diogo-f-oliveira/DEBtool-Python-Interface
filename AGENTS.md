@@ -37,12 +37,13 @@
   - example scripts in `examples/`
   - integration tests in `tests/integration/`
 - For changes affecting DEBtool generated files, preserve naming and expected DEBtool/add-my-pet conventions unless explicitly requested.
+- When generating MATLAB numeric arrays, preserve missing and infinite values as MATLAB-compatible `NaN`, `Inf`, and `-Inf` tokens; do not coerce or drop them.
 - Prefer small, targeted patches and keep public constructor signatures explicit.
 
 ## References
 - Multitier paper (canonical link): `https://www.sciencedirect.com/science/article/pii/S0304380024001674`
-- For multitier methodological decisions, prioritize local reference PDF:
-  - `docs/references/Oliveira_et_al_2024_multitier_DEB.pdf`
+- For multitier methodological decisions, prioritize:
+  - `docs/multitier_methodology_for_agents.md`
 
 ## Output And Reporting
 - After changes, report:

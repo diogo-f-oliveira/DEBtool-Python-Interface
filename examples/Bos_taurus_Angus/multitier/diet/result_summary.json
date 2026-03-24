@@ -1,0 +1,25 @@
+{
+  "elapsed_duration_seconds": 7.222047,
+  "mean_entity_errors_by_tier": {
+    "diet": 0.02838952264780962,
+    "individual": 0.02677164275668272
+  },
+  "mean_estimated_parameters": {
+    "kap_P": 0.23952472641693853,
+    "kap_X": 0.22997282857650347,
+    "p_Am": 2290.016303098675
+  },
+  "mean_group_errors_by_tier": {
+    "diet": null,
+    "individual": 0.08002338521332572
+  },
+  "n_tier_entities": 2,
+  "n_tier_groups": 0,
+  "species_name": "Bos_taurus_Angus",
+  "tier_name": "diet",
+  "tier_parameters": [
+    "p_Am",
+    "kap_X",
+    "kap_P"
+  ]
+}

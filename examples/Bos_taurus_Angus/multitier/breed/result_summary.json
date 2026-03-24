@@ -1,0 +1,51 @@
+{
+  "elapsed_duration_seconds": 411.5366,
+  "mean_entity_errors_by_tier": {
+    "breed": null,
+    "diet": 0.06418437342902268,
+    "individual": 0.037615951825829844
+  },
+  "mean_estimated_parameters": {
+    "E_G": 7834.2228718500555,
+    "E_Hb": 4481896.204583712,
+    "E_Hp": 62707369.94226506,
+    "E_Hp_f": 53530873.90550706,
+    "E_Hx": 39690817.59481414,
+    "del_M": 0.5431873077903444,
+    "h_a": 2.7844390234578433e-14,
+    "kap": 0.9731529512613655,
+    "kap_P": 0.23780704970035593,
+    "kap_X": 0.2158521265477386,
+    "p_Am": 2149.2944336880646,
+    "p_Am_f": 1931.1012236332617,
+    "p_M": 26.092027157756377,
+    "t_0": 235.50729624618896,
+    "v": 0.33531232404165323
+  },
+  "mean_group_errors_by_tier": {
+    "breed": null,
+    "diet": null,
+    "individual": 0.10153292011586397
+  },
+  "n_tier_entities": 1,
+  "n_tier_groups": 0,
+  "species_name": "Bos_taurus_Angus",
+  "tier_name": "breed",
+  "tier_parameters": [
+    "p_Am",
+    "kap_X",
+    "kap_P",
+    "p_M",
+    "v",
+    "kap",
+    "E_G",
+    "E_Hb",
+    "E_Hx",
+    "E_Hp",
+    "h_a",
+    "t_0",
+    "del_M",
+    "p_Am_f",
+    "E_Hp_f"
+  ]
+}

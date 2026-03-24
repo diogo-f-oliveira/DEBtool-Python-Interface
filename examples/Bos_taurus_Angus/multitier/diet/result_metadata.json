@@ -1,0 +1,59 @@
+{
+  "elapsed_duration_seconds": 7.222047,
+  "estimation_end_time": "2026-03-24T00:10:27.548784",
+  "estimation_iterations": [
+    {
+      "elapsed_duration_seconds": 5.338204,
+      "entity_list": [
+        "TMR"
+      ],
+      "estimation_end_time": "2026-03-24T00:10:25.664941",
+      "estimation_start_time": "2026-03-24T00:10:20.326737",
+      "estimation_target_name": "TMR",
+      "estimation_target_type": "entity",
+      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\diet\\TMR",
+      "success": 1.0
+    },
+    {
+      "elapsed_duration_seconds": 1.558748,
+      "entity_list": [
+        "CTRL"
+      ],
+      "estimation_end_time": "2026-03-24T00:10:27.406744",
+      "estimation_start_time": "2026-03-24T00:10:25.847996",
+      "estimation_target_name": "CTRL",
+      "estimation_target_type": "entity",
+      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\diet\\CTRL",
+      "success": 1.0
+    }
+  ],
+  "estimation_settings": {
+    "n_runs": 10,
+    "n_steps": 500,
+    "pars_init_method": 2,
+    "results_output_mode": 0,
+    "tol_simplex": 0.0001
+  },
+  "estimation_start_time": "2026-03-24T00:10:20.326737",
+  "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\diet",
+  "schema_version": 1,
+  "species_name": "Bos_taurus_Angus",
+  "stable_output_files": [
+    "pars.csv",
+    "entity_data_errors.csv",
+    "group_data_errors.csv",
+    "result_metadata.json",
+    "result_summary.json"
+  ],
+  "tier_entities": [
+    "TMR",
+    "CTRL"
+  ],
+  "tier_groups": [],
+  "tier_name": "diet",
+  "tier_parameters": [
+    "p_Am",
+    "kap_X",
+    "kap_P"
+  ]
+}

@@ -30,7 +30,7 @@ class DataCollection:
         for ds in data_sources:
             self.add_data_source(ds)
 
-    def add_data_source(self, data_source: [EntityDataSourceBase, GroupDataSourceBase]):
+    def add_data_source(self, data_source: EntityDataSourceBase | GroupDataSourceBase):
         # Add data source to data of tier
         self.data_sources[data_source.name] = data_source
         self.data_source_vs_data_type_df.loc[data_source.name, data_source.TYPE] = True
@@ -104,6 +104,7 @@ class DataCollection:
             return []
         if entity_list == 'all':
             return self.groups
+        entity_list = list(entity_list)
         return sorted(self.entity_vs_group_df.loc[entity_list].dropna(axis=1, how='all').columns)
 
     def get_data_source_of_entity(self, entity_id, data_type):

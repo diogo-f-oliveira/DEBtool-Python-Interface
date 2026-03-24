@@ -1,0 +1,21 @@
+{
+  "elapsed_duration_seconds": 103.061071,
+  "mean_entity_errors_by_tier": {
+    "individual": 0.020732509798275466
+  },
+  "mean_estimated_parameters": {
+    "kap_X": 0.23198012803473747,
+    "p_Am": 2307.2430740739437
+  },
+  "mean_group_errors_by_tier": {
+    "individual": 0.07798001371816238
+  },
+  "n_tier_entities": 20,
+  "n_tier_groups": 4,
+  "species_name": "Bos_taurus_Angus",
+  "tier_name": "individual",
+  "tier_parameters": [
+    "p_Am",
+    "kap_X"
+  ]
+}

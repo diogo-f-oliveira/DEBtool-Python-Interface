@@ -243,16 +243,25 @@ function [prdData, info] = predict_<species>(par, data, auxData)
 Current multitier `predict` templates usually:
 
 1. Initialize `info = 1`.
-2. Compute temperature correction from `auxData.temp`.
-3. Initialize any group-level accumulators in `prdData`.
-4. Loop over the current tier entities in `auxData.tiers.entity_list`.
-5. Copy `par` into a local struct and replace the tier-varying base parameters with entity-specific values such as `par.<name>_<entity_id>`.
-6. Validate the parameter set with `filter_stx(...)`.
-7. Pull parameters with `vars_pull(...)` and `parscomp_st(...)`.
-8. Predict current-tier observations.
-9. Descend into lower-tier entities through `auxData.tiers.tier_subtree`.
-10. Use `auxData.init` and `auxData.tiers.groups_of_entity` when predicting individual and group observations.
-11. Add dummy prediction entries for helper variables so DEBtool remains satisfied with the data layout.
+   This is the success flag, so the template starts by assuming prediction will succeed and only flips `info` to `0` if it encounters an invalid or infeasible case.
+2. Initialize group predictions for the estimation tier when that tier has group data.
+   The usual source for the relevant group ids is `auxData.tiers.tier_groups.<tier_name>`.
+3. Loop through the estimation entities in `auxData.tiers.entity_list`.
+4. For the current estimation entity, set the tier-varying parameters by replacing each base parameter in `auxData.tiers.tier_pars` with its entity-specific value from `par.<name>_<entity_id>`.
+5. Check whether the resulting parameterization is valid.
+   If it is not valid, return `info = 0`.
+6. Predict entity-level data for the estimation tier.
+7. Predict group-level data for the estimation tier.
+   When the current entity contributes to one or more groups, the usual lookup is `auxData.tiers.groups_of_entity.(entity_id)`.
+8. Loop through each tier below the estimation tier.
+9. For each lower tier, initialize group predictions for that tier when group data exists.
+   The usual source is `auxData.tiers.tier_groups.<lower_tier_name>`.
+10. For each lower tier, get the relevant descendant entities of the current estimation entity from `auxData.tiers.tier_subtree.(entity_id).<lower_tier_name>`.
+11. Loop through those descendant entities and predict their entity-level data.
+12. For each descendant entity, predict its group-level contributions using `auxData.tiers.groups_of_entity.(descendant_entity_id)` when needed.
+13. Add dummy prediction entries for helper variables so DEBtool remains satisfied with the data layout.
+
+The exact biological equations and numerical steps inside each prediction block are template-specific. The important contract is the tier-wise traversal and the use of the helper structs from `auxData`.
 
 ### Structs Read Here
 
@@ -273,6 +282,7 @@ Current multitier `predict` templates usually:
 
 - Carries all the non-fitted context needed by the biological prediction logic.
 - The multitier-specific contract is mostly under `auxData.tiers` and `auxData.init`.
+- `auxData.temp` may also be used for temperature correction or other template-specific auxiliary calculations.
 
 ### Structs Defined Here
 
@@ -293,12 +303,14 @@ Current templates rely on these patterns:
 
 - `auxData.tiers.entity_list`
   - iterate over the current tier entities being estimated now
+- `auxData.tiers.tier_groups.<tier_name>`
+  - initialize group predictions for the current tier or for a lower tier before accumulating contributions
 - `auxData.tiers.tier_pars`
   - know which base parameters must be overridden with tier-specific values
 - `auxData.tiers.tier_subtree.(entity_id).<lower_tier>`
-  - find descendant entities that belong to the current entity
+  - find descendant entities in each lower tier that belong to the current estimation entity
 - `auxData.tiers.groups_of_entity.(entity_id)`
-  - accumulate predictions into group-level observations
+  - accumulate predictions into group-level observations at the relevant tier
 - `auxData.init.<data_varname>`
   - recover initial conditions for time-series predictions
 

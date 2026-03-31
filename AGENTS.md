@@ -42,8 +42,12 @@
 
 ## References
 - Multitier paper (canonical link): `https://www.sciencedirect.com/science/article/pii/S0304380024001674`
-- For multitier methodological decisions, prioritize:
-  - `docs/multitier_methodology_for_agents.md`
+- For agent-facing multitier documentation, prioritize:
+  - `docs/agents/README.md`
+  - `docs/agents/MULTITIER_WORKFLOW.md`
+  - `docs/agents/DEBTOOL_FILES.md`
+  - `docs/agents/TEMPLATE_GENERATION.md`
+  - `docs/agents/MULTITIER.md`
 
 ## Output And Reporting
 - After changes, report:

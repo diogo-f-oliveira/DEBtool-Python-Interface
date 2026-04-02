@@ -9,6 +9,10 @@ from ..utils.mydata_code_generation import (
 )
 
 
+def _sorted_unique_strings(values):
+    return sorted(set(values))
+
+
 class TierCodeGenerator:
     FILES_NEEDED = ["mydata", "pars_init", "predict", "run"]
 
@@ -72,11 +76,11 @@ class TierCodeGenerator:
 
         entity_data_types_code = generate_meta_data_code(
             var_name="entity_data_types",
-            converted_data=convert_list_of_strings_to_matlab(list(entity_data_types)),
+            converted_data=convert_list_of_strings_to_matlab(_sorted_unique_strings(entity_data_types)),
         )
         group_data_types_code = generate_meta_data_code(
             var_name="group_data_types",
-            converted_data=convert_list_of_strings_to_matlab(list(group_data_types)),
+            converted_data=convert_list_of_strings_to_matlab(_sorted_unique_strings(group_data_types)),
         )
         entity_list_code = generate_tier_variable_code(
             var_name="entity_list",

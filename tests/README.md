@@ -33,6 +33,7 @@ What the current multitier unit tests protect:
 - persisted per-tier result files
 - persisted tier timing and per-iteration timing metadata
 - load-time restoration of saved metadata
+- rejection of unsupported `result_metadata.json` schema versions
 - compatibility when `result_metadata.json` is missing
 - generation and reconstruction of the higher-level tier result summary
 
@@ -135,12 +136,13 @@ The current tier result contract assumed by the tests is:
   - group-level errors indexed by `(tier, group)`
 - `result_metadata.json`
   - tier identity
-  - output folder
   - tier entities and groups
   - estimated tier parameters
   - estimation settings used
   - overall tier timing
   - per-iteration timing for grouped or entity-level estimation runs
+  - per-iteration `relative_output_folder` values relative to the tier output folder
+  - no machine-specific absolute paths
 - `result_summary.json`
   - compact structured summary for inspection and comparison
   - tier identity and counts

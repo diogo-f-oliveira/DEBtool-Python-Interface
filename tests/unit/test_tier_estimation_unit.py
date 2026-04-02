@@ -156,3 +156,52 @@ def test_estimate_requested_entities_rejects_unknown_entities(template_folder):
             estimation_settings={"n_runs": 4, "n_steps": 12},
             entity_list=["PT999"],
         )
+
+
+def test_estimate_accepts_single_entity_string_for_ungrouped_entity(template_folder):
+    tier = build_mixed_tier_estimator(template_folder)
+
+    tier.estimate(
+        save_results=False,
+        print_results=False,
+        hide_output=True,
+        estimation_settings={"n_runs": 4, "n_steps": 12},
+        entity_list="PT42",
+    )
+
+    assert [iteration["estimation_target_name"] for iteration in tier.estimation_iterations] == ["PT42"]
+    assert [iteration["estimation_target_type"] for iteration in tier.estimation_iterations] == ["entity"]
+    assert [iteration["entity_list"] for iteration in tier.estimation_iterations] == [["PT42"]]
+    assert tier.pars_df.loc["PT42", "par_a"] == 42.0
+
+
+def test_estimate_accepts_single_entity_string_for_grouped_entity(template_folder):
+    tier = build_mixed_tier_estimator(template_folder)
+
+    with pytest.warns(UserWarning, match="Pen_2"):
+        tier.estimate(
+            save_results=False,
+            print_results=False,
+            hide_output=True,
+            estimation_settings={"n_runs": 4, "n_steps": 12},
+            entity_list="PT20",
+        )
+
+    assert [iteration["estimation_target_name"] for iteration in tier.estimation_iterations] == ["Pen_2"]
+    assert [iteration["estimation_target_type"] for iteration in tier.estimation_iterations] == ["group"]
+    assert [iteration["entity_list"] for iteration in tier.estimation_iterations] == [["PT20", "PT21"]]
+    assert tier.pars_df.loc["PT20", "par_a"] == 2.0
+    assert tier.pars_df.loc["PT21", "par_a"] == 2.1
+
+
+def test_estimate_rejects_none_entity_list(template_folder):
+    tier = build_mixed_tier_estimator(template_folder)
+
+    with pytest.raises(TypeError, match="entity_list must be 'all'"):
+        tier.estimate(
+            save_results=False,
+            print_results=False,
+            hide_output=True,
+            estimation_settings={"n_runs": 4, "n_steps": 12},
+            entity_list=None,
+        )

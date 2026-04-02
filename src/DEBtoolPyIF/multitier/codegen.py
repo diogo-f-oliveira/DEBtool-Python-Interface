@@ -1,6 +1,6 @@
 import shutil
 from string import Template
-
+from pathlib import Path
 from ..utils.data_conversion import convert_dict_to_matlab, convert_list_of_strings_to_matlab
 from ..utils.mydata_code_generation import (
     check_files_exist_in_folder,
@@ -19,7 +19,7 @@ class TierCodeGenerator:
     def __init__(self, tier):
         self.tier_estimator = tier
         self.tier_structure = tier.tier_structure
-        self.output_folder = None
+        self.output_folder = Path()
 
         complete, missing_file = self.check_all_files_exist(self.tier_estimator.template_folder)
         if not complete:

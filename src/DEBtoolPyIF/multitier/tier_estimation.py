@@ -179,22 +179,19 @@ class TierEstimator:
             self.save_results()
 
     def get_estimation_targets(self, entity_list="all"):
-        if entity_list is None:
+        entity_list = normalize_entity_list(entity_list)
+        if entity_list == "all":
             requested_entities = list(self.tier_entities)
         else:
-            entity_list = normalize_entity_list(entity_list)
-            if entity_list == "all":
-                requested_entities = list(self.tier_entities)
-            else:
-                requested_entities = list(dict.fromkeys(entity_list))
-                invalid_entities = [entity_id for entity_id in requested_entities if entity_id not in self.tier_entities]
-                if invalid_entities:
-                    invalid_entities_str = ", ".join(invalid_entities)
-                    raise ValueError(
-                        f"Cannot estimate tier '{self.name}' for unknown entities: {invalid_entities_str}."
-                    )
-                if not requested_entities:
-                    raise ValueError(f"Cannot estimate tier '{self.name}' with an empty entity list.")
+            requested_entities = list(dict.fromkeys(entity_list))
+            invalid_entities = [entity_id for entity_id in requested_entities if entity_id not in self.tier_entities]
+            if invalid_entities:
+                invalid_entities_str = ", ".join(invalid_entities)
+                raise ValueError(
+                    f"Cannot estimate tier '{self.name}' for unknown entities: {invalid_entities_str}."
+                )
+            if not requested_entities:
+                raise ValueError(f"Cannot estimate tier '{self.name}' with an empty entity list.")
 
         if len(self.tier_entities) == 1:
             return [{

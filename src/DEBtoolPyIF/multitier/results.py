@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from ..utils.entity_list import normalize_entity_list
+
 
 def serialize_metadata_value(value):
     if isinstance(value, Path):
@@ -45,20 +47,32 @@ def get_elapsed_duration_seconds(tier_estimator):
     return get_duration_seconds(tier_estimator.estim_start_time, tier_estimator.estim_end_time)
 
 
+def _get_normalized_relative_output_folder(output_folder, tier_output_folder):
+    try:
+        relative_path = Path(output_folder).resolve().relative_to(Path(tier_output_folder).resolve())
+    except ValueError as exc:
+        raise ValueError(
+            f"Cannot persist iteration metadata outside tier output folder: '{output_folder}'."
+        ) from exc
+    return relative_path.as_posix()
+
+
 def build_estimation_iteration_metadata(
         target_type,
         target_name,
         entity_list,
         output_folder,
+        tier_output_folder,
         start_time,
         end_time,
         success,
 ):
+    entity_list = normalize_entity_list(entity_list, allow_all=False)
     return serialize_metadata_value({
         "estimation_target_type": target_type,
         "estimation_target_name": target_name,
         "entity_list": list(entity_list),
-        "output_folder": str(Path(output_folder).resolve()),
+        "relative_output_folder": _get_normalized_relative_output_folder(output_folder, tier_output_folder),
         "estimation_start_time": start_time,
         "estimation_end_time": end_time,
         "elapsed_duration_seconds": get_duration_seconds(start_time, end_time),
@@ -72,7 +86,6 @@ def build_result_metadata(tier_estimator):
         "stable_output_files": list(tier_estimator.OUTPUT_FILES),
         "tier_name": tier_estimator.name,
         "species_name": tier_estimator.tier_structure.species_name,
-        "output_folder": str(tier_estimator.output_folder.resolve()),
         "tier_entities": list(tier_estimator.tier_entities),
         "tier_groups": list(tier_estimator.tier_groups),
         "tier_parameters": list(tier_estimator.tier_pars),
@@ -155,6 +168,12 @@ def load_result_metadata(tier_estimator):
 
 def apply_result_metadata(tier_estimator, metadata):
     metadata = deepcopy(metadata)
+    schema_version = metadata.get("schema_version")
+    if schema_version != tier_estimator.RESULT_SCHEMA_VERSION:
+        raise ValueError(
+            f"Cannot load result metadata schema version {schema_version!r}; expected "
+            f"{tier_estimator.RESULT_SCHEMA_VERSION}."
+        )
     if metadata.get("tier_name") not in (None, tier_estimator.name):
         raise ValueError(
             f"Cannot load results for tier '{tier_estimator.name}' from metadata for tier "

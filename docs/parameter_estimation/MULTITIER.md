@@ -7,7 +7,8 @@ If you are helping a package user build or modify a workflow, start with:
 1. [README.md](README.md)
 2. [MULTITIER_WORKFLOW.md](MULTITIER_WORKFLOW.md)
 3. [DEBTOOL_FILES.md](DEBTOOL_FILES.md)
-4. [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md)
+4. [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md)
+5. [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md)
 
 Use this file when you need the deeper implementation and methodology details behind those user-facing guides.
 
@@ -278,7 +279,7 @@ At the methodology level, the important point is that these files carry:
 - the hierarchy metadata needed to predict the current tier and all tiers below it,
 - the estimation settings for the DEBtool run.
 
-The authoritative file-by-file contract, including function flow, structs, and helper-field expectations, is documented in [DEBTOOL_FILES.md](DEBTOOL_FILES.md). This document stays focused on why those files exist in the multitier method and how the tier logic depends on them.
+The general DEBtool file-by-file contract is documented in [DEBTOOL_FILES.md](DEBTOOL_FILES.md). The multitier-specific integration layer for those files is documented in [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md). This document stays focused on why those files exist in the multitier method and how the tier logic depends on them.
 
 ## The Role Of Pseudo-Data In This Package
 

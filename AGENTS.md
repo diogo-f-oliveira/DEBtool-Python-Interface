@@ -42,12 +42,13 @@
 
 ## References
 - Multitier paper (canonical link): `https://www.sciencedirect.com/science/article/pii/S0304380024001674`
-- For agent-facing multitier documentation, prioritize:
-  - `docs/agents/README.md`
-  - `docs/agents/MULTITIER_WORKFLOW.md`
-  - `docs/agents/DEBTOOL_FILES.md`
-  - `docs/agents/TEMPLATE_GENERATION.md`
-  - `docs/agents/MULTITIER.md`
+- For shared parameter-estimation documentation, prioritize:
+  - `docs/parameter_estimation/README.md`
+  - `docs/parameter_estimation/MULTITIER_WORKFLOW.md`
+  - `docs/parameter_estimation/DEBTOOL_FILES.md`
+  - `docs/parameter_estimation/DEBTOOL_MULTITIER.md`
+  - `docs/parameter_estimation/TEMPLATE_GENERATION.md`
+  - `docs/parameter_estimation/MULTITIER.md`
 
 ## Output And Reporting
 - After changes, report:

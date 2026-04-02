@@ -80,4 +80,4 @@ If the user's request is about changing biology or tier logic, edit the tier tem
 
 If the request is about understanding a failed run, inspect the generated MATLAB files in the tier output folders to see the final concrete inputs that DEBtool received.
 
-For the roles of the individual DEBtool files, see [DEBTOOL_FILES.md](DEBTOOL_FILES.md).
+For the general DEBtool species-file structure, see [DEBTOOL_FILES.md](DEBTOOL_FILES.md). For the multitier-specific helper structures and prediction integration layer, see [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md).

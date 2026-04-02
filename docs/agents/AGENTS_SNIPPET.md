@@ -26,4 +26,4 @@ Users can copy or adapt the block below into their own `AGENTS.md` when they wan
 - Adjust file names or function names only if your project already uses a different structure.
 - If your project uses only built-in data source classes, you may not need a separate `data_sources.py`.
 - If your hierarchy has more than two tiers, keep the same pattern and add tiers without changing the top-down estimation order.
-- If you want deeper background for agents, link them to [MULTITIER_WORKFLOW.md](MULTITIER_WORKFLOW.md) and [MULTITIER.md](MULTITIER.md).
+- If you want deeper background for agents, link them to [MULTITIER_WORKFLOW.md](../parameter_estimation/MULTITIER_WORKFLOW.md) and [MULTITIER.md](../parameter_estimation/MULTITIER.md).

@@ -7,6 +7,7 @@ from tabulate import tabulate
 
 from . import results
 from .codegen import TierCodeGenerator
+from ..utils.entity_list import normalize_entity_list
 
 
 class TierEstimator:
@@ -21,9 +22,10 @@ class TierEstimator:
     - ``group_data_errors.csv`` stores group-level data errors for this tier and descendant tiers, indexed by
       ``(tier, group)``. This remains unchanged for backward compatibility.
     - ``result_metadata.json`` stores stable tier metadata for machine-readable loading, including tier identity,
-      output folder, entities, groups, estimated parameters, estimation settings actually used, persisted timestamps,
-      overall elapsed duration in seconds, and per-iteration timing records for each group or entity estimation
-      performed within the tier.
+      entities, groups, estimated parameters, estimation settings actually used, persisted timestamps, overall elapsed
+      duration in seconds, and per-iteration timing records for each group or entity estimation performed within the
+      tier. Per-iteration folders are persisted as ``relative_output_folder`` values relative to the tier result
+      folder; machine-specific absolute paths are intentionally excluded from the schema.
     - ``result_summary.json`` stores a compact structured summary for quick inspection and loading. It includes:
       ``tier_name``, ``species_name``, ``n_tier_entities``, ``n_tier_groups``, ordered ``tier_parameters``,
       ``elapsed_duration_seconds``, ``mean_estimated_parameters`` as a parameter-to-mean mapping, and aggregated
@@ -37,7 +39,7 @@ class TierEstimator:
 
     RESULT_METADATA_FILE = "result_metadata.json"
     RESULT_SUMMARY_FILE = "result_summary.json"
-    RESULT_SCHEMA_VERSION = 1
+    RESULT_SCHEMA_VERSION = 2
     OUTPUT_FILE_DESCRIPTIONS = {
         "pars.csv": "Estimated tier parameters indexed by entity.",
         "entity_data_errors.csv": "Entity-level data errors indexed by tier and entity.",
@@ -156,6 +158,7 @@ class TierEstimator:
                 target_name=estimation_target["target_name"],
                 entity_list=target_entity_list,
                 output_folder=output_folder,
+                tier_output_folder=self.output_folder,
                 start_time=iteration_start_time,
                 end_time=iteration_end_time,
                 success=success,
@@ -176,18 +179,22 @@ class TierEstimator:
             self.save_results()
 
     def get_estimation_targets(self, entity_list="all"):
-        if entity_list in (None, "all"):
+        if entity_list is None:
             requested_entities = list(self.tier_entities)
         else:
-            requested_entities = list(dict.fromkeys(entity_list))
-            invalid_entities = [entity_id for entity_id in requested_entities if entity_id not in self.tier_entities]
-            if invalid_entities:
-                invalid_entities_str = ", ".join(invalid_entities)
-                raise ValueError(
-                    f"Cannot estimate tier '{self.name}' for unknown entities: {invalid_entities_str}."
-                )
-            if not requested_entities:
-                raise ValueError(f"Cannot estimate tier '{self.name}' with an empty entity list.")
+            entity_list = normalize_entity_list(entity_list)
+            if entity_list == "all":
+                requested_entities = list(self.tier_entities)
+            else:
+                requested_entities = list(dict.fromkeys(entity_list))
+                invalid_entities = [entity_id for entity_id in requested_entities if entity_id not in self.tier_entities]
+                if invalid_entities:
+                    invalid_entities_str = ", ".join(invalid_entities)
+                    raise ValueError(
+                        f"Cannot estimate tier '{self.name}' for unknown entities: {invalid_entities_str}."
+                    )
+                if not requested_entities:
+                    raise ValueError(f"Cannot estimate tier '{self.name}' with an empty entity list.")
 
         if len(self.tier_entities) == 1:
             return [{
@@ -288,6 +295,7 @@ class TierEstimator:
             target_name=target_name,
             entity_list=entity_list,
             output_folder=output_folder,
+            tier_output_folder=self.output_folder,
             start_time=start_time,
             end_time=end_time,
             success=success,

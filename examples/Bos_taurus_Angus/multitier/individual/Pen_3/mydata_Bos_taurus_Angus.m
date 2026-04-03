@@ -43,16 +43,16 @@ units.tiers.tier_groups = '-'; label.tiers.tier_groups = 'List of groups ids for
 %% Entity data
 %% Time vs Weight data 
 
-data.tW_PT524401180 = [0 496; 14 503; 21 508; 35 532; 50 560; 63 586; 83 610];
-units.tW_PT524401180 = {'d', 'kg'}; label.tW_PT524401180 = {'Time since start', 'Wet weight'}; comment.tW_PT524401180 = 'Data from GreenBeef trial 1'; title.tW_PT524401180 = 'Wet weight growth curve, individual PT524401180'; bibkey.tW_PT524401180 = 'GreenBeefTrial1';
-init.tW_PT524401180 = 496;
-units.init.tW_PT524401180 = 'kg'; label.init.tW_PT524401180 = 'Initial weight'; 
-
-
 data.tW_PT333842562 = [0 515; 14 535; 21 539; 35 566; 50 594; 63 630; 83 652];
 units.tW_PT333842562 = {'d', 'kg'}; label.tW_PT333842562 = {'Time since start', 'Wet weight'}; comment.tW_PT333842562 = 'Data from GreenBeef trial 1'; title.tW_PT333842562 = 'Wet weight growth curve, individual PT333842562'; bibkey.tW_PT333842562 = 'GreenBeefTrial1';
 init.tW_PT333842562 = 515;
 units.init.tW_PT333842562 = 'kg'; label.init.tW_PT333842562 = 'Initial weight'; 
+
+
+data.tW_PT833653649 = [0 535; 14 546; 21 557; 35 586; 50 613; 63 641; 83 656];
+units.tW_PT833653649 = {'d', 'kg'}; label.tW_PT833653649 = {'Time since start', 'Wet weight'}; comment.tW_PT833653649 = 'Data from GreenBeef trial 1'; title.tW_PT833653649 = 'Wet weight growth curve, individual PT833653649'; bibkey.tW_PT833653649 = 'GreenBeefTrial1';
+init.tW_PT833653649 = 535;
+units.init.tW_PT833653649 = 'kg'; label.init.tW_PT833653649 = 'Initial weight'; 
 
 
 data.tW_PT933843894 = [0 508; 14 521; 21 534; 35 563; 50 583; 63 610; 83 639];
@@ -67,10 +67,10 @@ init.tW_PT533987885 = 436;
 units.init.tW_PT533987885 = 'kg'; label.init.tW_PT533987885 = 'Initial weight'; 
 
 
-data.tW_PT833653649 = [0 535; 14 546; 21 557; 35 586; 50 613; 63 641; 83 656];
-units.tW_PT833653649 = {'d', 'kg'}; label.tW_PT833653649 = {'Time since start', 'Wet weight'}; comment.tW_PT833653649 = 'Data from GreenBeef trial 1'; title.tW_PT833653649 = 'Wet weight growth curve, individual PT833653649'; bibkey.tW_PT833653649 = 'GreenBeefTrial1';
-init.tW_PT833653649 = 535;
-units.init.tW_PT833653649 = 'kg'; label.init.tW_PT833653649 = 'Initial weight'; 
+data.tW_PT524401180 = [0 496; 14 503; 21 508; 35 532; 50 560; 63 586; 83 610];
+units.tW_PT524401180 = {'d', 'kg'}; label.tW_PT524401180 = {'Time since start', 'Wet weight'}; comment.tW_PT524401180 = 'Data from GreenBeef trial 1'; title.tW_PT524401180 = 'Wet weight growth curve, individual PT524401180'; bibkey.tW_PT524401180 = 'GreenBeefTrial1';
+init.tW_PT524401180 = 496;
+units.init.tW_PT524401180 = 'kg'; label.init.tW_PT524401180 = 'Initial weight'; 
 
 
 
@@ -90,14 +90,14 @@ metaData.entity_list = tiers.entity_list;
 % Struct with form tier_entities.(tier_name) = list_of_entities_of_tier
 data.tier_entities = 10;
 units.tier_entities = '-'; label.tier_entities = 'Dummy variable'; 
-tiers.tier_entities = struct('individual', {{'PT524401180', 'PT333842562', 'PT933843894', 'PT533987885', 'PT833653649'}});
+tiers.tier_entities = struct('individual', {{'PT333842562', 'PT833653649', 'PT933843894', 'PT533987885', 'PT524401180'}});
 units.tiers.tier_entities = '-'; label.tiers.tier_entities = 'List of entity ids for each tier'; 
 
 
 % Struct with form groups_of_entity.(entity_id) = list_of_groups_ids_entity_belongs_to
 data.groups_of_entity = 10;
 units.groups_of_entity = '-'; label.groups_of_entity = 'Dummy variable'; 
-tiers.groups_of_entity = struct('PT524401180', {{'Pen_3'}}, 'PT333842562', {{'Pen_3'}}, 'PT933843894', {{'Pen_3'}}, 'PT533987885', {{'Pen_3'}}, 'PT833653649', {{'Pen_3'}});
+tiers.groups_of_entity = struct('PT333842562', {{'Pen_3'}}, 'PT833653649', {{'Pen_3'}}, 'PT933843894', {{'Pen_3'}}, 'PT533987885', {{'Pen_3'}}, 'PT524401180', {{'Pen_3'}});
 units.tiers.groups_of_entity = '-'; label.tiers.groups_of_entity = 'Groups each entity belongs to'; 
 
     

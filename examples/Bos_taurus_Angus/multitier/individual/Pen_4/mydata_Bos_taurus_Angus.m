@@ -43,6 +43,12 @@ units.tiers.tier_groups = '-'; label.tiers.tier_groups = 'List of groups ids for
 %% Entity data
 %% Time vs Weight data 
 
+data.tW_PT924401183 = [0 510; 14 543; 21 555; 35 587; 50 624; 63 648; 83 685];
+units.tW_PT924401183 = {'d', 'kg'}; label.tW_PT924401183 = {'Time since start', 'Wet weight'}; comment.tW_PT924401183 = 'Data from GreenBeef trial 1'; title.tW_PT924401183 = 'Wet weight growth curve, individual PT924401183'; bibkey.tW_PT924401183 = 'GreenBeefTrial1';
+init.tW_PT924401183 = 510;
+units.init.tW_PT924401183 = 'kg'; label.init.tW_PT924401183 = 'Initial weight'; 
+
+
 data.tW_PT224401177 = [0 562; 14 589; 21 597; 35 632; 50 660; 63 697; 83 723];
 units.tW_PT224401177 = {'d', 'kg'}; label.tW_PT224401177 = {'Time since start', 'Wet weight'}; comment.tW_PT224401177 = 'Data from GreenBeef trial 1'; title.tW_PT224401177 = 'Wet weight growth curve, individual PT224401177'; bibkey.tW_PT224401177 = 'GreenBeefTrial1';
 init.tW_PT224401177 = 562;
@@ -55,22 +61,16 @@ init.tW_PT524956505 = 542;
 units.init.tW_PT524956505 = 'kg'; label.init.tW_PT524956505 = 'Initial weight'; 
 
 
-data.tW_PT924401183 = [0 510; 14 543; 21 555; 35 587; 50 624; 63 648; 83 685];
-units.tW_PT924401183 = {'d', 'kg'}; label.tW_PT924401183 = {'Time since start', 'Wet weight'}; comment.tW_PT924401183 = 'Data from GreenBeef trial 1'; title.tW_PT924401183 = 'Wet weight growth curve, individual PT924401183'; bibkey.tW_PT924401183 = 'GreenBeefTrial1';
-init.tW_PT924401183 = 510;
-units.init.tW_PT924401183 = 'kg'; label.init.tW_PT924401183 = 'Initial weight'; 
+data.tW_PT933602927 = [0 426; 14 450; 21 462; 35 482; 50 497; 63 524; 83 539];
+units.tW_PT933602927 = {'d', 'kg'}; label.tW_PT933602927 = {'Time since start', 'Wet weight'}; comment.tW_PT933602927 = 'Data from GreenBeef trial 1'; title.tW_PT933602927 = 'Wet weight growth curve, individual PT933602927'; bibkey.tW_PT933602927 = 'GreenBeefTrial1';
+init.tW_PT933602927 = 426;
+units.init.tW_PT933602927 = 'kg'; label.init.tW_PT933602927 = 'Initial weight'; 
 
 
 data.tW_PT533843896 = [0 480; 14 492; 21 506; 35 536; 50 551; 63 574; 83 586];
 units.tW_PT533843896 = {'d', 'kg'}; label.tW_PT533843896 = {'Time since start', 'Wet weight'}; comment.tW_PT533843896 = 'Data from GreenBeef trial 1'; title.tW_PT533843896 = 'Wet weight growth curve, individual PT533843896'; bibkey.tW_PT533843896 = 'GreenBeefTrial1';
 init.tW_PT533843896 = 480;
 units.init.tW_PT533843896 = 'kg'; label.init.tW_PT533843896 = 'Initial weight'; 
-
-
-data.tW_PT933602927 = [0 426; 14 450; 21 462; 35 482; 50 497; 63 524; 83 539];
-units.tW_PT933602927 = {'d', 'kg'}; label.tW_PT933602927 = {'Time since start', 'Wet weight'}; comment.tW_PT933602927 = 'Data from GreenBeef trial 1'; title.tW_PT933602927 = 'Wet weight growth curve, individual PT933602927'; bibkey.tW_PT933602927 = 'GreenBeefTrial1';
-init.tW_PT933602927 = 426;
-units.init.tW_PT933602927 = 'kg'; label.init.tW_PT933602927 = 'Initial weight'; 
 
 
 
@@ -90,14 +90,14 @@ metaData.entity_list = tiers.entity_list;
 % Struct with form tier_entities.(tier_name) = list_of_entities_of_tier
 data.tier_entities = 10;
 units.tier_entities = '-'; label.tier_entities = 'Dummy variable'; 
-tiers.tier_entities = struct('individual', {{'PT224401177', 'PT524956505', 'PT924401183', 'PT533843896', 'PT933602927'}});
+tiers.tier_entities = struct('individual', {{'PT924401183', 'PT224401177', 'PT524956505', 'PT933602927', 'PT533843896'}});
 units.tiers.tier_entities = '-'; label.tiers.tier_entities = 'List of entity ids for each tier'; 
 
 
 % Struct with form groups_of_entity.(entity_id) = list_of_groups_ids_entity_belongs_to
 data.groups_of_entity = 10;
 units.groups_of_entity = '-'; label.groups_of_entity = 'Dummy variable'; 
-tiers.groups_of_entity = struct('PT224401177', {{'Pen_4'}}, 'PT524956505', {{'Pen_4'}}, 'PT924401183', {{'Pen_4'}}, 'PT533843896', {{'Pen_4'}}, 'PT933602927', {{'Pen_4'}});
+tiers.groups_of_entity = struct('PT924401183', {{'Pen_4'}}, 'PT224401177', {{'Pen_4'}}, 'PT524956505', {{'Pen_4'}}, 'PT933602927', {{'Pen_4'}}, 'PT533843896', {{'Pen_4'}});
 units.tiers.groups_of_entity = '-'; label.tiers.groups_of_entity = 'Groups each entity belongs to'; 
 
     

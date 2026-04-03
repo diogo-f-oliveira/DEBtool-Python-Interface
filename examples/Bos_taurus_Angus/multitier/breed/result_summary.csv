@@ -1,2 +1,0 @@
-tier_name,species_name,n_tier_entities,n_tier_groups,tier_parameters,elapsed_duration_seconds,mean_entity_error__breed,mean_entity_error__diet,mean_entity_error__individual,mean_group_error__breed,mean_group_error__diet,mean_group_error__individual
-breed,Bos_taurus_Angus,1,0,"[""p_Am"", ""kap_X"", ""kap_P"", ""p_M"", ""v"", ""kap"", ""E_G"", ""E_Hb"", ""E_Hx"", ""E_Hp"", ""h_a"", ""t_0"", ""del_M"", ""p_Am_f"", ""E_Hp_f""]",7.27832,,0.19522130137509974,0.06455682542921912,,,0.10398435388845045

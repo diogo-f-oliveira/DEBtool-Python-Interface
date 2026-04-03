@@ -46,7 +46,7 @@ def run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION
         multitier.tiers[tier_name].estimate(
             save_results=True,
             print_results=False,
-            hide_output=True,
+            hide_output=False,
             estimation_settings=estimation_settings[tier_name],
         )
 

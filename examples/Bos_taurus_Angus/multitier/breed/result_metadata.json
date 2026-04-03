@@ -1,17 +1,17 @@
 {
-  "elapsed_duration_seconds": 411.5366,
-  "estimation_end_time": "2026-03-24T00:10:20.306203",
+  "elapsed_duration_seconds": 369.149456,
+  "estimation_end_time": "2026-04-03T12:15:49.824977",
   "estimation_iterations": [
     {
-      "elapsed_duration_seconds": 409.820234,
+      "elapsed_duration_seconds": 367.701126,
       "entity_list": [
         "male"
       ],
-      "estimation_end_time": "2026-03-24T00:10:18.589837",
-      "estimation_start_time": "2026-03-24T00:03:28.769603",
+      "estimation_end_time": "2026-04-03T12:15:48.376647",
+      "estimation_start_time": "2026-04-03T12:09:40.675521",
       "estimation_target_name": "male",
       "estimation_target_type": "entity",
-      "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\breed",
+      "relative_output_folder": ".",
       "success": 1.0
     }
   ],
@@ -22,9 +22,8 @@
     "results_output_mode": 3,
     "tol_simplex": 0.0001
   },
-  "estimation_start_time": "2026-03-24T00:03:28.769603",
-  "output_folder": "C:\\Users\\diogo\\OneDrive - Universidade de Lisboa\\Terraprima\\Code\\DEB Parameter Estimation\\DEBtool-Python-Interface\\examples\\Bos_taurus_Angus\\multitier\\breed",
-  "schema_version": 1,
+  "estimation_start_time": "2026-04-03T12:09:40.675521",
+  "schema_version": 2,
   "species_name": "Bos_taurus_Angus",
   "stable_output_files": [
     "pars.csv",

@@ -1,5 +1,17 @@
 # Multitier Methodology For Agents
 
+This document is the advanced reference for the multitier DEB estimation workflow implemented in `DEBtoolPyIF`.
+
+If you are helping a package user build or modify a workflow, start with:
+
+1. [README.md](README.md)
+2. [MULTITIER_WORKFLOW.md](MULTITIER_WORKFLOW.md)
+3. [DEBTOOL_FILES.md](DEBTOOL_FILES.md)
+4. [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md)
+5. [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md)
+
+Use this file when you need the deeper implementation and methodology details behind those user-facing guides.
+
 This document explains the multitier DEB estimation methodology implemented in `DEBtoolPyIF`, focusing only on the concepts and package behavior that matter for implementation and maintenance. It is based on:
 
 - `docs/references/Oliveira_et_al_2024_multitier_DEB.pdf`
@@ -260,45 +272,14 @@ The package uses templates because DEBtool expects MATLAB species files in the s
 
 For each tier estimation, the templates are filled into a fresh output folder.
 
-### `mydata`
+At the methodology level, the important point is that these files carry:
 
-Generated `mydata` contains:
+- the current tier's observations and inherited context,
+- the current tier's free parameters and inherited fixed parameters,
+- the hierarchy metadata needed to predict the current tier and all tiers below it,
+- the estimation settings for the DEBtool run.
 
-- entity and group datasets included in the current run,
-- `entity_data_types` and `group_data_types`,
-- `entity_list`,
-- `tier_entities`,
-- `tier_groups`,
-- `tier_subtree`,
-- `groups_of_entity`,
-- `tier_pars`,
-- `tier_par_init_values`.
-
-These helper variables are not incidental. They are how the MATLAB `predict` template learns:
-
-- which lower-tier entities belong to the current tier universe,
-- which groups each entity contributes to,
-- which parameter names must be expanded as per-entity tier parameters.
-
-### `pars_init`
-
-Generated `pars_init` starts from the fixed parameter context from higher tiers and inserts per-entity initial values for the current tier parameters.
-
-This is how the package encodes the paper's rule that each tier starts from the tier above.
-
-### `predict`
-
-The package usually copies a tier-specific `predict` template unchanged. Those templates implement the biological logic for the specific hierarchy.
-
-They are expected to:
-
-- read the tier helper variables from `auxData.tiers`,
-- replace base parameter values with tier-specific values such as `par.<name>_<entity_id>`,
-- predict data for the current tier entities and all lower-tier observations they govern.
-
-### `run`
-
-Generated `run` injects estimation settings such as number of runs, iteration limits, and output mode.
+The general DEBtool file-by-file contract is documented in [DEBTOOL_FILES.md](DEBTOOL_FILES.md). The multitier-specific integration layer for those files is documented in [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md). This document stays focused on why those files exist in the multitier method and how the tier logic depends on them.
 
 ## The Role Of Pseudo-Data In This Package
 

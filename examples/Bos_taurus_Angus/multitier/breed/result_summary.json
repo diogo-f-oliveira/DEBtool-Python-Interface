@@ -1,5 +1,5 @@
 {
-  "elapsed_duration_seconds": 411.5366,
+  "elapsed_duration_seconds": 369.149456,
   "mean_entity_errors_by_tier": {
     "breed": null,
     "diet": 0.06418437342902268,
@@ -25,7 +25,7 @@
   "mean_group_errors_by_tier": {
     "breed": null,
     "diet": null,
-    "individual": 0.10153292011586397
+    "individual": 0.10153292011586398
   },
   "n_tier_entities": 1,
   "n_tier_groups": 0,

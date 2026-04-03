@@ -1,9 +1,11 @@
 import pandas as pd
 
 from ..data_sources.base import DataSourceBase, EntityDataSourceBase, GroupDataSourceBase
+from ..utils.entity_list import normalize_entity_list
 
 
 def get_mydata_code(data_source_list: list[DataSourceBase], entity_list='all'):
+    entity_list = normalize_entity_list(entity_list)
     data_types = []
     mydata_code = []
     for data_source in data_source_list:
@@ -91,6 +93,7 @@ class DataCollection:
         return sorted(self.entity_vs_group_df[group_id].dropna().index)
 
     def get_groups_of_entities(self, entity_list='all'):
+        entity_list = normalize_entity_list(entity_list)
         if entity_list == 'all':
             entity_list = self.entities
 
@@ -102,9 +105,9 @@ class DataCollection:
     def get_group_list_from_entity_list(self, entity_list='all'):
         if not len(self._groups):
             return []
+        entity_list = normalize_entity_list(entity_list)
         if entity_list == 'all':
             return self.groups
-        entity_list = list(entity_list)
         return sorted(self.entity_vs_group_df.loc[entity_list].dropna(axis=1, how='all').columns)
 
     def get_data_source_of_entity(self, entity_id, data_type):

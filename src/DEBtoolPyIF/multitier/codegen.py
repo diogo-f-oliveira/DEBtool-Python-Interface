@@ -1,6 +1,6 @@
 import shutil
 from string import Template
-
+from pathlib import Path
 from ..utils.data_conversion import convert_dict_to_matlab, convert_list_of_strings_to_matlab
 from ..utils.mydata_code_generation import (
     check_files_exist_in_folder,
@@ -9,13 +9,17 @@ from ..utils.mydata_code_generation import (
 )
 
 
+def _sorted_unique_strings(values):
+    return sorted(set(values))
+
+
 class TierCodeGenerator:
     FILES_NEEDED = ["mydata", "pars_init", "predict", "run"]
 
     def __init__(self, tier):
         self.tier_estimator = tier
         self.tier_structure = tier.tier_structure
-        self.output_folder = None
+        self.output_folder = Path()
 
         complete, missing_file = self.check_all_files_exist(self.tier_estimator.template_folder)
         if not complete:
@@ -72,11 +76,11 @@ class TierCodeGenerator:
 
         entity_data_types_code = generate_meta_data_code(
             var_name="entity_data_types",
-            converted_data=convert_list_of_strings_to_matlab(list(entity_data_types)),
+            converted_data=convert_list_of_strings_to_matlab(_sorted_unique_strings(entity_data_types)),
         )
         group_data_types_code = generate_meta_data_code(
             var_name="group_data_types",
-            converted_data=convert_list_of_strings_to_matlab(list(group_data_types)),
+            converted_data=convert_list_of_strings_to_matlab(_sorted_unique_strings(group_data_types)),
         )
         entity_list_code = generate_tier_variable_code(
             var_name="entity_list",

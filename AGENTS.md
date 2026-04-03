@@ -42,8 +42,13 @@
 
 ## References
 - Multitier paper (canonical link): `https://www.sciencedirect.com/science/article/pii/S0304380024001674`
-- For multitier methodological decisions, prioritize:
-  - `docs/multitier_methodology_for_agents.md`
+- For shared parameter-estimation documentation, prioritize:
+  - `docs/parameter_estimation/README.md`
+  - `docs/parameter_estimation/MULTITIER_WORKFLOW.md`
+  - `docs/parameter_estimation/DEBTOOL_FILES.md`
+  - `docs/parameter_estimation/DEBTOOL_MULTITIER.md`
+  - `docs/parameter_estimation/TEMPLATE_GENERATION.md`
+  - `docs/parameter_estimation/MULTITIER.md`
 
 ## Output And Reporting
 - After changes, report:

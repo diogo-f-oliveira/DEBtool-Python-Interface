@@ -97,7 +97,7 @@ def test_estimation_outputs_expected_result_files(estimated_multitier):
         metadata = json.loads((tier_output_folder / "result_metadata.json").read_text(encoding="utf-8"))
         assert metadata["tier_name"] == tier_name
         assert metadata["species_name"] == multitier.species_name
-        assert metadata["output_folder"] == str(tier_output_folder.resolve())
+        assert "output_folder" not in metadata
         assert metadata["tier_entities"] == tier.tier_entities
         assert metadata["tier_groups"] == tier.tier_groups
         assert metadata["tier_parameters"] == tier.tier_pars
@@ -105,6 +105,7 @@ def test_estimation_outputs_expected_result_files(estimated_multitier):
         assert metadata["estimation_start_time"] is not None
         assert metadata["estimation_end_time"] is not None
         assert metadata["elapsed_duration_seconds"] is not None
+        assert str(tier_output_folder.resolve()) not in json.dumps(metadata)
         if len(tier.tier_entities) == 1:
             expected_iteration_count = 1
         elif len(tier.tier_groups):
@@ -112,9 +113,20 @@ def test_estimation_outputs_expected_result_files(estimated_multitier):
         else:
             expected_iteration_count = len(tier.tier_entities)
         assert len(metadata["estimation_iterations"]) == expected_iteration_count
+        assert all("relative_output_folder" in iteration for iteration in metadata["estimation_iterations"])
         assert all(iteration["estimation_start_time"] is not None for iteration in metadata["estimation_iterations"])
         assert all(iteration["estimation_end_time"] is not None for iteration in metadata["estimation_iterations"])
         assert all(iteration["elapsed_duration_seconds"] is not None for iteration in metadata["estimation_iterations"])
+        expected_iteration_folders = ["."]
+        if len(tier.tier_entities) == 1:
+            expected_iteration_folders = ["."]
+        elif len(tier.tier_groups):
+            expected_iteration_folders = list(tier.tier_groups)
+        else:
+            expected_iteration_folders = list(tier.tier_entities)
+        assert [iteration["relative_output_folder"] for iteration in metadata["estimation_iterations"]] == (
+            expected_iteration_folders
+        )
 
         summary = json.loads((tier_output_folder / "result_summary.json").read_text(encoding="utf-8"))
         assert summary["tier_name"] == tier_name

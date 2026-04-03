@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
 from DEBtoolPyIF.multitier import TierEstimator
@@ -41,7 +41,7 @@ def test_save_results_writes_backward_compatible_csvs_and_metadata(template_fold
     assert metadata["stable_output_files"] == TierEstimator.OUTPUT_FILES
     assert metadata["tier_name"] == "tier_1"
     assert metadata["species_name"] == "Test_species"
-    assert metadata["output_folder"] == str((template_folder / "output").resolve())
+    assert "output_folder" not in metadata
     assert metadata["tier_entities"] == ["entity_1"]
     assert metadata["tier_groups"] == ["group_1"]
     assert metadata["tier_parameters"] == ["par_a"]
@@ -53,6 +53,7 @@ def test_save_results_writes_backward_compatible_csvs_and_metadata(template_fold
     assert metadata["estimation_iterations"][0]["estimation_target_type"] == "entity"
     assert metadata["estimation_iterations"][0]["estimation_target_name"] == "entity_1"
     assert metadata["estimation_iterations"][0]["entity_list"] == ["entity_1"]
+    assert metadata["estimation_iterations"][0]["relative_output_folder"] == "."
     assert metadata["estimation_iterations"][0]["estimation_start_time"] is not None
     assert metadata["estimation_iterations"][0]["estimation_end_time"] is not None
     assert metadata["estimation_iterations"][0]["elapsed_duration_seconds"] >= 0
@@ -123,6 +124,25 @@ def test_load_results_remains_compatible_without_metadata_file(template_folder):
     assert list(loaded_tier.pars_df.columns) == ["par_a"]
 
 
+def test_load_results_rejects_previous_metadata_schema_version(template_folder):
+    tier = build_tier_estimator(template_folder)
+    tier.estimate(
+        save_results=True,
+        print_results=False,
+        hide_output=True,
+        estimation_settings={"n_runs": 2, "n_steps": 8},
+    )
+
+    metadata_path = tier.output_folder / "result_metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["schema_version"] = 1
+    metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True), encoding="utf-8")
+
+    loaded_tier = build_tier_estimator(template_folder)
+    with pytest.raises(ValueError, match="schema version 1"):
+        loaded_tier.load_results()
+
+
 def test_group_result_metadata_preserves_iteration_output_folders(template_folder):
     tier = build_grouped_tier_estimator(template_folder)
 
@@ -139,7 +159,7 @@ def test_group_result_metadata_preserves_iteration_output_folders(template_folde
         "group_1",
         "group_2",
     ]
-    assert [Path(iteration["output_folder"]).name for iteration in metadata["estimation_iterations"]] == [
+    assert [iteration["relative_output_folder"] for iteration in metadata["estimation_iterations"]] == [
         "group_1",
         "group_2",
     ]
@@ -172,7 +192,7 @@ def test_save_and_load_results_preserve_mixed_group_and_entity_iteration_metadat
         "group",
         "entity",
     ]
-    assert [Path(iteration["output_folder"]).name for iteration in metadata["estimation_iterations"]] == [
+    assert [iteration["relative_output_folder"] for iteration in metadata["estimation_iterations"]] == [
         "Pen_2",
         "Pen_3",
         "Pen_4",

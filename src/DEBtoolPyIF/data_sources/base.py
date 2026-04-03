@@ -3,6 +3,7 @@ import pandas as pd
 from ..utils.mydata_code_generation import is_valid_matlab_field_name, generate_data_code, generate_aux_data_code
 from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_string_to_matlab, \
     convert_list_of_strings_to_matlab
+from ..utils.entity_list import normalize_entity_list
 
 
 class DataSourceBase:
@@ -192,6 +193,7 @@ class GroupDataSourceBase(DataSourceBase):
 
     def get_groups_in_entity_list(self, entity_list):
         # Only returns groups of individuals that exist in the data
+        entity_list = normalize_entity_list(entity_list, allow_all=False)
         entity_list = [entity_id for entity_id in entity_list if entity_id in self.entity_vs_group_df.index]
         return sorted(self.entity_vs_group_df.loc[entity_list].dropna(axis=1, how='all').columns)
 

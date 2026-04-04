@@ -39,9 +39,16 @@
 - For changes affecting DEBtool generated files, preserve naming and expected DEBtool/add-my-pet conventions unless explicitly requested.
 - When generating MATLAB numeric arrays, preserve missing and infinite values as MATLAB-compatible `NaN`, `Inf`, and `-Inf` tokens; do not coerce or drop them.
 - Prefer small, targeted patches and keep public constructor signatures explicit.
+- Before proposing or implementing new architecture, broad abstractions, large refactors, or changes that may affect future extensibility, review `docs/development_plan.md` and align the design with the roadmap when reasonable.
+- For architecture and large-refactor work, prefer designs that preserve compatibility with the current workflow, keep future roadmap options open, and add only lightweight scaffolding for likely future changes when it improves extensibility without adding premature complexity.
+- For architecture and large-refactor work, explicitly report that `docs/development_plan.md` was considered and summarize any roadmap-related accommodations, constraints, or tradeoffs in the final write-up.
+- If roadmap alignment is unclear, or if multiple plausible directions would support different future roadmap items, ask the user for clarification rather than silently choosing one.
 
 ## References
-- Multitier paper (canonical link): `https://www.sciencedirect.com/science/article/pii/S0304380024001674`
+- Multitier paper (canonical link): 
+  - `docs/references/Oliveira_et_al_2024_Multitier_DEB.pdf`
+- Development roadmap:
+  - `docs/ROADMAP.md`
 - For shared parameter-estimation documentation, prioritize:
   - `docs/parameter_estimation/README.md`
   - `docs/parameter_estimation/MULTITIER_WORKFLOW.md`

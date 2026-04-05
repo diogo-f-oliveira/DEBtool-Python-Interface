@@ -33,16 +33,18 @@
   
 ## Code Change Guidelines
 - Keep path handling robust and cross-platform (`os.path.join` or `pathlib`).
-- Avoid introducing breaking API changes without updating:
+- After introducing breaking API changes update all affected code and tests, including:
   - example scripts in `examples/`
   - integration tests in `tests/integration/`
 - For changes affecting DEBtool generated files, preserve naming and expected DEBtool/add-my-pet conventions unless explicitly requested.
 - When generating MATLAB numeric arrays, preserve missing and infinite values as MATLAB-compatible `NaN`, `Inf`, and `-Inf` tokens; do not coerce or drop them.
 - Prefer small, targeted patches and keep public constructor signatures explicit.
-- Before proposing or implementing new architecture, broad abstractions, large refactors, or changes that may affect future extensibility, review `docs/development_plan.md` and align the design with the roadmap when reasonable.
+- Before proposing or implementing new architecture, broad abstractions, large refactors, or changes that may affect future extensibility, review `docs/ROADMAP.md` and align the design with the roadmap when reasonable.
 - For architecture and large-refactor work, prefer designs that preserve compatibility with the current workflow, keep future roadmap options open, and add only lightweight scaffolding for likely future changes when it improves extensibility without adding premature complexity.
-- For architecture and large-refactor work, explicitly report that `docs/development_plan.md` was considered and summarize any roadmap-related accommodations, constraints, or tradeoffs in the final write-up.
+- For architecture and large-refactor work, explicitly report that `docs/ROADMAP.md` was considered and summarize any roadmap-related accommodations, constraints, or tradeoffs in the final write-up.
 - If roadmap alignment is unclear, or if multiple plausible directions would support different future roadmap items, ask the user for clarification rather than silently choosing one.
+- When discussing code architecture, optimize for sound design and maintainability rather than agreement. If a user suggestion would add unnecessary complexity, conflict with the roadmap, weaken the API, or otherwise lead to worse code, respectfully push back, explain why, and propose a better alternative.
+- Do not be sycophantic in architectural discussions. Treat the shared goal as building the best code and making durable technical decisions, even when that means disagreeing with the user's initial proposal.
 
 ## References
 - Multitier paper (canonical link): 

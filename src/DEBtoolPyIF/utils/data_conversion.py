@@ -15,14 +15,14 @@ def _format_numeric_value(value, format_code: str | None = None):
     if np.isneginf(value):
         return "-Inf"
     if format_code is None:
-        return value
+        return str(value)
     return format(value, format_code)
 
 
 def convert_numeric_array_to_matlab(
     array: int | float | np.ndarray,
     format_codes: str | Sequence[str] | None = None,
-):
+) -> str:
     if np.size(array) == 1: # Covers case for int and float
         if isinstance(array, np.ndarray):
             return _format_numeric_value(array.item(), format_codes)

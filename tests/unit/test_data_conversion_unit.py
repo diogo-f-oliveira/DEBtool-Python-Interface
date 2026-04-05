@@ -23,9 +23,9 @@ def test_convert_string_to_matlab(value, expected):
 @pytest.mark.parametrize(
     ("value", "format_codes", "expected"),
     [
-        (5, None, 5),
-        (3.2, None, 3.2),
-        (np.array(7), None, 7),
+        (5, None, "5"),
+        (3.2, None, "3.2"),
+        (np.array(7), None, "7"),
         (np.array([[0, 1], [2, 3]]), None, "[0 1; 2 3]"),
         (np.array([[1.5, 2.0]]), None, "[1.5 2.0]"),
         (np.array([[1], [2]]), None, "[1; 2]"),

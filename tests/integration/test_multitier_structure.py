@@ -34,4 +34,6 @@ def test_create_tier_structure_has_core_multitier_attributes(
     assert hasattr(tier_structure, "tier_names")
     assert hasattr(tier_structure, "entity_hierarchy")
     assert hasattr(tier_structure, "tiers")
+    assert hasattr(tier_structure, "estimation_templates")
     assert isinstance(tier_structure.tiers, dict)
+    assert isinstance(tier_structure.estimation_templates, dict)

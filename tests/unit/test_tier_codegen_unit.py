@@ -3,8 +3,9 @@ from types import SimpleNamespace
 
 import pandas as pd
 
-from DEBtoolPyIF.multitier import TierHierarchy
-from DEBtoolPyIF.multitier.codegen import TierCodeGenerator
+from DEBtoolPyIF.estimation_files.writer import write_estimation_file
+from DEBtoolPyIF.multitier import MultitierMyDataSubstitutionTemplate, TierHierarchy
+from DEBtoolPyIF.multitier.estimation_files import MultitierGenerationContext
 
 
 class FakeCodegenTierData:
@@ -62,7 +63,29 @@ class FakeCodegenTierStructure:
 
 def _write_required_templates(template_folder: Path, species_name: str):
     (template_folder / f"mydata_{species_name}.m").write_text(
-        "$entity_data_types\n$group_data_types\n",
+        "\n".join(
+            [
+                "$function_header",
+                "$metadata_block",
+                "$entity_data_block",
+                "$entity_data_types",
+                "$group_data_block",
+                "$group_data_types",
+                "$entity_list",
+                "$tier_entities",
+                "$tier_groups",
+                "$groups_of_entity",
+                "$tier_subtree",
+                "$tier_pars",
+                "$tier_par_init_values",
+                "$weights_block",
+                "$save_fields_block",
+                "$remove_dummy_weights_block",
+                "$add_pseudodata_block",
+                "$multitier_pseudodata_block",
+                "$packing_block",
+            ]
+        ),
         encoding="utf-8",
     )
     for prefix in ("pars_init", "predict", "run"):
@@ -81,14 +104,23 @@ def test_generate_mydata_file_sorts_and_deduplicates_metadata_types(tmp_path):
     tier_estimator = SimpleNamespace(
         name="top",
         tier_structure=tier_structure,
-        template_folder=template_folder,
+        output_folder=output_folder,
         tier_pars=["par_a"],
         extra_info="",
+        estimation_settings={},
     )
-    code_generator = TierCodeGenerator(tier=tier_estimator)
-    code_generator.output_folder = output_folder
-
-    code_generator.generate_mydata_file(entity_list=["root_entity"])
+    context = MultitierGenerationContext.from_tier_estimator(
+        tier_estimator=tier_estimator,
+        entity_list=["root_entity"],
+        output_folder=output_folder,
+    )
+    write_estimation_file(
+        "mydata",
+        MultitierMyDataSubstitutionTemplate(
+            source=template_folder / f"mydata_{tier_structure.species_name}.m"
+        ),
+        context,
+    )
 
     contents = (output_folder / "mydata_Test_species.m").read_text(encoding="utf-8")
 

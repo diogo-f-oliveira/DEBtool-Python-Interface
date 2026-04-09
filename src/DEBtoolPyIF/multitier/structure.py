@@ -1,24 +1,48 @@
 from pathlib import Path
+import warnings
 
 import pandas as pd
 
 from ..data_sources.collection import DataCollection
+from ..estimation_files import normalize_estimation_templates
 from ..estimation.runner import EstimationRunner
+from .estimation_files import build_estimation_templates_from_folder
 from .hierarchy import TierHierarchy
 from .tier_estimation import TierEstimator
 
 
 class MultiTierStructure:
     def __init__(self, species_name: str, entity_hierarchy: TierHierarchy, data: dict[str, DataCollection], pars: dict,
-                 tier_pars: dict, template_folder: str | Path, output_folder: str | Path, matlab_session="auto"):
+                 tier_pars: dict, template_folder: str | Path | None = None,
+                 estimation_templates: dict | None = None,
+                 output_folder: str | Path = ".", matlab_session="auto"):
         self.data = data
         self.species_name = species_name
         self.entity_hierarchy = entity_hierarchy
         self.tier_names = list(self.entity_hierarchy.tier_names)
-        self.template_folder = Path(template_folder)
+        self.template_folder = Path(template_folder) if template_folder is not None else None
         self.output_folder = Path(output_folder)
         self.pars = pars
         self.tier_pars = tier_pars
+        if estimation_templates is None:
+            if self.template_folder is None:
+                raise ValueError("Either estimation_templates or template_folder must be provided.")
+            warnings.warn(
+                "template_folder is deprecated and will be removed in 0.4.0. "
+                "Pass estimation_templates instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.estimation_templates = build_estimation_templates_from_folder(
+                template_folder=self.template_folder,
+                tier_names=self.tier_names,
+                species_name=self.species_name,
+            )
+        else:
+            self.estimation_templates = normalize_estimation_templates(
+                estimation_templates=estimation_templates,
+                tier_names=self.tier_names,
+            )
         self.tiers = {}
         self.build_tiers()
         self.estimation_runner = EstimationRunner(
@@ -32,9 +56,7 @@ class MultiTierStructure:
         self.entity_hierarchy.to_dataframe().to_csv(self.output_folder / "entity_vs_tier.csv")
 
         for tier_name in self.tier_names:
-            template_folder = self.template_folder / tier_name
-            if not template_folder.is_dir():
-                raise Exception(f"Template folder for tier {tier_name} not found at: {template_folder}")
+            tier_template_folder = self.template_folder / tier_name if self.template_folder is not None else None
             tier_pars_str = " ".join(self.tier_pars[tier_name])
             if not all([p in self.pars for p in self.tier_pars[tier_name]]):
                 raise Exception(f"Cannot estimate tier pars {tier_pars_str} for {tier_name} tier as they"
@@ -46,7 +68,8 @@ class MultiTierStructure:
                 tier_structure=self,
                 tier_name=tier_name,
                 tier_pars=self.tier_pars[tier_name],
-                template_folder=template_folder,
+                template_folder=tier_template_folder,
+                estimation_templates=self.estimation_templates[tier_name],
                 output_folder=tier_output_folder,
             )
 

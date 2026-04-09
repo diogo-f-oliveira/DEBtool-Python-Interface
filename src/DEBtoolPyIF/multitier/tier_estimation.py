@@ -5,8 +5,16 @@ from pathlib import Path
 import pandas as pd
 from tabulate import tabulate
 
+from ..estimation_files import (
+    CopyFileTemplate,
+    EstimationTemplates,
+    RunSubstitutionTemplate,
+)
+from ..estimation_files.writer import write_tier_estimation_files
 from . import results
-from .codegen import TierCodeGenerator
+from .estimation_files import MultitierGenerationContext
+from .mydata import MultitierMyDataSubstitutionTemplate
+from .pars_init import MultitierParsInitSubstitutionTemplate
 from ..utils.entity_list import normalize_entity_list
 
 
@@ -49,8 +57,9 @@ class TierEstimator:
     }
     OUTPUT_FILES = list(OUTPUT_FILE_DESCRIPTIONS)
 
-    def __init__(self, tier_structure, tier_name, tier_pars: list, template_folder: str | Path,
-                 output_folder: str | Path, extra_info="", extra_pseudo_data=None):
+    def __init__(self, tier_structure, tier_name, tier_pars: list, template_folder: str | Path | None = None,
+                 estimation_templates: EstimationTemplates | dict | None = None,
+                 output_folder: str | Path = ".", extra_info="", extra_pseudo_data=None):
         if extra_pseudo_data is None:
             extra_pseudo_data = {}
         self.tier_structure = tier_structure
@@ -59,7 +68,25 @@ class TierEstimator:
         self.pars_df = None
         self.tier_entities = list(self.tier_structure.entity_hierarchy.get_entities(self.name))
         self.tier_groups = list(self.tier_structure.data[tier_name].groups)
-        self.template_folder = Path(template_folder)
+        self.template_folder = Path(template_folder) if template_folder is not None else None
+        if estimation_templates is not None:
+            self.estimation_templates = EstimationTemplates.from_mapping(estimation_templates)
+        elif template_folder is not None:
+            species_name = self.tier_structure.species_name
+            self.estimation_templates = EstimationTemplates(
+                mydata=MultitierMyDataSubstitutionTemplate(
+                    source=self.template_folder / f"mydata_{species_name}.m"
+                ),
+                pars_init=MultitierParsInitSubstitutionTemplate(
+                    source=self.template_folder / f"pars_init_{species_name}.m"
+                ),
+                predict=CopyFileTemplate(self.template_folder / f"predict_{species_name}.m"),
+                run=RunSubstitutionTemplate(
+                    source=self.template_folder / f"run_{species_name}.m"
+                ),
+            )
+        else:
+            self.estimation_templates = None
         self.output_folder = Path(output_folder)
         self.estimation_settings = None
         self.pseudo_data = extra_pseudo_data
@@ -89,7 +116,6 @@ class TierEstimator:
             index=pd.MultiIndex.from_tuples(group_list, names=("tier", "group")),
         )
 
-        self.code_generator = TierCodeGenerator(tier=self)
         self.estim_start_time = None
         self.estim_end_time = None
         self.estimation_iterations = []
@@ -148,8 +174,13 @@ class TierEstimator:
             output_folder = self.output_folder / group_name
             output_folder.mkdir(parents=True, exist_ok=True)
             self.tier_structure.estimation_runner.estim_files_dir = output_folder
-            self.code_generator.output_folder = output_folder
-            self.code_generator.generate_code(entity_list=target_entity_list, pseudo_data_weight=pseudo_data_weight)
+            generation_context = MultitierGenerationContext.from_tier_estimator(
+                tier_estimator=self,
+                entity_list=target_entity_list,
+                pseudo_data_weight=pseudo_data_weight,
+                output_folder=output_folder,
+            )
+            write_tier_estimation_files(self.estimation_templates, generation_context)
 
             success = self.tier_structure.estimation_runner.run_estimation(hide_output=hide_output)
             iteration_end_time = pd.Timestamp.now()

@@ -1,7 +1,20 @@
 """Public multitier estimation interfaces for DEBtoolPyIF."""
 
+from .estimation_files import build_estimation_templates_from_folder
 from .hierarchy import TierHierarchy, TierHierarchyError
+from .mydata import MultitierMyDataProgrammaticTemplate, MultitierMyDataSubstitutionTemplate
+from .pars_init import MultitierParsInitProgrammaticTemplate, MultitierParsInitSubstitutionTemplate
 from .structure import MultiTierStructure
 from .tier_estimation import TierEstimator
 
-__all__ = ["TierHierarchy", "TierHierarchyError", "MultiTierStructure", "TierEstimator"]
+__all__ = [
+    "build_estimation_templates_from_folder",
+    "TierHierarchy",
+    "TierHierarchyError",
+    "MultiTierStructure",
+    "TierEstimator",
+    "MultitierMyDataProgrammaticTemplate",
+    "MultitierMyDataSubstitutionTemplate",
+    "MultitierParsInitProgrammaticTemplate",
+    "MultitierParsInitSubstitutionTemplate",
+]

@@ -1,6 +1,20 @@
 from __future__ import annotations
 
-from DEBtoolPyIF import MyDataSection
+from .mydata_base import MyDataSection
+from ..utils.data_conversion import convert_numeric_array_to_matlab
+from ..utils.mydata_code_generation import generate_meta_data_code
+
+
+class TypicalTemperatureSection(MyDataSection):
+    key = "typical_temperature_block"
+
+    def __init__(self, *, t_typical: int | float = 0) -> None:
+        self.t_typical = t_typical
+        line = (
+            f"{generate_meta_data_code('T_typical', convert_numeric_array_to_matlab(self.t_typical)).rstrip()} "
+            "% K, body temperature"
+        )
+        super().__init__(matlab_code=line)
 
 
 class SetTypicalTemperatureForAllDatasetsSection(MyDataSection):

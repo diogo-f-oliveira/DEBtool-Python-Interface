@@ -24,7 +24,6 @@ class SetTypicalTemperatureForAllDatasetsSection(MyDataSection):
     """
     key = "set_temperature_block"
     matlab_code = """%% Set temperature metadata
-temp = struct();
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};
 

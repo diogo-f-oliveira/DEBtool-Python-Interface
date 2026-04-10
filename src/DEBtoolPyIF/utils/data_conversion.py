@@ -63,6 +63,12 @@ def convert_list_of_strings_to_matlab(list_data: list, double_brackets: bool = F
     return matlab_code
 
 
+def convert_string_or_collection_to_matlab(value: str | list[str] | tuple[str, ...]) -> str:
+    if isinstance(value, (list, tuple)):
+        return convert_list_of_strings_to_matlab(list(value))
+    return convert_string_to_matlab(value)
+
+
 def convert_dict_to_matlab(dict_data: dict, is_string_data=False):
     # Return empty struct if dict is empty
     if not dict_data:

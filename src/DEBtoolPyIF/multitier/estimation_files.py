@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import warnings
 
 from ..estimation_files.config import EstimationTemplates
 from ..estimation_files.context import GenerationContext
@@ -14,11 +15,37 @@ from .mydata import MultitierMyDataSubstitutionTemplate
 from .pars_init import MultitierParsInitSubstitutionTemplate
 
 
+def build_estimation_files_from_folder(
+    template_folder: str | Path,
+    tier_names: list[str] | tuple[str, ...],
+    species_name: str,
+) -> dict[str, EstimationTemplates]:
+    warnings.warn(
+        "build_estimation_files_from_folder() is deprecated and will be removed in version 0.4.0. "
+        "Use build_estimation_templates_from_folder() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return build_estimation_templates_from_folder(
+        template_folder=template_folder,
+        tier_names=tier_names,
+        species_name=species_name,
+    )
+
+
 def build_estimation_templates_from_folder(
     template_folder: str | Path,
     tier_names: list[str] | tuple[str, ...],
     species_name: str,
 ) -> dict[str, EstimationTemplates]:
+
+    warnings.warn(
+        "build_estimation_templates_from_folder() is deprecated and will be removed in version 0.4.0. "
+        "Build EstimationTemplates objects directly.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     template_folder = Path(template_folder)
     return {
         tier_name: EstimationTemplates(

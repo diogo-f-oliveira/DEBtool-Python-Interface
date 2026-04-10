@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from string import Template
 
-from .mydata_base import BaseMyDataState, MyDataSection, StaticMyDataSection
+from .mydata_base import BaseMyDataState, MyDataSection
 from .mydata_data_sections import (
     EntityDataSection,
     EntityDataTypesSection,
@@ -15,13 +14,15 @@ from .mydata_data_sections import (
 )
 from .mydata_metadata_sections import (
     BibkeysSection,
+    CompletenessLevelSection,
     DiscussionSection,
-    FunctionHeaderSection,
-    MetadataSection,
+    MyDataFunctionHeaderSection,
+    SpeciesInfoMetadataSection,
     SaveFieldsSection,
 )
 from .mydata_packing_sections import PackingSection
 from .mydata_pseudodata_sections import AddPseudoDataSection
+from .mydata_temperature_sections import TypicalTemperatureSection
 from .mydata_weight_sections import RemoveDummyWeightsSection, InitializeWeightsSection
 from .templates import ProgrammaticTemplate, SubstitutionTemplate
 
@@ -29,6 +30,8 @@ from .templates import ProgrammaticTemplate, SubstitutionTemplate
 MYDATA_TEMPLATE_KEYS = (
     "function_header",
     "metadata_block",
+    "typical_temperature_block",
+    "completeness_level_block",
     "group_data_block",
     "group_data_types",
     "entity_data_block",
@@ -48,6 +51,8 @@ MYDATA_TEMPLATE_KEYS = (
 MYDATA_BASE_REQUIRED_TEMPLATE_KEYS = (
     "function_header",
     "metadata_block",
+    "typical_temperature_block",
+    "completeness_level_block",
     "entity_data_block",
     "group_data_block",
     "weights_block",
@@ -84,9 +89,7 @@ def build_mydata_substitutions(
         state = build_mydata_state(context)
     substitutions = {}
     for section in sections:
-        substitutions[section.key] = Template(section.render(context, state)).safe_substitute(
-            species_name=context.species_name
-        )
+        substitutions[section.key] = section.render(context, state)
     return substitutions
 
 
@@ -100,8 +103,10 @@ class MyDataTemplate:
     @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            FunctionHeaderSection(),
-            MetadataSection(),
+            MyDataFunctionHeaderSection(),
+            SpeciesInfoMetadataSection(),
+            TypicalTemperatureSection(),
+            CompletenessLevelSection(),
             GroupDataSection(),
             GroupDataTypesSection(),
             EntityDataSection(),
@@ -121,8 +126,10 @@ class MyDataTemplate:
     @classmethod
     def required_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            FunctionHeaderSection(),
-            MetadataSection(),
+            MyDataFunctionHeaderSection(),
+            SpeciesInfoMetadataSection(),
+            TypicalTemperatureSection(),
+            CompletenessLevelSection(),
             GroupDataSection(),
             EntityDataSection(),
             InitializeWeightsSection(),
@@ -139,7 +146,7 @@ class MyDataTemplate:
         return build_mydata_state(context)
 
     def render_section_with_state(self, section, context, state: BaseMyDataState) -> str:
-        return Template(section.render(context, state)).safe_substitute(species_name=context.species_name)
+        return section.render(context, state)
 
     def render_section(self, section, context) -> str:
         return self.render_section_with_state(section, context, self.build_state(context))

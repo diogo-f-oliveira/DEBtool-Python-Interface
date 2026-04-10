@@ -2,71 +2,102 @@
 
 from __future__ import annotations
 
-from string import Template
+from .mydata_base import MyDataSection
+from ..utils.data_conversion import (
+    convert_numeric_array_to_matlab,
+    convert_string_or_collection_to_matlab,
+    convert_string_to_matlab,
+)
+from ..utils.mydata_code_generation import generate_meta_data_code
 
-from .mydata_base import BaseMyDataState, MyDataSection
 
-
-class FunctionHeaderSection(MyDataSection):
+class MyDataFunctionHeaderSection(MyDataSection):
     key = "function_header"
+    matlab_code = """function [data, auxData, metaData, txtData, weights] = mydata_${species_name}
+% Baseline generic mydata template for DEBtoolPyIF."""
 
-    def render(self, context, _state: BaseMyDataState) -> str:
-        return Template(
-            """function [data, auxData, metaData, txtData, weights] = mydata_${species_name}
-% Baseline generic mydata template for DEBtoolPyIF.
-
-data = struct();
-auxData = struct();
-metaData = struct();
-txtData = struct();
-weights = struct();
-init = struct();
-units = struct();
-label = struct();
-bibkey = struct();
-comment = struct();
-title = struct();
-tiers = struct();
-temp = struct();"""
-        ).substitute(species_name=context.species_name)
+    def get_render_substitutions(self, context, state=None) -> dict[str, str]:
+        return {"species_name": context.species_name}
 
 
-class MetadataSection(MyDataSection):
-    # TODO: Add arguments for metadata fields and use them in the render method.
+class SpeciesInfoMetadataSection(MyDataSection):
     key = "metadata_block"
 
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return """%% set metaData
-metaData.phylum     = '';
-metaData.class      = '';
-metaData.order      = '';
-metaData.family     = '';
-metaData.species    = '';
-metaData.species_en = '';
-metaData.T_typical  = 0; % K, body temperature
-metaData.data_0     = {};
-metaData.data_1     = {};
+    def __init__(
+        self,
+        *,
+        phylum: str = "",
+        class_name: str = "",
+        order_name: str = "",
+        family: str = "",
+        species: str = "",
+        species_en: str = "",
+        t_typical: int | float = 0,
+        complete: int | float = 2.5,
+    ) -> None:
+        self.phylum = phylum
+        self.class_name = class_name
+        self.order_name = order_name
+        self.family = family
+        self.species = species
+        self.species_en = species_en
+        self.t_typical = t_typical
+        self.complete = complete
+        lines = [
+            "%% set metaData",
+            generate_meta_data_code("phylum", convert_string_to_matlab(self.phylum)).rstrip(),
+            generate_meta_data_code("class", convert_string_to_matlab(self.class_name)).rstrip(),
+            generate_meta_data_code("order", convert_string_to_matlab(self.order_name)).rstrip(),
+            generate_meta_data_code("family", convert_string_to_matlab(self.family)).rstrip(),
+            generate_meta_data_code("species", convert_string_to_matlab(self.species)).rstrip(),
+            generate_meta_data_code("species_en", convert_string_to_matlab(self.species_en)).rstrip(),
+        ]
+        super().__init__(matlab_code="\n".join(lines))
 
-metaData.COMPLETE = 2.5; % using criteria of LikaKear2011
 
-metaData.author   = {''};
-% metaData.email    = {''};
-% metaData.address  = {''};"""
+class CompletenessLevelSection(MyDataSection):
+    key = "completeness_level_block"
 
+    def __init__(self, *, complete: int | float = 2.5) -> None:
+        self.complete = complete
+        line = (
+            f"{generate_meta_data_code('COMPLETE', convert_numeric_array_to_matlab(self.complete)).rstrip()} "
+            "% using criteria of LikaKear2011"
+        )
+        super().__init__(matlab_code=line)
+
+class AuthorInfoMetadataSection(MyDataSection):
+    key = "author_info_block"
+
+    def __init__(
+        self,
+        *,
+        author: str | list[str] | tuple[str, ...] = "",
+        email: str | list[str] | tuple[str, ...] = "",
+        address: str | list[str] | tuple[str, ...] = "",
+    ) -> None:
+        self.author = author
+        self.email = email
+        self.address = address
+        lines = [
+            "%% Author information",
+            generate_meta_data_code("author", convert_string_or_collection_to_matlab(self.author)).rstrip(),
+            generate_meta_data_code('email', convert_string_or_collection_to_matlab(self.email)).rstrip(),
+            generate_meta_data_code('address', convert_string_or_collection_to_matlab(self.address)).rstrip(),
+        ]
+        super().__init__(matlab_code="\n".join(lines))
 
 class SaveFieldsSection(MyDataSection):
     key = "save_fields_block"
-
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return """%% Save dataset field names
+    matlab_code = """%% Save dataset field names
 metaData.data_fields = fieldnames(data);"""
 
 
 class SaveDataFieldsByVariateTypeSection(MyDataSection):
     key = "data_partition_block"
-
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return """%% Save data fields into zero-variate and univariate
+    matlab_code = """%% Save data fields into zero-variate and univariate
+metaData.data_0     = {};
+metaData.data_1     = {};
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};
     if length(data.(field)) > 1
@@ -78,22 +109,35 @@ end"""
 
 
 class DiscussionSection(MyDataSection):
-    # TODO: Add discussion points as arguments and build `metaData.discussion` with them.
     key = "discussion_block"
-
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return """
-        %% Discussion points
-D1 = '';
-D2 = '';
-metaData.discussion = struct('D1', D1, 'D2', D2);
+    matlab_code = """%% Discussion points
+${discussion_assignments}
+metaData.discussion = struct(${discussion_struct});
 """
+
+    def __init__(self, *, discussion_points: dict[str, str] | None = None) -> None:
+        self.discussion_points = {"D1": "", "D2": ""} if discussion_points is None else discussion_points
+        super().__init__()
+
+    def get_init_substitutions(self) -> dict[str, str]:
+        assignments = "\n".join(
+            f"{key} = {convert_string_to_matlab(value)};"
+            for key, value in self.discussion_points.items()
+        )
+        struct_entries = ", ".join(f"'{key}', {key}" for key in self.discussion_points)
+        return {
+            "discussion_assignments": assignments,
+            "discussion_struct": struct_entries,
+        }
 
 
 class BibkeysSection(MyDataSection):
-    # TODO: Add arguments for bibliography keys and use them in the render method.
-    # TODO: Take .bib file as input and copy bibliography info from file.
     key = "bibkeys_block"
+    matlab_code = "${bibkeys_content}"
 
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return "% Optional bibliography metadata can be inserted here."
+    def __init__(self, *, bibkeys_content: str = "% Optional bibliography metadata can be inserted here.") -> None:
+        self.bibkeys_content = bibkeys_content
+        super().__init__()
+
+    def get_init_substitutions(self) -> dict[str, str]:
+        return {"bibkeys_content": self.bibkeys_content}

@@ -1,20 +1,73 @@
 """Curated public API for the main DEBtoolPyIF workflows."""
 
 from .data_sources import DataCollection
+from .estimation_files import (
+    BaseMyDataState,
+    CopyFileTemplate,
+    EstimationFileSection,
+    EstimationFileTemplate,
+    EstimationTemplates,
+    MyDataSection,
+    MyDataProgrammaticTemplate,
+    MyDataSubstitutionTemplate,
+    ParsInitProgrammaticTemplate,
+    ParsInitSubstitutionTemplate,
+    RunProgrammaticTemplate,
+    RunSubstitutionTemplate,
+    ProgrammaticTemplate,
+    SubstitutionTemplate,
+    build_mydata_state,
+    build_mydata_substitutions,
+)
 from .estimation import (
     DEBModelParametrizationProblem,
     EstimationRunner,
     MATLABWrapper,
 )
-from .multitier import MultiTierStructure, TierEstimator, TierHierarchy, TierHierarchyError
+from .multitier import (
+    MultiTierStructure,
+    MultitierMyDataProgrammaticTemplate,
+    MultitierMyDataSubstitutionTemplate,
+    MultitierParsInitProgrammaticTemplate,
+    MultitierParsInitSubstitutionTemplate,
+    TierEstimator,
+    TierHierarchy,
+    TierHierarchyError,
+    build_estimation_templates_from_folder,
+)
+from .parameters import CustomParameterDefinition, ParameterDefinition, ParameterRegistry
 
 __all__ = [
+    "CopyFileTemplate",
+    "CustomParameterDefinition",
     "DataCollection",
+    "EstimationTemplates",
+    "EstimationFileSection",
+    "BaseMyDataState",
+    "MyDataSection",
     "TierHierarchy",
     "TierHierarchyError",
     "MultiTierStructure",
     "TierEstimator",
+    "EstimationFileTemplate",
     "MATLABWrapper",
     "EstimationRunner",
     "DEBModelParametrizationProblem",
+    "ParameterDefinition",
+    "ParameterRegistry",
+    "MyDataProgrammaticTemplate",
+    "MyDataSubstitutionTemplate",
+    "MultitierMyDataProgrammaticTemplate",
+    "MultitierMyDataSubstitutionTemplate",
+    "MultitierParsInitProgrammaticTemplate",
+    "MultitierParsInitSubstitutionTemplate",
+    "ProgrammaticTemplate",
+    "SubstitutionTemplate",
+    "ParsInitProgrammaticTemplate",
+    "ParsInitSubstitutionTemplate",
+    "RunProgrammaticTemplate",
+    "RunSubstitutionTemplate",
+    "build_mydata_state",
+    "build_mydata_substitutions",
+    "build_estimation_templates_from_folder",
 ]

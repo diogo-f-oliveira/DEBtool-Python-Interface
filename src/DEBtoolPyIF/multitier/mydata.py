@@ -20,9 +20,10 @@ from ..estimation_files.mydata_data_sections import (
     GroupDataTypesSection,
 )
 from ..estimation_files.mydata_metadata_sections import (
+    CompletenessLevelSection,
     DiscussionSection,
-    FunctionHeaderSection,
-    MetadataSection,
+    MyDataFunctionHeaderSection,
+    SpeciesInfoMetadataSection,
     SaveDataFieldsByVariateTypeSection,
     SaveFieldsSection, BibkeysSection,
 )
@@ -31,7 +32,10 @@ from ..estimation_files.mydata_weight_sections import (
     RemoveDummyWeightsSection,
     InitializeWeightsSection,
 )
-from ..estimation_files.mydata_temperature_sections import SetTypicalTemperatureForAllDatasetsSection
+from ..estimation_files.mydata_temperature_sections import (
+    SetTypicalTemperatureForAllDatasetsSection,
+    TypicalTemperatureSection,
+)
 from ..estimation_files.templates import ProgrammaticTemplate
 from ..utils.data_conversion import convert_dict_to_matlab, convert_list_of_strings_to_matlab
 from ..utils.mydata_code_generation import generate_tier_variable_code
@@ -111,8 +115,10 @@ class MultitierMyDataTemplate(MyDataTemplate):
     @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            FunctionHeaderSection(),
-            MetadataSection(),
+            MyDataFunctionHeaderSection(),
+            SpeciesInfoMetadataSection(),
+            TypicalTemperatureSection(),
+            CompletenessLevelSection(),
             GroupDataSection(),
             GroupDataTypesSection(),
             EntityDataSection(),
@@ -140,8 +146,10 @@ class MultitierMyDataTemplate(MyDataTemplate):
     @classmethod
     def required_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            FunctionHeaderSection(),
-            MetadataSection(),
+            MyDataFunctionHeaderSection(),
+            SpeciesInfoMetadataSection(),
+            TypicalTemperatureSection(),
+            CompletenessLevelSection(),
             GroupDataSection(),
             EntityDataSection(),
             EntityListSection(),

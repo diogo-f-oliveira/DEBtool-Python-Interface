@@ -16,7 +16,18 @@ class MyDataFunctionHeaderSection(MyDataSection):
     matlab_code = """function [data, auxData, metaData, txtData, weights] = mydata_${species_name}
 % Baseline generic mydata template for DEBtoolPyIF."""
 
+    def __init__(self, *, species_name: str | None = None) -> None:
+        self.species_name = species_name
+        super().__init__()
+
+    def get_init_substitutions(self) -> dict[str, str]:
+        if self.species_name is None:
+            return {}
+        return {"species_name": self.species_name}
+
     def get_render_substitutions(self, context, state=None) -> dict[str, str]:
+        if self.species_name is not None:
+            return {}
         return {"species_name": context.species_name}
 
 

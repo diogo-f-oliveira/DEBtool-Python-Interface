@@ -30,7 +30,18 @@ class ParsInitFunctionHeaderSection(EstimationFileSection):
     slot_name = "function_header"
     matlab_code = "function [par, metaPar, txtPar] = pars_init_${species_name}(metaData)"
 
+    def __init__(self, *, species_name: str | None = None) -> None:
+        self.species_name = species_name
+        super().__init__()
+
+    def get_init_substitutions(self) -> dict[str, str]:
+        if self.species_name is None:
+            return {}
+        return {"species_name": self.species_name}
+
     def get_render_substitutions(self, context) -> dict[str, str]:
+        if self.species_name is not None:
+            return {}
         return {"species_name": context.species_name}
 
 

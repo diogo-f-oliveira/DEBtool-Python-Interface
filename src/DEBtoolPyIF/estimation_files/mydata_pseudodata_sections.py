@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from .mydata_base import BaseMyDataState, MyDataSection
+from .mydata_base import MyDataSection
 
 
 class AddPseudoDataSection(MyDataSection):
     key = "add_pseudodata_block"
-
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return """%% Add generic pseudo-data
+    matlab_code = """%% Add generic pseudo-data
 [data, units, label, weights] = addpseudodata(data, units, label, weights);"""

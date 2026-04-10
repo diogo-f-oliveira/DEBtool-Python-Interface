@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from DEBtoolPyIF import MyDataSection, BaseMyDataState
+from DEBtoolPyIF import MyDataSection
 
 
 class SetTypicalTemperatureForAllDatasetsSection(MyDataSection):
@@ -9,9 +9,7 @@ class SetTypicalTemperatureForAllDatasetsSection(MyDataSection):
     `metadata.T_typical'.
     """
     key = "set_temperature_block"
-
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return """%% Set temperature metadata
+    matlab_code = """%% Set temperature metadata
 temp = struct();
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};

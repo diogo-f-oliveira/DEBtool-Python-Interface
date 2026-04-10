@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .templates import EstimationFileSection, ProgrammaticTemplate, StaticSection, SubstitutionTemplate
+from .templates import EstimationFileSection, ProgrammaticTemplate, SubstitutionTemplate
 
 
 RUN_SLOT_NAMES = (
@@ -34,102 +34,97 @@ def get_run_settings(context) -> dict:
     return settings
 
 
-class RunScriptHeaderSection(StaticSection):
-    def __init__(self):
-        super().__init__(
-            slot_name="script_header",
-            content="""% Baseline generic run template for DEBtoolPyIF.
+class RunScriptHeaderSection(EstimationFileSection):
+    slot_name = "script_header"
+    matlab_code = """% Baseline generic run template for DEBtoolPyIF.
 
 clear;
 close all;
-global pets""",
-        )
+global pets"""
 
 
 class RunSetupSection(EstimationFileSection):
     slot_name = "setup"
+    matlab_code = """pets = {'${species_name}'};
+check_my_pet(pets);"""
 
-    def render(self, context) -> str:
-        return "\n".join(
-            [
-                f"pets = {{'{context.species_name}'}};",
-                "check_my_pet(pets);",
-            ]
-        )
+    def get_render_substitutions(self, context) -> dict[str, str]:
+        return {"species_name": context.species_name}
 
 
 class RunAlgorithmSection(EstimationFileSection):
     slot_name = "algorithm"
+    matlab_code = """estim_options('default');
+estim_options('max_step_number', ${n_steps});
+estim_options('max_fun_evals', 5e4);
+estim_options('simplex_size', 0.05);
+estim_options('filter', 0);
+tol_simplex = ${tol_simplex};
+estim_options('tol_simplex', tol_simplex);
 
-    def render(self, context) -> str:
+estim_options('pars_init_method', ${pars_init_method});
+estim_options('results_output', 0);
+estim_options('method', 'nm');"""
+
+    def get_render_substitutions(self, context) -> dict[str, str]:
         settings = get_run_settings(context)
-        return "\n".join(
-            [
-                "estim_options('default');",
-                f"estim_options('max_step_number', {settings['n_steps']});",
-                "estim_options('max_fun_evals', 5e4);",
-                "estim_options('simplex_size', 0.05);",
-                "estim_options('filter', 0);",
-                f"tol_simplex = {settings['tol_simplex']};",
-                "estim_options('tol_simplex', tol_simplex);",
-                "",
-                f"estim_options('pars_init_method', {settings['pars_init_method']});",
-                "estim_options('results_output', 0);",
-                "estim_options('method', 'nm');",
-            ]
-        )
+        return {
+            "n_steps": str(settings["n_steps"]),
+            "tol_simplex": str(settings["tol_simplex"]),
+            "pars_init_method": str(settings["pars_init_method"]),
+        }
 
 
 class RunEstimationCallSection(EstimationFileSection):
     slot_name = "estimation_call"
+    matlab_code = """[nsteps, converged, fval] = estim_pars; %#ok<NASGU,ASGLU>
 
-    def render(self, context) -> str:
+n_runs = ${n_runs};
+estim_options('pars_init_method', 1);
+estim_options('results_output', 0);
+prev_fval = 1e10;
+i = 2;
+
+while (abs(prev_fval - fval) > tol_simplex) && (i < n_runs) && ~converged
+    prev_fval = fval;
+    fprintf('Run %d\\n', i)
+    [nsteps, converged, fval] = estim_pars; %#ok<NASGU,ASGLU>
+    i = i + 1;
+end
+
+estim_options('pars_init_method', 1);
+estim_options('results_output', ${results_output_mode});
+estim_options('method', 'no');
+estim_pars;"""
+
+    def get_render_substitutions(self, context) -> dict[str, str]:
         settings = get_run_settings(context)
-        return "\n".join(
-            [
-                "[nsteps, converged, fval] = estim_pars; %#ok<NASGU,ASGLU>",
-                "",
-                f"n_runs = {settings['n_runs']};",
-                "estim_options('pars_init_method', 1);",
-                "estim_options('results_output', 0);",
-                "prev_fval = 1e10;",
-                "i = 2;",
-                "",
-                "while (abs(prev_fval - fval) > tol_simplex) && (i < n_runs) && ~converged",
-                "    prev_fval = fval;",
-                "    fprintf('Run %d\\n', i)",
-                "    [nsteps, converged, fval] = estim_pars; %#ok<NASGU,ASGLU>",
-                "    i = i + 1;",
-                "end",
-                "",
-                "estim_options('pars_init_method', 1);",
-                f"estim_options('results_output', {settings['results_output_mode']});",
-                "estim_options('method', 'no');",
-                "estim_pars;",
-            ]
-        )
+        return {
+            "n_runs": str(settings["n_runs"]),
+            "results_output_mode": str(settings["results_output_mode"]),
+        }
 
 
-class RunPredictionSection(StaticSection):
-    def __init__(self):
-        super().__init__(
-            slot_name="prediction_or_postprocess",
-            content="""load(['results_' pets{1} '.mat']);
+class RunPredictionSection(EstimationFileSection):
+    slot_name = "prediction_or_postprocess"
+    matlab_code = """load(['results_' pets{1} '.mat']);
 [data, auxData, metaData, txtData, weights] = feval(['mydata_' pets{1}]);
 q = rmfield(par, 'free');
 [prdData, info] = feval(['predict_' pets{1}], q, data, auxData); %#ok<NASGU,ASGLU>
 
-save(['results_' pets{1} '.mat'], 'metaData', 'metaPar', 'par', 'txtPar', 'data', 'auxData', 'txtData', 'weights', 'prdData')""",
-        )
+save(['results_' pets{1} '.mat'], 'metaData', 'metaPar', 'par', 'txtPar', 'data', 'auxData', 'txtData', 'weights', 'prdData')"""
 
 
 class RunHookSection(EstimationFileSection):
+    matlab_code = "${hook_code}"
+
     def __init__(self, *, slot_name: str, code: str = "") -> None:
         self.slot_name = slot_name
         self.code = code
+        super().__init__()
 
-    def render(self, _context) -> str:
-        return self.code
+    def get_init_substitutions(self) -> dict[str, str]:
+        return {"hook_code": self.code}
 
 
 class RunTemplate:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .templates import EstimationFileSection, ProgrammaticTemplate, StaticSection, SubstitutionTemplate
+from .templates import EstimationFileSection, ProgrammaticTemplate, SubstitutionTemplate
 from ..parameters import ParameterDefinition, ParameterRegistry, build_default_parameter_registry
 from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_string_to_matlab
 
@@ -28,25 +28,24 @@ PARS_INIT_BASE_REQUIRED_KEYS = (
 
 class ParsInitFunctionHeaderSection(EstimationFileSection):
     slot_name = "function_header"
+    matlab_code = "function [par, metaPar, txtPar] = pars_init_${species_name}(metaData)"
 
-    def render(self, context) -> str:
-        return f"function [par, metaPar, txtPar] = pars_init_{context.species_name}(metaData)"
+    def get_render_substitutions(self, context) -> dict[str, str]:
+        return {"species_name": context.species_name}
 
 
 class ParsInitModelMetadataSection(EstimationFileSection):
     slot_name = "model_metadata"
+    matlab_code = """metaPar.model = ${model};
+
+%% reference parameter and model parameters"""
 
     def __init__(self, model: str = "stx") -> None:
         self.model = model
+        super().__init__()
 
-    def render(self, _context) -> str:
-        return "\n".join(
-            [
-                "metaPar.model = {model};".format(model=convert_string_to_matlab(self.model)),
-                "",
-                "%% reference parameter and model parameters",
-            ]
-        )
+    def get_init_substitutions(self) -> dict[str, str]:
+        return {"model": convert_string_to_matlab(self.model)}
 
 
 class ParsInitBaseParametersSection(EstimationFileSection):
@@ -106,32 +105,27 @@ class ParsInitBaseParametersSection(EstimationFileSection):
 
 class ParsInitAddChemSection(EstimationFileSection):
     slot_name = "addchem"
+    matlab_code = """%% set chemical parameters from Kooy2010
+[par, units, label, free] = addchem(par, units, label, free, metaData.phylum, metaData.class);"""
 
     def __init__(self, include_addchem: bool = True) -> None:
         self.include_addchem = include_addchem
+        super().__init__()
 
     def render(self, _context) -> str:
         if not self.include_addchem:
             return ""
-        return "\n".join(
-            [
-                "%% set chemical parameters from Kooy2010",
-                "[par, units, label, free] = addchem(par, units, label, free, metaData.phylum, metaData.class);",
-            ]
-        )
+        return super().render(_context)
 
 
-class ParsInitPackingSection(StaticSection):
-    def __init__(self):
-        super().__init__(
-            slot_name="packing",
-            content="""%% Pack output
+class ParsInitPackingSection(EstimationFileSection):
+    slot_name = "packing"
+    matlab_code = """%% Pack output
 txtPar.units = units;
 txtPar.label = label;
 par.free = free;
 
-end""",
-        )
+end"""
 
 
 def build_pars_init_substitutions(

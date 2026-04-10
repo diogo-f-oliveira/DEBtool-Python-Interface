@@ -178,27 +178,29 @@ class TierParInitValuesSection(MyDataSection):
 
 class MultitierPseudoDataSection(MyDataSection):
     key = "multitier_pseudodata_block"
+    matlab_code = """%% Add multitier pseudo-data from previous-tier estimates
+for e = 1:length(tiers.entity_list)
+    entity_id = tiers.entity_list{e};
+    for p = 1:length(tiers.tier_pars)
+        par_name = tiers.tier_pars{p};
+        varname = [par_name '_' entity_id];
+
+        data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
+        units.psd.(varname) = '';
+        label.psd.(varname) = '';
+        weights.psd.(varname) = ${pseudo_data_weight};
+    end
+end"""
 
     def render(self, context, _state: MultitierMyDataState) -> str:
         if context.tier_structure.entity_hierarchy.get_parent_tier(context.tier_name) is None:
             return ""
-        return "\n".join(
-            [
-                "%% Add multitier pseudo-data from previous-tier estimates",
-                "for e = 1:length(tiers.entity_list)",
-                "    entity_id = tiers.entity_list{e};",
-                "    for p = 1:length(tiers.tier_pars)",
-                "        par_name = tiers.tier_pars{p};",
-                "        varname = [par_name '_' entity_id];",
-                "",
-                "        data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);",
-                "        units.psd.(varname) = '';",
-                "        label.psd.(varname) = '';",
-                f"        weights.psd.(varname) = {context.pseudo_data_weight};",
-                "    end",
-                "end",
-            ]
-        )
+        return super().render(context, _state)
+
+    def get_render_substitutions(self, context, state: MultitierMyDataState | None = None) -> dict[str, str]:
+        substitutions = super().get_render_substitutions(context, state)
+        substitutions["pseudo_data_weight"] = str(context.pseudo_data_weight)
+        return substitutions
 
 
 class MultitierPackingSection(PackingSection):

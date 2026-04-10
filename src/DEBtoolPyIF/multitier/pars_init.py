@@ -20,30 +20,26 @@ MULTITIER_PARS_INIT_REQUIRED_KEYS = PARS_INIT_BASE_REQUIRED_KEYS + ("tier_parame
 
 class MultitierParsInitLoopsSection(EstimationFileSection):
     slot_name = "tier_parameter_loops"
+    matlab_code = """%% Set tier parameters
+for e = 1:length(metaData.entity_list)
+    entity_id = metaData.entity_list{e};
+    for p = 1:length(metaData.tier_pars)
+        par_name = metaData.tier_pars{p};
+        varname = [par_name '_' entity_id];
+
+        par.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
+        free.(varname) = 1;
+        units.(varname) = units.(par_name);
+        label.(varname) = [label.(par_name) '${tier_label_template}' entity_id];
+    end
+end"""
 
     def __init__(self, tier_label_template: str = " for tier entity "):
         self.tier_label_template = tier_label_template
+        super().__init__()
 
-    def render(self, context) -> str:
-        return "\n".join(
-            [
-                "%% Set tier parameters",
-                "for e = 1:length(metaData.entity_list)",
-                "    entity_id = metaData.entity_list{e};",
-                "    for p = 1:length(metaData.tier_pars)",
-                "        par_name = metaData.tier_pars{p};",
-                "        varname = [par_name '_' entity_id];",
-                "",
-                "        par.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);",
-                "        free.(varname) = 1;",
-                "        units.(varname) = units.(par_name);",
-                "        label.(varname) = [label.(par_name) '"
-                + self.tier_label_template
-                + "' entity_id];",
-                "    end",
-                "end",
-            ]
-        )
+    def get_init_substitutions(self) -> dict[str, str]:
+        return {"tier_label_template": self.tier_label_template}
 
 
 class MultitierParsInitTemplate(ParsInitTemplate):

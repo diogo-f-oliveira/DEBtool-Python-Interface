@@ -11,7 +11,7 @@ class PackingSection(MyDataSection):
     def __init__(
         self,
         *,
-        aux_data_fields: list[str] | tuple[str, ...] = ("temp"),
+        aux_data_fields: list[str] | tuple[str, ...] = ("temp",),
         txt_data_fields: list[str] | tuple[str, ...] = ("units", "label", "bibkey", "comment", "title"),
     ) -> None:
         self.aux_data_fields = tuple(aux_data_fields)

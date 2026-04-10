@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import warnings
 
 from ..estimation_files.mydata_base import BaseMyDataState, MyDataSection
 from ..estimation_files.mydata_packing_sections import PackingSection
@@ -207,9 +208,15 @@ class MultitierPackingSection(PackingSection):
     def __init__(
         self,
         *,
-        aux_data_fields: list[str] | tuple[str, ...] = ("temp", "tiers"),
+        aux_data_fields: list[str] | tuple[str, ...] = ("temp", "tiers", "init"),
         txt_data_fields: list[str] | tuple[str, ...] = ("units", "label", "bibkey", "comment", "title"),
     ) -> None:
+        if "tiers" not in aux_data_fields:
+            warnings.warn(
+                "MultitierPackingSection was initialized without 'tiers' in aux_data_fields; "
+                "pars_init.m and predict.m files may not have access to tier structure data.",
+                stacklevel=2,
+            )
 
         super().__init__(
             aux_data_fields=aux_data_fields,

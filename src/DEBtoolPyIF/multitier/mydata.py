@@ -113,16 +113,8 @@ class MultitierMyDataTemplate(MyDataTemplate):
     required_section_keys = MULTITIER_MYDATA_REQUIRED_TEMPLATE_KEYS
 
     @classmethod
-    def default_sections(cls) -> tuple[MyDataSection, ...]:
+    def tier_variable_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            MyDataFunctionHeaderSection(),
-            SpeciesInfoMetadataSection(),
-            TypicalTemperatureSection(),
-            CompletenessLevelSection(),
-            GroupDataSection(),
-            GroupDataTypesSection(),
-            EntityDataSection(),
-            EntityDataTypesSection(),
             EntityListSection(),
             TierEntitiesSection(),
             TierGroupsSection(),
@@ -130,6 +122,17 @@ class MultitierMyDataTemplate(MyDataTemplate):
             TierSubtreeSection(),
             TierParsSection(),
             TierParInitValuesSection(),
+        )
+
+    @classmethod
+    def default_sections(cls) -> tuple[MyDataSection, ...]:
+        return (
+            MyDataFunctionHeaderSection(),
+            SpeciesInfoMetadataSection(),
+            TypicalTemperatureSection(),
+            CompletenessLevelSection(),
+            *cls.data_sections(),
+            *cls.tier_variable_sections(),
             ExtraInfoSection(),
             InitializeWeightsSection(),
             SaveFieldsSection(),
@@ -152,13 +155,7 @@ class MultitierMyDataTemplate(MyDataTemplate):
             CompletenessLevelSection(),
             GroupDataSection(),
             EntityDataSection(),
-            EntityListSection(),
-            TierEntitiesSection(),
-            TierGroupsSection(),
-            GroupsOfEntitySection(),
-            TierSubtreeSection(),
-            TierParsSection(),
-            TierParInitValuesSection(),
+            *cls.tier_variable_sections(),
             InitializeWeightsSection(),
             SaveFieldsSection(),
             RemoveDummyWeightsSection(),

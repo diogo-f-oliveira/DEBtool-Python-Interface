@@ -101,16 +101,22 @@ class MyDataTemplate:
     required_section_keys = MYDATA_BASE_REQUIRED_TEMPLATE_KEYS
 
     @classmethod
+    def data_sections(cls) -> tuple[MyDataSection, ...]:
+        return (
+            GroupDataSection(),
+            GroupDataTypesSection(),
+            EntityDataSection(),
+            EntityDataTypesSection(),
+        )
+
+    @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:
         return (
             MyDataFunctionHeaderSection(),
             SpeciesInfoMetadataSection(),
             TypicalTemperatureSection(),
             CompletenessLevelSection(),
-            GroupDataSection(),
-            GroupDataTypesSection(),
-            EntityDataSection(),
-            EntityDataTypesSection(),
+            *cls.data_sections(),
             ExtraInfoSection(),
             InitializeWeightsSection(),
             SaveFieldsSection(),

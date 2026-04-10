@@ -26,7 +26,7 @@ class SetTypicalTemperatureForAllDatasetsSection(MyDataSection):
     This section provides code to set the temperature of all datasets to the typical temperature defined in
     `metadata.T_typical'.
     """
-    key = "set_temperature_block"
+    key = "set_temperature_equal_to_typical_block"
     matlab_code = """%% Set temperature metadata
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};

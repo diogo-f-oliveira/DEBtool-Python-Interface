@@ -105,7 +105,7 @@ metaData.data_fields = fieldnames(data);"""
 
 
 class SaveDataFieldsByVariateTypeSection(MyDataSection):
-    key = "data_partition_block"
+    key = "save_fields_by_variate_type_block"
     matlab_code = """%% Save data fields into zero-variate and univariate
 metaData.data_0     = {};
 metaData.data_1     = {};

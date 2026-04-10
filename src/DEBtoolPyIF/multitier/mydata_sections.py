@@ -204,8 +204,14 @@ end"""
 
 
 class MultitierPackingSection(PackingSection):
-    def render(self, context, state: MultitierMyDataState) -> str:
-        lines = super().render(context, state).splitlines()
-        insert_index = lines.index("auxData.init = init;")
-        lines.insert(insert_index, "auxData.tiers = tiers;")
-        return "\n".join(lines)
+    def __init__(
+        self,
+        *,
+        aux_data_fields: list[str] | tuple[str, ...] = ("temp", "tiers"),
+        txt_data_fields: list[str] | tuple[str, ...] = ("units", "label", "bibkey", "comment", "title"),
+    ) -> None:
+
+        super().__init__(
+            aux_data_fields=aux_data_fields,
+            txt_data_fields=txt_data_fields,
+        )

@@ -5,7 +5,6 @@ from .mydata import (
     MyDataSection,
     MyDataProgrammaticTemplate,
     MyDataSubstitutionTemplate,
-    StaticMyDataSection,
     build_mydata_state,
     build_mydata_substitutions,
 )
@@ -20,7 +19,6 @@ from .templates import (
     EstimationFileSection,
     EstimationFileTemplate,
     ProgrammaticTemplate,
-    StaticSection,
     SubstitutionTemplate,
 )
 
@@ -36,12 +34,10 @@ __all__ = [
     "MyDataSection",
     "MyDataProgrammaticTemplate",
     "MyDataSubstitutionTemplate",
-    "StaticMyDataSection",
     "ParsInitProgrammaticTemplate",
     "ParsInitSubstitutionTemplate",
     "RunProgrammaticTemplate",
     "RunSubstitutionTemplate",
-    "StaticSection",
     "build_mydata_state",
     "build_mydata_substitutions",
     "normalize_estimation_templates",

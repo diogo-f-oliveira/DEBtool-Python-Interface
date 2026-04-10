@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass, field
+
+from .templates import MatlabSnippetMixin
 
 
 @dataclass(frozen=True)
@@ -19,10 +21,13 @@ class BaseMyDataState:
     extra_info: str = ""
 
 
-class MyDataSection(ABC):
+class MyDataSection(MatlabSnippetMixin, ABC):
     """Render one canonical mydata substitution key."""
 
     key: str
+
+    def __init__(self, *, matlab_code: str | None = None) -> None:
+        super().__init__(matlab_code=matlab_code)
 
     def validate(self, allowed_keys: tuple[str, ...]) -> None:
         if self.key not in allowed_keys:
@@ -31,17 +36,5 @@ class MyDataSection(ABC):
                 f"Expected one of: {', '.join(allowed_keys)}."
             )
 
-    @abstractmethod
     def render(self, context, state: BaseMyDataState) -> str:
-        raise NotImplementedError
-
-
-@dataclass(frozen=True)
-class StaticMyDataSection(MyDataSection):
-    """Fixed content rendered into one mydata substitution key."""
-
-    key: str
-    content: str
-
-    def render(self, _context, _state: BaseMyDataState) -> str:
-        return self.content
+        return self._render_matlab_code(context, state)

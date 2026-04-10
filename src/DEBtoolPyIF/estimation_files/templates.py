@@ -20,10 +20,42 @@ class EstimationFileTemplate(ABC):
         """Render the final estimation file."""
 
 
-class EstimationFileSection(ABC):
+class MatlabSnippetMixin:
+    """Shared snippet-backed rendering behavior for section classes."""
+
+    matlab_code: str = ""
+
+    def __init__(self, *, matlab_code: str | None = None) -> None:
+        source = self.matlab_code if matlab_code is None else matlab_code
+        self._bound_matlab_code = render_source_template(
+            source,
+            substitutions=self.get_init_substitutions(),
+        )
+        referenced_keys = extract_template_keys(self._bound_matlab_code, "section")
+        self._bound_template = Template(self._bound_matlab_code) if referenced_keys else None
+
+    def get_init_substitutions(self) -> dict[str, str]:
+        return {}
+
+    def get_render_substitutions(self, *args, **kwargs) -> dict[str, str]:
+        return {}
+
+    def get_matlab_code(self) -> str:
+        return self._bound_matlab_code
+
+    def _render_matlab_code(self, *args, **kwargs) -> str:
+        if self._bound_template is None:
+            return self._bound_matlab_code
+        return self._bound_template.safe_substitute(self.get_render_substitutions(*args, **kwargs))
+
+
+class EstimationFileSection(MatlabSnippetMixin, ABC):
     """Render one named slot inside a sectioned estimation-file template."""
 
     slot_name: str
+
+    def __init__(self, *, matlab_code: str | None = None) -> None:
+        super().__init__(matlab_code=matlab_code)
 
     def validate(self, allowed_slots: tuple[str, ...]) -> None:
         if self.slot_name not in allowed_slots:
@@ -32,20 +64,8 @@ class EstimationFileSection(ABC):
                 f"Expected one of: {', '.join(allowed_slots)}."
             )
 
-    @abstractmethod
     def render(self, context) -> str:
-        raise NotImplementedError
-
-
-@dataclass(frozen=True)
-class StaticSection(EstimationFileSection):
-    """A fixed string rendered into one slot."""
-
-    slot_name: str
-    content: str
-
-    def render(self, _context) -> str:
-        return self.content
+        return self._render_matlab_code(context)
 
 
 @dataclass(frozen=True)

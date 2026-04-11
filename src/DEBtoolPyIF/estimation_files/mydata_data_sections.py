@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ..utils.data_conversion import convert_list_of_strings_to_matlab
-from ..utils.mydata_code_generation import generate_meta_data_code
+from ..utils.data_conversion import convert_dict_to_matlab, convert_list_of_strings_to_matlab
+from ..utils.mydata_code_generation import generate_meta_data_code, generate_struct_variable_code
 from .mydata_base import BaseMyDataState, MyDataSection
 
 
@@ -50,6 +50,47 @@ class EntityDataTypesSection(MyDataSection):
         return generate_meta_data_code(
             var_name="entity_data_types",
             converted_data=convert_list_of_strings_to_matlab(list(state.entity_data_types)),
+        )
+
+
+class EntityListSection(MyDataSection):
+    key = "entity_list"
+    template_families = ("mydata",)
+    section_tags = ("data",)
+    struct_name = "info"
+    pars_init_access = False
+
+    def render(self, _context, state: BaseMyDataState) -> str:
+        if not state.entity_list:
+            return ""
+        return generate_struct_variable_code(
+            var_name="entity_list",
+            converted_data=convert_list_of_strings_to_matlab(list(state.entity_list)),
+            struct_name=self.struct_name,
+            label="List of entities",
+            pars_init_access=self.pars_init_access,
+        )
+
+
+class GroupsOfEntitySection(MyDataSection):
+    key = "groups_of_entity"
+    template_families = ("mydata",)
+    section_tags = ("data",)
+    struct_name = "info"
+
+    def render(self, _context, state: BaseMyDataState) -> str:
+        if not state.groups_of_entity:
+            return ""
+        return generate_struct_variable_code(
+            var_name="groups_of_entity",
+            converted_data=convert_dict_to_matlab(
+                {
+                    entity_id: convert_list_of_strings_to_matlab(group_ids, double_brackets=True)
+                    for entity_id, group_ids in state.groups_of_entity.items()
+                }
+            ),
+            struct_name=self.struct_name,
+            label="Groups each entity belongs to",
         )
 
 

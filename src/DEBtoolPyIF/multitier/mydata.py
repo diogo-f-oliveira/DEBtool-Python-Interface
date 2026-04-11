@@ -35,8 +35,15 @@ from ..estimation_files.mydata_temperature_sections import (
 )
 from ..estimation_files.templates import ProgrammaticTemplate
 from .mydata_sections import (
+    MultitierEntityListSection,
+    MultitierGroupsOfEntitySection,
     MultitierPackingSection,
     MultitierPseudoDataSection,
+    TierEntitiesSection,
+    TierGroupsSection,
+    TierParInitValuesSection,
+    TierParsSection,
+    TierSubtreeSection,
     build_multitier_mydata_state,
 )
 
@@ -47,7 +54,15 @@ class MultitierMyDataTemplate(MyDataTemplate):
 
     @classmethod
     def tier_variable_sections(cls) -> tuple[MyDataSection, ...]:
-        return cls.sections_for_tag("tier_variables")
+        return (
+            MultitierEntityListSection(),
+            TierEntitiesSection(),
+            TierGroupsSection(),
+            MultitierGroupsOfEntitySection(),
+            TierSubtreeSection(),
+            TierParsSection(),
+            TierParInitValuesSection(),
+        )
 
     @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:

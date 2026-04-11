@@ -6,6 +6,10 @@ from dataclasses import dataclass, field
 import warnings
 
 from ..estimation_files.mydata_base import BaseMyDataState, MyDataSection
+from ..estimation_files.mydata_data_sections import (
+    EntityListSection as GenericEntityListSection,
+    GroupsOfEntitySection as GenericGroupsOfEntitySection,
+)
 from ..estimation_files.mydata_packing_sections import PackingSection
 from ..utils.data_conversion import convert_dict_to_matlab, convert_list_of_strings_to_matlab
 from ..utils.mydata_code_generation import generate_meta_data_code, generate_tier_variable_code
@@ -96,20 +100,11 @@ def build_multitier_mydata_state(context) -> MultitierMyDataState:
     )
 
 
-class EntityListSection(MyDataSection):
-    key = "entity_list"
+class MultitierEntityListSection(GenericEntityListSection):
     template_families = ("multitier_mydata",)
     section_tags = ("tier_variables",)
-
-    def render(self, _context, state: MultitierMyDataState) -> str:
-        if not state.entity_list:
-            return ""
-        return generate_tier_variable_code(
-            var_name="entity_list",
-            converted_data=convert_list_of_strings_to_matlab(list(state.entity_list)),
-            label="List of entities",
-            pars_init_access=True,
-        )
+    struct_name = "tiers"
+    pars_init_access = True
 
 
 class TierEntitiesSection(MyDataSection):
@@ -148,24 +143,10 @@ class TierGroupsSection(MyDataSection):
         )
 
 
-class GroupsOfEntitySection(MyDataSection):
-    key = "groups_of_entity"
+class MultitierGroupsOfEntitySection(GenericGroupsOfEntitySection):
     template_families = ("multitier_mydata",)
     section_tags = ("tier_variables",)
-
-    def render(self, _context, state: MultitierMyDataState) -> str:
-        if not state.groups_of_entity:
-            return ""
-        return generate_tier_variable_code(
-            var_name="groups_of_entity",
-            converted_data=convert_dict_to_matlab(
-                {
-                    entity_id: convert_list_of_strings_to_matlab(group_ids, double_brackets=True)
-                    for entity_id, group_ids in state.groups_of_entity.items()
-                }
-            ),
-            label="Groups each entity belongs to",
-        )
+    struct_name = "tiers"
 
 
 class TierSubtreeSection(MyDataSection):
@@ -270,5 +251,6 @@ class MultitierPackingSection(PackingSection):
 
         super().__init__(
             aux_data_fields=aux_data_fields,
+            optional_aux_data_fields=(),
             txt_data_fields=txt_data_fields,
         )

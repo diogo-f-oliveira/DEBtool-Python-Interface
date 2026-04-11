@@ -7,10 +7,8 @@ from pathlib import Path
 from .mydata_base import BaseMyDataState, MyDataSection
 from .mydata_data_sections import (
     EntityDataSection,
-    EntityDataTypesSection,
     ExtraInfoSection,
     GroupDataSection,
-    GroupDataTypesSection,
 )
 from .mydata_metadata_sections import (
     BibkeysSection,
@@ -25,42 +23,6 @@ from .mydata_pseudodata_sections import AddPseudoDataSection
 from .mydata_temperature_sections import TypicalTemperatureSection
 from .mydata_weight_sections import RemoveDummyWeightsSection, InitializeWeightsSection
 from .templates import ProgrammaticTemplate, SubstitutionTemplate
-
-
-MYDATA_TEMPLATE_KEYS = (
-    "function_header",
-    "metadata_block",
-    "typical_temperature_block",
-    "completeness_level_block",
-    "group_data_block",
-    "group_data_types",
-    "entity_data_block",
-    "entity_data_types",
-    "extra_info",
-    "weights_block",
-    "save_fields_block",
-    "set_temperature_block",
-    "remove_dummy_weights_block",
-    "data_partition_block",
-    "add_pseudodata_block",
-    "bibkeys_block",
-    "discussion_block",
-    "packing_block",
-)
-
-MYDATA_BASE_REQUIRED_TEMPLATE_KEYS = (
-    "function_header",
-    "metadata_block",
-    "typical_temperature_block",
-    "completeness_level_block",
-    "entity_data_block",
-    "group_data_block",
-    "weights_block",
-    "save_fields_block",
-    "remove_dummy_weights_block",
-    "add_pseudodata_block",
-    "packing_block",
-)
 
 
 def build_mydata_state(context) -> BaseMyDataState:
@@ -97,17 +59,36 @@ class MyDataTemplate:
     """Shared file-family behavior for mydata template classes."""
 
     template_label = "mydata"
-    allowed_section_keys = MYDATA_TEMPLATE_KEYS
-    required_section_keys = MYDATA_BASE_REQUIRED_TEMPLATE_KEYS
+    template_families = ("mydata",)
+
+    @classmethod
+    def available_section_classes(cls) -> tuple[type[MyDataSection], ...]:
+        return MyDataSection.registered_section_classes(
+            template_families=cls.template_families,
+        )
+
+    @classmethod
+    def allowed_section_keys(cls) -> tuple[str, ...]:
+        return tuple(dict.fromkeys(section_class.key for section_class in cls.available_section_classes()))
+
+    @classmethod
+    def required_section_keys(cls) -> tuple[str, ...]:
+        return tuple(section.key for section in cls.required_sections())
+
+    @classmethod
+    def section_classes_for_tag(cls, tag: str) -> tuple[type[MyDataSection], ...]:
+        return MyDataSection.registered_section_classes(
+            template_families=cls.template_families,
+            tag=tag,
+        )
+
+    @classmethod
+    def sections_for_tag(cls, tag: str) -> tuple[MyDataSection, ...]:
+        return tuple(section_class() for section_class in cls.section_classes_for_tag(tag))
 
     @classmethod
     def data_sections(cls) -> tuple[MyDataSection, ...]:
-        return (
-            GroupDataSection(),
-            GroupDataTypesSection(),
-            EntityDataSection(),
-            EntityDataTypesSection(),
-        )
+        return cls.sections_for_tag("data")
 
     @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:
@@ -165,8 +146,8 @@ class MyDataProgrammaticTemplate(MyDataTemplate, ProgrammaticTemplate):
         final_sections = self.required_sections() if sections is None else tuple(sections)
         super().__init__(
             sections=final_sections,
-            allowed_section_keys=self.allowed_section_keys,
-            required_section_keys=self.required_section_keys,
+            allowed_section_keys=self.allowed_section_keys(),
+            required_section_keys=self.required_section_keys(),
             template_label=self.template_label,
         )
 

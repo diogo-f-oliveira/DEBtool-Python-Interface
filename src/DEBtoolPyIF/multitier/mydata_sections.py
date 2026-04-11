@@ -96,8 +96,26 @@ def build_multitier_mydata_state(context) -> MultitierMyDataState:
     )
 
 
+class EntityListSection(MyDataSection):
+    key = "entity_list"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
+
+    def render(self, _context, state: MultitierMyDataState) -> str:
+        if not state.entity_list:
+            return ""
+        return generate_tier_variable_code(
+            var_name="entity_list",
+            converted_data=convert_list_of_strings_to_matlab(list(state.entity_list)),
+            label="List of entities",
+            pars_init_access=True,
+        )
+
+
 class TierEntitiesSection(MyDataSection):
     key = "tier_entities"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
 
     def render(self, _context, state: MultitierMyDataState) -> str:
         return generate_tier_variable_code(
@@ -114,6 +132,8 @@ class TierEntitiesSection(MyDataSection):
 
 class TierGroupsSection(MyDataSection):
     key = "tier_groups"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
 
     def render(self, _context, state: MultitierMyDataState) -> str:
         return generate_tier_variable_code(
@@ -128,8 +148,30 @@ class TierGroupsSection(MyDataSection):
         )
 
 
+class GroupsOfEntitySection(MyDataSection):
+    key = "groups_of_entity"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
+
+    def render(self, _context, state: MultitierMyDataState) -> str:
+        if not state.groups_of_entity:
+            return ""
+        return generate_tier_variable_code(
+            var_name="groups_of_entity",
+            converted_data=convert_dict_to_matlab(
+                {
+                    entity_id: convert_list_of_strings_to_matlab(group_ids, double_brackets=True)
+                    for entity_id, group_ids in state.groups_of_entity.items()
+                }
+            ),
+            label="Groups each entity belongs to",
+        )
+
+
 class TierSubtreeSection(MyDataSection):
     key = "tier_subtree"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
 
     def render(self, _context, state: MultitierMyDataState) -> str:
         return generate_tier_variable_code(
@@ -151,6 +193,8 @@ class TierSubtreeSection(MyDataSection):
 
 class TierParsSection(MyDataSection):
     key = "tier_pars"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
 
     def render(self, _context, state: MultitierMyDataState) -> str:
         return generate_tier_variable_code(
@@ -164,6 +208,8 @@ class TierParsSection(MyDataSection):
 
 class TierParInitValuesSection(MyDataSection):
     key = "tier_par_init_values"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
 
     def render(self, _context, state: MultitierMyDataState) -> str:
         return generate_meta_data_code(
@@ -179,6 +225,8 @@ class TierParInitValuesSection(MyDataSection):
 
 class MultitierPseudoDataSection(MyDataSection):
     key = "multitier_pseudodata_block"
+    template_families = ("multitier_mydata",)
+    section_tags = ("pseudodata",)
     matlab_code = """%% Add multitier pseudo-data from previous-tier estimates
 for e = 1:length(tiers.entity_list)
     entity_id = tiers.entity_list{e};
@@ -205,6 +253,8 @@ end"""
 
 
 class MultitierPackingSection(PackingSection):
+    template_families = ("multitier_mydata",)
+
     def __init__(
         self,
         *,

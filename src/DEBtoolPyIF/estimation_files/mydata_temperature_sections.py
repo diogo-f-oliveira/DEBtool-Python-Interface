@@ -7,6 +7,8 @@ from ..utils.mydata_code_generation import generate_meta_data_code
 
 class TypicalTemperatureSection(MyDataSection):
     key = "typical_temperature_block"
+    template_families = ("mydata",)
+    section_tags = ("temperature", "metadata")
 
     def __init__(self, *, t_typical: int | float = 0, is_celsius: bool = False) -> None:
         self.t_typical = t_typical
@@ -27,6 +29,8 @@ class SetTypicalTemperatureForAllDatasetsSection(MyDataSection):
     `metadata.T_typical'.
     """
     key = "set_temperature_equal_to_typical_block"
+    template_families = ("multitier_mydata",)
+    section_tags = ("temperature",)
     matlab_code = """%% Set temperature metadata
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};

@@ -13,6 +13,7 @@ from ..utils.mydata_code_generation import generate_meta_data_code
 
 class MyDataFunctionHeaderSection(MyDataSection):
     key = "function_header"
+    template_families = ("mydata",)
     matlab_code = """function [data, auxData, metaData, txtData, weights] = mydata_${species_name}
 % Baseline generic mydata template for DEBtoolPyIF."""
 
@@ -33,6 +34,8 @@ class MyDataFunctionHeaderSection(MyDataSection):
 
 class SpeciesInfoMetadataSection(MyDataSection):
     key = "metadata_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
 
     def __init__(
         self,
@@ -68,6 +71,8 @@ class SpeciesInfoMetadataSection(MyDataSection):
 
 class CompletenessLevelSection(MyDataSection):
     key = "completeness_level_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
 
     def __init__(self, *, complete: int | float = 2.5) -> None:
         self.complete = complete
@@ -79,6 +84,8 @@ class CompletenessLevelSection(MyDataSection):
 
 class AuthorInfoMetadataSection(MyDataSection):
     key = "author_info_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
 
     def __init__(
         self,
@@ -100,12 +107,16 @@ class AuthorInfoMetadataSection(MyDataSection):
 
 class SaveFieldsSection(MyDataSection):
     key = "save_fields_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
     matlab_code = """%% Save dataset field names
 metaData.data_fields = fieldnames(data);"""
 
 
 class SaveDataFieldsByVariateTypeSection(MyDataSection):
     key = "save_fields_by_variate_type_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
     matlab_code = """%% Save data fields into zero-variate and univariate
 metaData.data_0     = {};
 metaData.data_1     = {};
@@ -121,6 +132,8 @@ end"""
 
 class DiscussionSection(MyDataSection):
     key = "discussion_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
     matlab_code = """%% Discussion points
 ${discussion_assignments}
 metaData.discussion = struct(${discussion_struct});
@@ -144,6 +157,8 @@ metaData.discussion = struct(${discussion_struct});
 
 class BibkeysSection(MyDataSection):
     key = "bibkeys_block"
+    template_families = ("mydata",)
+    section_tags = ("metadata",)
     matlab_code = "${bibkeys_content}"
 
     def __init__(self, *, bibkeys_content: str = "% Optional bibliography metadata can be inserted here.") -> None:

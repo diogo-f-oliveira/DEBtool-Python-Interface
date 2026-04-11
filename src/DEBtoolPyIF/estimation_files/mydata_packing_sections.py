@@ -7,6 +7,8 @@ from .mydata_base import MyDataSection
 
 class PackingSection(MyDataSection):
     key = "packing_block"
+    template_families = ("mydata",)
+    section_tags = ("packing",)
 
     def __init__(
         self,

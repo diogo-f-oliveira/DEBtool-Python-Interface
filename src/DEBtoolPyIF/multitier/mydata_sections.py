@@ -251,6 +251,5 @@ class MultitierPackingSection(PackingSection):
 
         super().__init__(
             aux_data_fields=aux_data_fields,
-            optional_aux_data_fields=(),
             txt_data_fields=txt_data_fields,
         )

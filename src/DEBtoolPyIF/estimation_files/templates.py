@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from string import Template
+from typing import ClassVar, TypeVar
+
+
+TRegisteredSection = TypeVar("TRegisteredSection", bound="RegisteredTemplateSection")
 
 
 class EstimationFileTemplate(ABC):
@@ -47,6 +52,86 @@ class MatlabSnippetMixin:
         if self._bound_template is None:
             return self._bound_matlab_code
         return self._bound_template.safe_substitute(self.get_render_substitutions(*args, **kwargs))
+
+
+class RegisteredTemplateSection(MatlabSnippetMixin, ABC):
+    """Base class for template sections that opt into family-based discovery."""
+
+    key: str
+    template_label = "estimation file"
+    template_families: tuple[str, ...] = ()
+    section_tags: tuple[str, ...] = ()
+    _registered_sections_by_family: ClassVar[dict[str, list[type["RegisteredTemplateSection"]]]] = (
+        defaultdict(list)
+    )
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+
+        template_families = tuple(cls.__dict__.get("template_families", ()))
+        if not template_families:
+            return
+
+        key = getattr(cls, "key", "")
+        template_label = cls.template_label
+        if not isinstance(key, str) or not key:
+            raise ValueError(
+                f"{cls.__name__} must define a non-empty 'key' to register as a {template_label} section."
+            )
+
+        for family in template_families:
+            registered_sections = cls._registered_sections_by_family[family]
+            duplicate_section = next(
+                (section for section in registered_sections if section.key == key and section is not cls),
+                None,
+            )
+            if duplicate_section is not None:
+                raise ValueError(
+                    f"Duplicate {template_label} section key '{key}' for template family '{family}': "
+                    f"{duplicate_section.__name__} and {cls.__name__}."
+                )
+            if cls not in registered_sections:
+                registered_sections.append(cls)
+
+    @classmethod
+    def registered_section_classes(
+        cls: type[TRegisteredSection],
+        *,
+        template_families: str | tuple[str, ...],
+        tag: str | None = None,
+    ) -> tuple[type[TRegisteredSection], ...]:
+        if isinstance(template_families, str):
+            template_families = (template_families,)
+
+        registered_sections = []
+        seen_sections = set()
+        key_indices: dict[str, int] = {}
+        for family in template_families:
+            for section in cls._registered_sections_by_family.get(family, ()):
+                if section in seen_sections:
+                    continue
+
+                seen_sections.add(section)
+                existing_index = key_indices.get(section.key)
+                if existing_index is None:
+                    key_indices[section.key] = len(registered_sections)
+                    registered_sections.append(section)
+                else:
+                    registered_sections[existing_index] = section
+
+        if tag is None:
+            return tuple(registered_sections)
+        return tuple(section for section in registered_sections if tag in section.section_tags)
+
+    def __init__(self, *, matlab_code: str | None = None) -> None:
+        super().__init__(matlab_code=matlab_code)
+
+    def validate(self, allowed_keys: tuple[str, ...]) -> None:
+        if self.key not in allowed_keys:
+            raise ValueError(
+                f"Unsupported {self.template_label} template key '{self.key}'. "
+                f"Expected one of: {', '.join(allowed_keys)}."
+            )
 
 
 class EstimationFileSection(MatlabSnippetMixin, ABC):

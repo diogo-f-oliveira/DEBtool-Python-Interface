@@ -23,7 +23,7 @@ What changes is that the package injects hierarchy-aware helper data into those 
 
 ## Multitier Additions To `mydata`
 
-In `DEBtoolPyIF`, generated `mydata` files carry both observations and multitier helper structures.
+In `DEBtoolPyIF`, multitier `mydata` generation is the most mature estimation-template path. Generated `mydata` files carry both observations and multitier helper structures.
 
 ### Helper Structures Injected Into `mydata`
 
@@ -54,7 +54,7 @@ In `DEBtoolPyIF`, generated `mydata` files carry both observations and multitier
 
 ### Why Dummy Variables Are Used
 
-Current multitier templates often transport hierarchy metadata through DEBtool by writing helper values as dummy variables:
+Current multitier `mydata` sections often transport hierarchy metadata through DEBtool by writing helper values as dummy variables:
 
 - a placeholder value is written into `data`,
 - the real helper payload is stored in `tiers`,
@@ -64,7 +64,7 @@ This preserves compatibility with the DEBtool file contract while still making t
 
 ## Multitier Additions To `pars_init`
 
-The multitier layer keeps the normal DEBtool parameter structs, but expands the current tier parameters into entity-specific fields.
+The multitier `pars_init` layer keeps the normal DEBtool parameter structs, but expands the current tier parameters into entity-specific fields.
 
 Typical pattern:
 
@@ -98,7 +98,7 @@ The biological equations remain species- and hierarchy-specific, but this traver
 
 ### Which Helper Structs `predict` Uses
 
-Current multitier `predict` templates typically read:
+Current multitier `predict` sources typically read:
 
 - `auxData.tiers.entity_list`
   - the estimation entities of the current tier
@@ -137,19 +137,19 @@ This is one of the main reasons the multitier workflow must run from the most ge
 
 ## How Generated Templates Support The Method
 
-`DEBtoolPyIF` generates or fills templates so each tier output folder contains a concrete DEBtool run with:
+`DEBtoolPyIF` renders tier `estimation_templates` so each tier output folder contains a concrete DEBtool run with:
 
 - the current tier's data plus all lower-tier data,
 - the current tier's estimation entities,
 - the correct inherited parameter context,
-- the helper structs needed by hierarchy-aware prediction logic,
+- the helper structs produced by the multitier `mydata` sections and state builders,
 - the estimation settings for the MATLAB run.
 
-The Python-side generation path is documented in [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md). The key point here is that generated `mydata` and tier-specific `predict` templates form one joint contract.
+The Python-side generation path is documented in [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md). The key point here is that generated `mydata` and tier-specific `predict` sources form one joint contract.
 
 ## What Current Templates Must Preserve
 
-When editing multitier templates, preserve these invariants:
+When editing multitier estimation templates, preserve these invariants:
 
 - `tier_entities`, `tier_groups`, `tier_subtree`, `groups_of_entity`, and `tier_par_init_values` must remain aligned with the prediction logic.
 - Lower-tier `predict` logic must traverse the descendant hierarchy implied by `tier_subtree`.
@@ -162,6 +162,6 @@ When editing multitier templates, preserve these invariants:
 - [DEBTOOL_FILES.md](DEBTOOL_FILES.md)
   - use for the general DEBtool species-file structure
 - [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md)
-  - use for how Python fills or copies the tier templates
+  - use for how Python renders tier `estimation_templates`
 - [MULTITIER.md](MULTITIER.md)
   - use for the broader methodology, hierarchy semantics, and package architecture

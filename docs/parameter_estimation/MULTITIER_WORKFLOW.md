@@ -1,6 +1,8 @@
 # Multitier Workflow For Package Users
 
-This guide describes the recommended way for agents to help users set up multitier estimation with `DEBtoolPyIF`.
+This guide describes the recommended way to build and run multitier estimation workflows with `DEBtoolPyIF`.
+
+The current preferred workflow constructs `estimation_templates` explicitly in Python and passes them into `MultiTierStructure`.
 
 ## What The Multitier Method Does
 
@@ -8,9 +10,9 @@ The multitier workflow estimates DEB parameters from the most general tier down 
 
 A typical pattern is:
 
-- a broad tier establishes a stable baseline parameterization,
-- intermediate tiers re-estimate a smaller subset of parameters that vary across subgroups,
-- the lowest tier re-estimates an even smaller subset for each entity or group.
+- a broad tier establishes a stable baseline parameterization
+- intermediate tiers re-estimate a smaller subset of parameters that vary across subgroups
+- the lowest tier re-estimates an even smaller subset for each entity or group
 
 This helps avoid fitting every individual from scratch with too much flexibility and too little data.
 
@@ -20,95 +22,121 @@ Tier order is part of the method, not just a display choice.
 
 Higher-tier estimates are reused at lower tiers as:
 
-- initial values for the current tier parameters,
-- pseudo-data targets that anchor the next fit,
-- fixed values for parameters that are not being re-estimated at the current tier.
+- initial values for the current tier parameters
+- pseudo-data targets that anchor the next fit
+- fixed values for parameters that are not being re-estimated at the current tier
 
 Because of that, tiers should be built and estimated from most general to most specific.
 
 ## Minimum Objects To Assemble
 
-An agent normally needs to assemble four things:
+An end-to-end workflow normally assembles five things:
 
-1. One `DataCollection` per tier.
-2. One `TierHierarchy` covering the ordered entities across tiers.
-3. A base parameter dictionary and a `tier_pars` mapping.
-4. One `MultiTierStructure` that points to the tier template folders and output folder.
+1. One `DataCollection` per tier
+2. One `TierHierarchy` covering the ordered entities across tiers
+3. A base parameter dictionary and a `tier_pars` mapping
+4. One `estimation_templates` mapping keyed by tier name
+5. One `MultiTierStructure` that ties the hierarchy, data, parameters, templates, and outputs together
 
 Once the structure exists, estimation usually runs tier by tier through `multitier.tiers[...]`.
 
 ## Recommended Python Project Layout
 
-For user projects, follow this layout even when the repo example is not available:
+For user projects, this layout remains the best default:
 
 - `data_sources.py`
-  - define any custom entity or group data source classes,
-  - keep dataset-specific transformation logic close to the class that generates the MATLAB code,
-  - import from `DEBtoolPyIF.data_sources.base` when subclassing the package base classes.
+  - define any custom entity or group data source classes
+  - keep dataset-specific transformation logic close to the class that generates the MATLAB code
 - `data.py`
-  - load raw files,
-  - instantiate built-in or custom data source classes,
-  - return `dict[str, DataCollection]` keyed by tier name.
+  - load raw files
+  - instantiate built-in or custom data source classes
+  - return `dict[str, DataCollection]` keyed by tier name
+- `templates.py`
+  - construct the `estimation_templates` mapping
+  - define source templates and Python-side section overrides in one place
 - `tier_structure.py`
-  - define tier names,
-  - build the `TierHierarchy`,
-  - define initial DEB parameters,
-  - define `tier_pars`,
-  - instantiate `MultiTierStructure`.
+  - define tier names
+  - build the `TierHierarchy`
+  - define initial DEB parameters
+  - define `tier_pars`
+  - instantiate `MultiTierStructure`
 - `estimation.py`
-  - define estimation settings,
-  - run tiers in order,
-  - optionally load saved results back into the tier objects.
+  - define estimation settings
+  - run tiers in order
+  - optionally load saved results back into the tier objects
 
-This mirrors the package example's structure, but adds one extra recommendation: if the user needs any custom data source behavior, put it in `data_sources.py` rather than embedding the class definitions directly in `data.py`.
+The Angus example now follows this pattern and should be treated as the canonical reference.
 
-That separation is the best default because:
+## Recommended Template Pattern
 
-- `data.py` stays short and focused on assembling one workflow from local files,
-- custom parsing and MATLAB-code-generation logic becomes reusable across tiers or projects,
-- agents can inspect or edit data-source behavior without mixing it up with tier construction,
-- it becomes clearer which changes affect only loading versus which changes alter the MATLAB data contract.
+The preferred template workflow is:
 
-If a project only needs one very small one-off wrapper, defining it in `data.py` is still acceptable. But for agent-assisted work, a separate `data_sources.py` is the recommended default.
+1. Use source-backed template classes where MATLAB source remains workflow-specific and benefits from direct review.
+2. Use programmatic algorithm templates for `run` when a built-in optimizer captures the desired estimation behavior.
+3. Wrap the four file templates for each tier in one `EstimationTemplates` bundle.
+4. Pass the tier-name mapping into `MultiTierStructure(..., estimation_templates=...)`.
 
-## Custom Data Source Recommendation
+In practice, this means:
 
-Users are not limited to the built-in data source classes. They can define custom classes when their data layout or generated MATLAB variables do not match the package defaults.
+- `mydata` is usually built with `MultitierMyDataSubstitutionTemplate`
+- `pars_init` is usually built with `MultitierParsInitSubstitutionTemplate`
+- `predict` is usually wrapped with `CopyFileTemplate`
+- `run` should use an algorithm template such as `NelderMead()` when the built-in optimizer behavior fits
+- `RunSubstitutionTemplate` remains supported when a project needs to maintain a source-backed MATLAB run script
 
-The current package extension points are:
-
-- `EntityDataSourceBase` for entity-level datasets
-- `GroupDataSourceBase` for group-level datasets
-- the zero-variate variants when the dataset is scalar rather than time-series
-
-Recommended pattern for a custom data source:
-
-1. Set a stable `TYPE` that becomes part of the MATLAB variable name.
-2. Set `LABELS`, and `AUX_DATA_LABELS` when auxiliary data is generated.
-3. Normalize IDs so they remain valid MATLAB field names.
-4. Implement `generate_mydata_code(...)` so it emits the expected `data.<TYPE>_<id>` variables.
-5. When predictions need initial conditions or other side information, emit matching auxiliary structures such as `init.<varname>`.
-6. For group data sources, make sure entity-to-group membership is represented correctly so `DataCollection` can build `entity_vs_group_df`.
-
-As a rule:
-
-- put class definitions in `data_sources.py`,
-- put file paths, constructor calls, and `DataCollection(...)` assembly in `data.py`.
+Algorithm templates own their option set and read render-time values from `estimation_settings`. Source-backed run templates still combine readable MATLAB source with Python-side section rendering, but their placeholders must match registered run section keys such as `$setup`, `$set_options`, and `$estimation_call`.
 
 ## Minimal Skeleton
 
 ```python
+from pathlib import Path
+
 from DEBtoolPyIF import DataCollection, MultiTierStructure, TierHierarchy
+from DEBtoolPyIF.estimation_files import EstimationTemplates, CopyFileTemplate
+from DEBtoolPyIF.estimation_files.algorithms import NelderMead
+from DEBtoolPyIF.multitier import (
+    MultitierMyDataSubstitutionTemplate,
+    MultitierParsInitSubstitutionTemplate,
+)
 
 
-def load_data(data_folder):
+def load_data(data_folder: Path) -> dict[str, DataCollection]:
     return {
         "group": DataCollection(tier="group", data_sources=[...]),
         "individual": DataCollection(tier="individual", data_sources=[...]),
     }
 
 
-def create_tier_structure(data, matlab_session="auto"):
+def build_estimation_templates(species_name: str, template_root: Path) -> dict[str, EstimationTemplates]:
+    return {
+        "group": EstimationTemplates(
+            mydata=MultitierMyDataSubstitutionTemplate(
+                source=template_root / "group" / f"mydata_{species_name}.m",
+            ),
+            pars_init=MultitierParsInitSubstitutionTemplate(
+                source=template_root / "group" / f"pars_init_{species_name}.m",
+            ),
+            predict=CopyFileTemplate(
+                template_root / "group" / f"predict_{species_name}.m"
+            ),
+            run=NelderMead(),
+        ),
+        "individual": EstimationTemplates(
+            mydata=MultitierMyDataSubstitutionTemplate(
+                source=template_root / "individual" / f"mydata_{species_name}.m",
+            ),
+            pars_init=MultitierParsInitSubstitutionTemplate(
+                source=template_root / "individual" / f"pars_init_{species_name}.m",
+            ),
+            predict=CopyFileTemplate(
+                template_root / "individual" / f"predict_{species_name}.m"
+            ),
+            run=NelderMead(),
+        ),
+    }
+
+
+def create_tier_structure(data, estimation_templates, matlab_session="auto"):
     hierarchy = TierHierarchy.from_paths(
         tier_names=["group", "individual"],
         paths=[
@@ -135,7 +163,7 @@ def create_tier_structure(data, matlab_session="auto"):
         data=data,
         pars=initial_pars,
         tier_pars=tier_pars,
-        template_folder="path/to/templates",
+        estimation_templates=estimation_templates,
         output_folder="path/to/output",
         matlab_session=matlab_session,
     )
@@ -151,26 +179,50 @@ def run_multitier_estimation(multitier, estimation_settings):
         )
 ```
 
+## Where Python Customization Belongs
+
+Use `templates.py` for template construction concerns such as:
+
+- choosing template classes
+- swapping section objects
+- choosing an algorithm template, customizing its options, or composing `RunSection` objects directly
+- adding extra `mydata` sections such as temperature or data partition helpers
+
+Use `data_sources.py` and `data.py` for dataset concerns such as:
+
+- parsing raw files
+- building entity-level and group-level data sources
+- keeping MATLAB variable contracts aligned with the observations
+
+This separation makes it easier to inspect whether a change affects:
+
+- the data being passed into the estimation, or
+- the MATLAB files generated from that data
+
 ## Recommended Agent Behavior
 
 When helping a user, prefer this order:
 
 1. Identify the tiers and confirm they are ordered from most general to most specific.
-2. Decide whether built-in data source classes are enough or whether the user needs custom classes in `data_sources.py`.
+2. Decide whether built-in data source classes are enough or whether the user needs custom classes.
 3. Build one `DataCollection` per tier.
 4. Build the `TierHierarchy` from explicit paths or parent mappings.
 5. Choose a conservative `tier_pars` subset for each lower tier.
-6. Point `MultiTierStructure` at per-tier MATLAB template folders.
-7. Run estimation from top to bottom.
-8. Inspect saved tier results before changing the model structure.
+6. Build `estimation_templates` in Python using the current template classes.
+7. Pass those templates into `MultiTierStructure`.
+8. Run estimation from top to bottom.
+9. Inspect generated outputs and saved tier results before changing the model structure.
 
 ## Common Mistakes To Avoid
 
 - Do not estimate tiers out of order.
 - Do not make lower-tier `tier_pars` larger just because parameters exist in the base dictionary.
-- Do not assume the user's environment includes the repo examples.
-- Do not hide substantial custom data-source logic inside `data.py` when a dedicated `data_sources.py` would make the workflow clearer.
+- Do not hide substantial custom data-source logic inside `data.py` when a dedicated `data_sources.py` or `templates.py` would make the workflow clearer.
 - Do not bypass `TierHierarchy` by rebuilding hierarchy logic in ad hoc tables.
-- Do not change DEBtool file names or required helper variables unless the workflow itself is changing.
+- Do not treat `predict` as fully abstracted; it is still the most workflow-specific species file.
+- Do not assume all file families are equally mature.
+  - `mydata` is the most mature
+  - `pars_init` and `run` are usable but still evolving
+  - `predict` remains largely source-specific
 
-For the deeper implementation details behind these rules, see [MULTITIER.md](MULTITIER.md).
+For the deeper implementation details behind these rules, see [MULTITIER.md](MULTITIER.md). For the generation architecture itself, see [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md).

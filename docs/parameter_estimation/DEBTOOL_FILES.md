@@ -4,7 +4,7 @@ This document explains the general structure of DEBtool estimation files.
 
 It is meant for both humans and agents who need to understand how the standard DEBtool species files fit together, what each file defines, and which structs move through the estimation workflow.
 
-For the `DEBtoolPyIF` multitier-specific integration layer, see [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md). For Python-side template generation, see [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md).
+For the `DEBtoolPyIF` multitier-specific integration layer, see [DEBTOOL_MULTITIER.md](DEBTOOL_MULTITIER.md). For Python-side generation from `estimation_templates`, see [TEMPLATE_GENERATION.md](TEMPLATE_GENERATION.md).
 
 ## End-To-End Estimation Structure
 
@@ -30,6 +30,8 @@ In practice:
 - `mydata` prepares observations and metadata,
 - `pars_init` prepares the parameter struct,
 - `predict` turns parameters plus auxiliary inputs into predictions.
+
+In `DEBtoolPyIF`, these same file roles are preserved. The package's `estimation_templates` architecture is a way to generate those standard DEBtool files, not a different file contract.
 
 ## Standard Outputs
 
@@ -232,15 +234,18 @@ At a general level, `run` usually:
 1. Defines the species name through `pets`.
 2. Calls `check_my_pet(pets)`.
 3. Configures DEBtool estimation options.
-4. Calls `estim_pars` one or more times.
-5. Switches DEBtool into the final reporting or output mode.
-6. Loads the saved result file.
-7. Calls `mydata_<species>` and `predict_<species>` explicitly to compute final predictions.
-8. Saves the enriched result file.
+4. Calls the DEBtool estimation entry point, `estim_pars`.
+5. Optionally repeats `estim_pars` according to the chosen optimization algorithm.
+6. Optionally switches DEBtool into final reporting or output mode.
+7. Optionally loads the saved result file.
+8. Optionally calls `mydata_<species>` and `predict_<species>` explicitly to compute final predictions.
+9. Optionally saves the enriched result file.
 
 ### What `run` Controls
 
 `run` is where estimation settings, repeated runs, stopping criteria, and final output generation are coordinated.
+
+In `DEBtoolPyIF`, the base generated `run` contract treats `estim_pars` as the required DEBtool entry point. This is represented by `EstimationCallSection`. Repeated estimation loops, restart behavior, final reporting, and prediction saving are algorithm or template policy rather than requirements of the generic base run template.
 
 ### Generic Editing Invariants
 

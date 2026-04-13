@@ -83,11 +83,11 @@ The package currently relies on users to ensure that data passed from Python to 
 
 The `pars_init.m` file is currently generated from a template created by the user. Parameter values are defined in code and are then filled by the template. Given the simple structure of the `pars_init.m` file, it should be possible to automate its generation based on the parameters defined in the Python code. This would reduce the amount of manual work required to set up the estimation and ensure that the `pars_init.m` file is always consistent with the parameters defined in Python. Steps to achieve this include:
 
-- Define a clear structure for how parameters are defined in Python, including any necessary metadata such as parameter names, values, and sources. 
-- Create classes to host estimated parameters and their metadata, which can be used to generate the `pars_init.m` file automatically.
-- Core parameters should be defined in the package code, but base classes should be made available for users to define their own parameters as needed, with clear APIs for how to specify parameter values and metadata.
-- Implement a function that takes the defined parameters and their metadata and generates the `pars_init.m` file in the correct format for MATLAB estimation.
-- Update `pars_init.m` generation in `TierCodeGenerator`
+- [x] Define a clear structure for how parameters are defined in Python, including any necessary metadata such as parameter names, values, and sources. 
+- [x] Create classes to host estimated parameters and their metadata, which can be used to generate the `pars_init.m` file automatically.
+- [x] Core parameters should be defined in the package code, but base classes should be made available for users to define their own parameters as needed, with clear APIs for how to specify parameter values and metadata.
+- [ ] Create a `Section` class that renders parameters in the correct format for the `pars_init.m` file
+- [ ] Create a `pars_init.m` template class that generates the template file from the parameter registry
 
 ### 6. Selective Reruns And Partial Tier Estimation
 
@@ -148,26 +148,24 @@ Support for simultaneous estimation would be useful in the future, but it is not
 
 ### 3. Automated `run.m` generation for different optimization algorithms
 
-Generation for `run.m` files is currently handwritten in the example templates. This file is rather easy to generate and automate its generation since the commands are very similar. Moreover, we can define different run.m files that implement different optimization algorithms, namely: Nelder-Mead, Restarting Nelder-Mead, and Restarting Alternating Nelder-Mead or even the MultiCalib4DEB work. Steps to achieve this include:
+Generation for `run.m` files is moving from handwritten example templates toward registry-backed Python generation. The base structure now separates the generic DEBtool entry point from optimizer-specific policy, while algorithm templates can define different run strategies such as Nelder-Mead, Restarting Nelder-Mead, Restarting Alternating Nelder-Mead, or future MultiCalib4DEB work. Steps to achieve this include:
 
-- Define a clear structure for the `run.m` file, including the necessary commands and parameters for running the estimation process.
-- Decide on the architectural approach for generating `run.m` files, such as using a template-based approach or a more programmatic generation method based on the defined structure.
-- Create classes or functions that can generate `run.m` files based on the defined structure, allowing for different optimization algorithms to be implemented as needed.
-- Implement each optimization algorithm as a separate generation option, ensuring that the generated `run.m` files are correctly formatted and include all necessary commands and options for the chosen algorithm.
-- Update the generation logic in `TierCodeGenerator` to use this new `run.m` generation functionality, ensuring that the correct `run.m` file is generated based on user preferences or defaults.
+- [x] Define a clear base structure for the `run.m` file, including setup, option initialization, and the `estim_pars` entry point.
+- [x] Create `RunSection` classes for reusable run blocks such as setup, estimation option initialization, the estimation call, and prediction saving.
+- [x] Create `RunProgrammaticTemplate` and `RunSubstitutionTemplate` classes backed by the `RunSection` registry.
+- [x] Add typed `estim_options` objects so run-option rendering uses explicit numeric and string conversion with option-owned validation.
+- [x] Add an initial `NelderMead` algorithm template as the first programmatic optimizer-specific run template.
+- [ ] Complete `RestartingNelderMead` behavior using the same section and option architecture.
+- [ ] Add Restarting Alternating Nelder-Mead or MultiCalib4DEB-oriented templates once the required algorithm behavior is specified.
 
 ### 4. Automated `mydata.m` generation
 
 The `mydata.m` file is currently generated from a template created by the user. Given the structure of the `mydata.m` file, it should be possible to automate its generation based on the data sources defined in Python and species metadata defined by the user. This would reduce the amount of manual work required to set up the estimation and ensure that the `mydata.m` file is always consistent with the data sources and species metadata defined in Python. Steps to achieve this include:
 
-- Define a clear structure for how data sources and species metadata are defined in Python, including any necessary metadata such as data source names, values, and sources.
-- Decide on architectural approach for generating `mydata.m` files, such as using a template-based approach or a more programmatic generation method based on the defined structure.
-- Create classes or functions that can generate `mydata.m` files based on the defined structure, ensuring that the generated file correctly reflects the data sources and species metadata defined in Python.
-- Integrate with `DataSource` classes to automatically generate the necessary data definitions in the `mydata.m` file based on the data sources defined in Python.
-- Update the generation logic in `TierCodeGenerator` to use this new `mydata.m` generation functionality, ensuring that the correct `mydata.m` file is generated based on the defined data sources and species metadata.
-- Provide documentation and examples on how to use the new `mydata.m` generation functionality, including how to define data sources and species metadata in Python and how they are reflected in the generated `mydata.m` file.
-- Maintain backwards compatibility with existing `mydata.m` templates that are completely handwritten with template arguments through a freeform generation class. 
-
+- [x] Define a clear structure for how data sources and species metadata are defined in Python, including any necessary metadata such as data source names, values, and sources.
+- [x] Create `Section` classes that render `mydata.m` code snippets for different functionalities of the `mydata.m` file
+- [x] Integrate with `DataSource` classes to automatically generate the necessary data definitions in the `mydata.m` file based on the data sources defined in Python.
+- [x] Create a generic template class for `mydata.m` generation 
 
 ## Future Minor Versions
 

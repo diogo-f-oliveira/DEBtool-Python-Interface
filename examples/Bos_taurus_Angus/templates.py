@@ -1,7 +1,14 @@
 from pathlib import Path
 
-from DEBtoolPyIF import EstimationTemplates, MultitierMyDataSubstitutionTemplate, MultitierParsInitSubstitutionTemplate, \
-    CopyFileTemplate, RunSubstitutionTemplate
+from DEBtoolPyIF import (
+    CopyFileTemplate,
+    EstimationTemplates,
+    MultitierMyDataSubstitutionTemplate,
+    ParameterDefinition,
+    ParameterDefinitions,
+    ParameterRegistry,
+    RegistryMultitierParsInitProgrammaticTemplate,
+)
 from DEBtoolPyIF.estimation_files.mydata_metadata_sections import SaveDataFieldsByVariateTypeSection, \
     MyDataFunctionHeader, SpeciesInfoMetadataSection, AuthorInfoMetadataSection, SaveFieldsSection, \
     CompletenessLevelSection
@@ -11,6 +18,26 @@ from DEBtoolPyIF.estimation_files.mydata_temperature_sections import SetTypicalT
 from DEBtoolPyIF.estimation_files.mydata_weight_sections import InitializeWeightsSection, RemoveDummyWeightsSection
 from DEBtoolPyIF.multitier.mydata_sections import MultitierPseudoDataSection, MultitierPackingSection
 from DEBtoolPyIF.estimation_files.algorithms import RestartingNelderMead
+
+
+def build_angus_parameter_registry():
+    parameter_registry = ParameterRegistry.default()
+    for definition in (
+            ParameterDefinitions.p_Am,
+            ParameterDefinitions.t_0,
+            ParameterDefinitions.E_Hx,
+            ParameterDefinitions.del_M,
+    ):
+        parameter_registry.add(definition)
+    parameter_registry.add(
+        ParameterDefinition(
+            "p_Am_f",
+            "J/d.cm^2",
+            "Surface-specific maximum assimilation rate for females",
+        )
+    )
+    parameter_registry.add(ParameterDefinition("E_Hp_f", "J", "maturity at puberty for females"))
+    return parameter_registry
 
 
 def create_mydata_template(source_folder, species_name):
@@ -64,8 +91,8 @@ def build_estimation_templates(
                 species_name=species_name,
             ),
 
-            pars_init=MultitierParsInitSubstitutionTemplate(
-                source=base_template_folder / tier / f'pars_init_{species_name}.m',
+            pars_init=RegistryMultitierParsInitProgrammaticTemplate(
+                parameter_registry=build_angus_parameter_registry(),
             ),
 
             predict=CopyFileTemplate(base_template_folder / tier / f'predict_{species_name}.m'),

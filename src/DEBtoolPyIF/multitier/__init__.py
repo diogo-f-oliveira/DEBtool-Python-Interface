@@ -6,6 +6,7 @@ from .mydata import MultitierMyDataProgrammaticTemplate, MultitierMyDataSubstitu
 from .pars_init import (
     MultitierParsInitProgrammaticTemplate,
     MultitierParsInitSubstitutionTemplate,
+    RegistryMultitierParsInitProgrammaticTemplate,
     RegistryMultitierParsInitSubstitutionTemplate,
 )
 from .structure import MultiTierStructure
@@ -22,5 +23,6 @@ __all__ = [
     "MultitierMyDataSubstitutionTemplate",
     "MultitierParsInitProgrammaticTemplate",
     "MultitierParsInitSubstitutionTemplate",
+    "RegistryMultitierParsInitProgrammaticTemplate",
     "RegistryMultitierParsInitSubstitutionTemplate",
 ]

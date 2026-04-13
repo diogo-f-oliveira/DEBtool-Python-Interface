@@ -72,14 +72,15 @@ The Angus example now follows this pattern and should be treated as the canonica
 The preferred template workflow is:
 
 1. Use source-backed template classes where MATLAB source remains workflow-specific and benefits from direct review.
-2. Use programmatic algorithm templates for `run` when a built-in optimizer captures the desired estimation behavior.
-3. Wrap the four file templates for each tier in one `EstimationTemplates` bundle.
-4. Pass the tier-name mapping into `MultiTierStructure(..., estimation_templates=...)`.
+2. Use programmatic `pars_init` generation when parameter definitions are available in Python.
+3. Use programmatic algorithm templates for `run` when a built-in optimizer captures the desired estimation behavior.
+4. Wrap the four file templates for each tier in one `EstimationTemplates` bundle.
+5. Pass the tier-name mapping into `MultiTierStructure(..., estimation_templates=...)`.
 
 In practice, this means:
 
 - `mydata` is usually built with `MultitierMyDataSubstitutionTemplate`
-- `pars_init` is usually built with `MultitierParsInitSubstitutionTemplate`
+- `pars_init` is usually built with `RegistryMultitierParsInitProgrammaticTemplate`
 - `predict` is usually wrapped with `CopyFileTemplate`
 - `run` should use an algorithm template such as `NelderMead()` when the built-in optimizer behavior fits
 - `RunSubstitutionTemplate` remains supported when a project needs to maintain a source-backed MATLAB run script
@@ -96,7 +97,7 @@ from DEBtoolPyIF.estimation_files import EstimationTemplates, CopyFileTemplate
 from DEBtoolPyIF.estimation_files.algorithms import NelderMead
 from DEBtoolPyIF.multitier import (
     MultitierMyDataSubstitutionTemplate,
-    MultitierParsInitSubstitutionTemplate,
+    RegistryMultitierParsInitProgrammaticTemplate,
 )
 
 
@@ -113,9 +114,7 @@ def build_estimation_templates(species_name: str, template_root: Path) -> dict[s
             mydata=MultitierMyDataSubstitutionTemplate(
                 source=template_root / "group" / f"mydata_{species_name}.m",
             ),
-            pars_init=MultitierParsInitSubstitutionTemplate(
-                source=template_root / "group" / f"pars_init_{species_name}.m",
-            ),
+            pars_init=RegistryMultitierParsInitProgrammaticTemplate(),
             predict=CopyFileTemplate(
                 template_root / "group" / f"predict_{species_name}.m"
             ),
@@ -125,9 +124,7 @@ def build_estimation_templates(species_name: str, template_root: Path) -> dict[s
             mydata=MultitierMyDataSubstitutionTemplate(
                 source=template_root / "individual" / f"mydata_{species_name}.m",
             ),
-            pars_init=MultitierParsInitSubstitutionTemplate(
-                source=template_root / "individual" / f"pars_init_{species_name}.m",
-            ),
+            pars_init=RegistryMultitierParsInitProgrammaticTemplate(),
             predict=CopyFileTemplate(
                 template_root / "individual" / f"predict_{species_name}.m"
             ),

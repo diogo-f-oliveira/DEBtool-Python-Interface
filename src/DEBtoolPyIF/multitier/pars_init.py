@@ -74,6 +74,29 @@ class MultitierParsInitProgrammaticTemplate(MultitierParsInitTemplate, Programma
         )
 
 
+class RegistryMultitierParsInitProgrammaticTemplate(MultitierParsInitProgrammaticTemplate):
+    """Programmatic multitier pars_init template backed by a parameter registry."""
+
+    def __init__(
+        self,
+        *,
+        parameter_registry: ParameterRegistry | None = None,
+        model: str = "nat",
+        include_addchem: bool = True,
+        sections: tuple[ParsInitSection, ...] | None = None,
+    ) -> None:
+        final_sections = (
+            build_registry_multitier_pars_init_sections(
+                parameter_registry=parameter_registry,
+                model=model,
+                include_addchem=include_addchem,
+            )
+            if sections is None
+            else tuple(sections)
+        )
+        super().__init__(sections=final_sections)
+
+
 class MultitierParsInitSubstitutionTemplate(MultitierParsInitTemplate, ParsInitSubstitutionTemplate):
     """Source-backed multitier pars_init template with construction-time section matching."""
 

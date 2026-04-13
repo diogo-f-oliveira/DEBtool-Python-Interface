@@ -171,7 +171,7 @@ The template layer is intentionally split by behavior.
 - Current use: source-backed `run` customization when a project needs readable MATLAB source templates.
 - Current maturity: usable, still evolving.
 
-Algorithm templates in `DEBtoolPyIF.estimation_files.algorithms`, such as `NelderMead`, are the preferred higher-level entry point when the built-in optimizer behavior fits the workflow. These templates subclass `RunProgrammaticTemplate` and own their optimizer-specific option set and extra sections.
+Algorithm templates in `DEBtoolPyIF.estimation_files.algorithms`, such as `NelderMead`, are the preferred higher-level entry point when the built-in optimizer behavior fits the workflow. These templates subclass `AlgorithmRunTemplate`, which itself builds on `RunProgrammaticTemplate`, and own their optimizer-specific option set and post-estimation sections.
 
 ### Current maturity summary
 
@@ -224,6 +224,11 @@ Built-in run sections include:
   - renders DEBtool estimation option initialization and an ordered set of typed option objects
 - `EstimationCallSection`
   - renders the base DEBtool entry point, `estim_pars`
+- `RestartLoopSection`
+  - renders the restarting Nelder-Mead loop after an initial `estim_pars` call
+  - uses `n_runs` and `tol_restart` settings
+- `GetResultsSection`
+  - reloads parameters from the result file, disables estimation with `method='no'`, sets `results_output`, and calls `estim_pars` to save requested output
 - `SavePredictionsSection`
   - reloads the DEBtool result file, rebuilds data, calls `predict`, and saves predictions with the result data
 
@@ -244,6 +249,9 @@ Built-in run sections include:
 Typed option bases:
 
 - `NumericEstimOption`
+  - renders with `convert_numeric_array_to_matlab(...)`
+- `IntegerEstimOption`
+  - validates whole-number DEBtool options such as counts and numeric mode flags
   - renders with `convert_numeric_array_to_matlab(...)`
 - `StringEstimOption`
   - renders with `convert_string_to_matlab(...)`
@@ -282,6 +290,82 @@ section = SetEstimOptionsSection(
 ```
 
 `SetDefaultEstimOptions` renders the package's MATLAB code for default DEBtool estimation options. `SetEstimOptionsSection(options=None)` and `SetEstimOptionsSection(options=())` render only this default initialization; they do not provide shared algorithm defaults. Optimizer-specific defaults belong on algorithm templates such as `NelderMead`.
+
+`AlgorithmRunTemplate`
+
+- Base class for optimizer-specific `run.m` templates.
+- Subclasses define `method`, `option_classes`, and `get_algorithm_settings()`.
+- Constructor values are rendered directly into `estim_options(...)`.
+- Omitted constructor values become render-time keys resolved from `context.estimation_settings`.
+- `get_algorithm_settings()` may include non-`estim_options` settings used by algorithm sections.
+- `build_algorithm_options()` renders only settings declared in `option_classes`.
+- `get_fixed_settings()` returns constructor-provided settings.
+- `get_render_time_settings()` returns omitted settings that must be supplied at render time.
+
+`NelderMead`
+
+- Uses `method='nm'`.
+- Supports fixed or render-time values for `n_steps`, `n_evals`, `simplex_size`, `tol_simplex`, `pars_init_method`, and `results_output_mode`.
+- Accepts `extra_options=...` for additional typed `estim_options(...)` calls appended after built-in algorithm options.
+- Accepts `post_estimation_sections=...` for sections rendered after the `estim_pars` call.
+- Uses `SavePredictionsSection()` as the default post-estimation section when `save_predictions=True`.
+
+`RestartingNelderMead`
+
+- Uses `method='nm'` for the initial optimizer run.
+- Supports fixed or render-time values for the same initial optimizer options as `NelderMead`, except `results_output` is forced to `0` before estimation.
+- Adds restart settings `n_runs`, `tol_restart`, and `results_output_mode`.
+- Counts `n_runs` as optimizer calls only: the first `estim_pars` call plus restart-loop calls.
+- Uses `tol_restart` to decide whether the objective value improved enough to continue restarting.
+- Uses `GetResultsSection` for the final `method='no'` result-output call; this save call is not counted in `n_runs`.
+
+`AlternatingRestartNelderMead`
+
+- Inherits the restart settings and result-saving behavior from `RestartingNelderMead`.
+- Renders `simplex_size` as a global MATLAB variable so it can be changed during the run script.
+- Flips simplex direction with `simplex_size = -simplex_size;` before each restart attempt.
+- Leaves the first optimizer call on the initial simplex direction.
+
+Examples:
+
+```python
+from DEBtoolPyIF.estimation_files import (
+    AlternatingRestartNelderMead,
+    NelderMead,
+    RestartingNelderMead,
+    SetFilterOption,
+)
+from DEBtoolPyIF.estimation_files.run_sections import SavePredictionsSection
+
+# n_steps is fixed; omitted values such as tol_simplex are read from estimation_settings.
+run_template = NelderMead(
+    n_steps=500,
+    extra_options=(SetFilterOption(1),),
+)
+
+# Replace the default post-estimation sections explicitly.
+run_template = NelderMead(
+    save_predictions=False,
+    post_estimation_sections=(SavePredictionsSection(),),
+)
+
+run_template = RestartingNelderMead(
+    n_steps=500,
+    n_runs=5,
+    tol_restart=1e-5,
+    results_output_mode=0,
+)
+
+run_template = AlternatingRestartNelderMead(
+    n_steps=500,
+    simplex_size=0.05,
+    n_runs=5,
+    tol_restart=1e-5,
+    results_output_mode=0,
+)
+```
+
+High-level algorithm templates intentionally expose only option customization and post-estimation sections. If a workflow needs arbitrary section insertion between setup, option initialization, and the estimation call, compose `RunSection` objects directly with `RunProgrammaticTemplate`.
 
 Source-backed run templates still work, but their placeholders must match registered section keys. For the base run contract, use `$setup`, `$set_options`, and `$estimation_call`. Do not use `$algorithm` as a required base placeholder.
 

@@ -192,12 +192,12 @@ class SetTolSimplexOption(NumericEstimOption):
 
 class SetParsInitMethodOption(IntegerEstimOption):
     argument_name = "pars_init_method"
-    allowed_values = (0, 1, 2)
+    allowed_values = (0, 1, 2, 3)
 
 
 class SetResultsOutputOption(IntegerEstimOption):
     argument_name = "results_output"
-    allowed_values = (0, 1, 2, 3)
+    allowed_values = (-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6)
 
 
 class SetMethodOption(StringEstimOption):

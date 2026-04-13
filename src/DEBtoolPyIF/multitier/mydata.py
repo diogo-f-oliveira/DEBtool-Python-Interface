@@ -19,7 +19,7 @@ from ..estimation_files.mydata_metadata_sections import (
     BibkeysSection,
     CompletenessLevelSection,
     DiscussionSection,
-    MyDataFunctionHeaderSection,
+    MyDataFunctionHeader,
     SaveDataFieldsByVariateTypeSection,
     SaveFieldsSection,
     SpeciesInfoMetadataSection,
@@ -67,7 +67,7 @@ class MultitierMyDataTemplate(MyDataTemplate):
     @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            MyDataFunctionHeaderSection(),
+            MyDataFunctionHeader(),
             SpeciesInfoMetadataSection(),
             TypicalTemperatureSection(),
             CompletenessLevelSection(),
@@ -89,7 +89,7 @@ class MultitierMyDataTemplate(MyDataTemplate):
     @classmethod
     def required_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            MyDataFunctionHeaderSection(),
+            MyDataFunctionHeader(),
             SpeciesInfoMetadataSection(),
             TypicalTemperatureSection(),
             CompletenessLevelSection(),

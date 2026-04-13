@@ -3,7 +3,7 @@ from pathlib import Path
 from DEBtoolPyIF import EstimationTemplates, MultitierMyDataSubstitutionTemplate, MultitierParsInitSubstitutionTemplate, \
     CopyFileTemplate, RunSubstitutionTemplate
 from DEBtoolPyIF.estimation_files.mydata_metadata_sections import SaveDataFieldsByVariateTypeSection, \
-    MyDataFunctionHeaderSection, SpeciesInfoMetadataSection, AuthorInfoMetadataSection, SaveFieldsSection, \
+    MyDataFunctionHeader, SpeciesInfoMetadataSection, AuthorInfoMetadataSection, SaveFieldsSection, \
     CompletenessLevelSection
 from DEBtoolPyIF.estimation_files.mydata_pseudodata_sections import AddPseudoDataSection
 from DEBtoolPyIF.estimation_files.mydata_temperature_sections import SetTypicalTemperatureForAllDatasetsSection, \
@@ -17,7 +17,7 @@ def create_mydata_template(source_folder, species_name):
     return MultitierMyDataSubstitutionTemplate(
         source=source_folder / f"mydata_{species_name}.m",
         sections=(
-            MyDataFunctionHeaderSection(species_name=species_name),
+            MyDataFunctionHeader(species_name=species_name),
             SpeciesInfoMetadataSection(
                 phylum='Chordata',
                 class_name='Mammalia',

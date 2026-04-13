@@ -14,7 +14,7 @@ from .mydata_metadata_sections import (
     BibkeysSection,
     CompletenessLevelSection,
     DiscussionSection,
-    MyDataFunctionHeaderSection,
+    MyDataFunctionHeader,
     SpeciesInfoMetadataSection,
     SaveFieldsSection,
 )
@@ -93,7 +93,7 @@ class MyDataTemplate:
     @classmethod
     def default_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            MyDataFunctionHeaderSection(),
+            MyDataFunctionHeader(),
             SpeciesInfoMetadataSection(),
             TypicalTemperatureSection(),
             CompletenessLevelSection(),
@@ -113,7 +113,7 @@ class MyDataTemplate:
     @classmethod
     def required_sections(cls) -> tuple[MyDataSection, ...]:
         return (
-            MyDataFunctionHeaderSection(),
+            MyDataFunctionHeader(),
             SpeciesInfoMetadataSection(),
             TypicalTemperatureSection(),
             CompletenessLevelSection(),

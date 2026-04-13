@@ -4,233 +4,94 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .templates import EstimationFileSection, ProgrammaticTemplate, SubstitutionTemplate
-from ..parameters import ParameterDefinition, ParameterRegistry, build_default_parameter_registry
-from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_string_to_matlab
-
-
-SUPPLEMENTAL_PARAMETER_ORDER = ("T_A", "z", "F_m", "kap_R", "p_T", "k_J", "s_G", "f")
-PARS_INIT_SLOT_NAMES = (
-    "function_header",
-    "model_metadata",
-    "base_parameters",
-    "addchem",
-    "packing",
+from .pars_init_base import ParsInitSection
+from .pars_init_sections import (
+    AddModelMedatadaSection,
+    InitializeParametersSection,
+    ParsInitAddChemSection,
+    ParsInitFunctionHeader,
+    ParsInitPackingSection,
 )
-PARS_INIT_BASE_REQUIRED_KEYS = (
-    "function_header",
-    "model_metadata",
-    "base_parameters",
-    "addchem",
-    "packing",
-)
+from .templates import ProgrammaticTemplate, SubstitutionTemplate
+from ..parameters import ParameterRegistry
 
 
-class ParsInitFunctionHeaderSection(EstimationFileSection):
-    slot_name = "function_header"
-    matlab_code = "function [par, metaPar, txtPar] = pars_init_${species_name}(metaData)"
-
-    def __init__(self, *, species_name: str | None = None) -> None:
-        self.species_name = species_name
-        super().__init__()
-
-    def get_init_substitutions(self) -> dict[str, str]:
-        if self.species_name is None:
-            return {}
-        return {"species_name": self.species_name}
-
-    def get_render_substitutions(self, context) -> dict[str, str]:
-        if self.species_name is not None:
-            return {}
-        return {"species_name": context.species_name}
-
-
-class ParsInitModelMetadataSection(EstimationFileSection):
-    slot_name = "model_metadata"
-    matlab_code = """metaPar.model = ${model};
-
-%% reference parameter and model parameters"""
-
-    def __init__(self, model: str = "stx") -> None:
-        self.model = model
-        super().__init__()
-
-    def get_init_substitutions(self) -> dict[str, str]:
-        return {"model": convert_string_to_matlab(self.model)}
-
-
-class ParsInitBaseParametersSection(EstimationFileSection):
-    slot_name = "base_parameters"
-
-    def __init__(
-        self,
-        *,
-        parameter_registry: ParameterRegistry | None = None,
-        custom_parameters: tuple[ParameterDefinition, ...] = (),
-    ) -> None:
-        self.parameter_registry = (
-            build_default_parameter_registry() if parameter_registry is None else parameter_registry
-        )
-        self.custom_parameters = custom_parameters
-
-    def _registry(self) -> ParameterRegistry:
-        return self.parameter_registry.merged(list(self.custom_parameters))
-
-    def render(self, context) -> str:
-        registry = self._registry()
-        full_pars = context.full_pars_dict
-        parameter_order = []
-        for parameter_name in ("T_ref", *full_pars.keys(), *SUPPLEMENTAL_PARAMETER_ORDER):
-            if parameter_name not in parameter_order:
-                parameter_order.append(parameter_name)
-
-        lines = []
-        for parameter_name in parameter_order:
-            definition = registry.get(parameter_name)
-            if definition is None:
-                raise ValueError(
-                    f"No parameter definition available for '{parameter_name}'. "
-                    "Provide a CustomParameterDefinition when generating pars_init.m."
-                )
-
-            if parameter_name in full_pars:
-                value = full_pars[parameter_name]
-            else:
-                if definition.default_value is None:
-                    continue
-                value = definition.default_value
-
-            free_value = 1 if parameter_name in context.tier_pars else definition.default_free
-            lines.append(
-                "par.{name} = {value}; free.{name} = {free}; units.{name} = {units}; "
-                "label.{name} = {label};".format(
-                    name=parameter_name,
-                    value=convert_numeric_array_to_matlab(value, format_codes=definition.float_format),
-                    free=free_value,
-                    units=convert_string_to_matlab(definition.units),
-                    label=convert_string_to_matlab(definition.label),
-                )
-            )
-        return "\n".join(lines)
-
-
-class ParsInitAddChemSection(EstimationFileSection):
-    slot_name = "addchem"
-    matlab_code = """%% set chemical parameters from Kooy2010
-[par, units, label, free] = addchem(par, units, label, free, metaData.phylum, metaData.class);"""
-
-    def __init__(self, include_addchem: bool = True) -> None:
-        self.include_addchem = include_addchem
-        super().__init__()
-
-    def render(self, _context) -> str:
-        if not self.include_addchem:
-            return ""
-        return super().render(_context)
-
-
-class ParsInitPackingSection(EstimationFileSection):
-    slot_name = "packing"
-    matlab_code = """%% Pack output
-txtPar.units = units;
-txtPar.label = label;
-par.free = free;
-
-end"""
-
-
-def build_pars_init_substitutions(
-    context,
-    sections: tuple[EstimationFileSection, ...],
+def build_registry_pars_init_sections(
     *,
-    allowed_keys: tuple[str, ...] = PARS_INIT_SLOT_NAMES,
-) -> dict[str, str]:
-    rendered_keys = {key: "" for key in allowed_keys}
-    for section in sections:
-        section.validate(allowed_keys)
-        rendered_keys[section.slot_name] += section.render(context).rstrip() + "\n\n"
-    return {key: value.rstrip() for key, value in rendered_keys.items()}
+    parameter_registry: ParameterRegistry | None = None,
+    model: str = "nat",
+    include_addchem: bool = True,
+) -> tuple[ParsInitSection, ...]:
+    resolved_registry = ParameterRegistry.default() if parameter_registry is None else parameter_registry
+    return (
+        ParsInitFunctionHeader(),
+        AddModelMedatadaSection(model=model),
+        InitializeParametersSection(parameter_registry=resolved_registry),
+        ParsInitAddChemSection(include_addchem=include_addchem),
+        ParsInitPackingSection(),
+    )
 
 
 class ParsInitTemplate:
     """Shared file-family behavior for pars_init template classes."""
 
     template_label = "pars_init"
-    allowed_section_keys = PARS_INIT_SLOT_NAMES
-    required_section_keys = PARS_INIT_BASE_REQUIRED_KEYS
+    template_families = ("pars_init",)
 
-    def __init__(
-        self,
-        *,
-        parameter_registry: ParameterRegistry | None = None,
-        custom_parameters: tuple[ParameterDefinition, ...] = (),
-        model: str = "stx",
-        include_addchem: bool = True,
-    ) -> None:
-        self.parameter_registry = (
-            build_default_parameter_registry() if parameter_registry is None else parameter_registry
+    @classmethod
+    def available_section_classes(cls) -> tuple[type[ParsInitSection], ...]:
+        return ParsInitSection.registered_section_classes(
+            template_families=cls.template_families,
         )
-        self.custom_parameters = custom_parameters
-        self.model = model
-        self.include_addchem = include_addchem
+
+    @classmethod
+    def allowed_section_keys(cls) -> tuple[str, ...]:
+        registered_keys = tuple(dict.fromkeys(section_class.key for section_class in cls.available_section_classes()))
+        required_keys = cls.required_section_keys()
+        return required_keys + tuple(key for key in registered_keys if key not in required_keys)
+
+    @classmethod
+    def required_section_keys(cls) -> tuple[str, ...]:
+        return tuple(section.key for section in cls.required_sections())
+
+    @classmethod
+    def section_classes_for_tag(cls, tag: str) -> tuple[type[ParsInitSection], ...]:
+        return ParsInitSection.registered_section_classes(
+            template_families=cls.template_families,
+            tag=tag,
+        )
+
+    @classmethod
+    def sections_for_tag(cls, tag: str) -> tuple[ParsInitSection, ...]:
+        return tuple(section_class() for section_class in cls.section_classes_for_tag(tag))
 
     @classmethod
     def base_required_sections(
         cls,
-        *,
-        parameter_registry: ParameterRegistry,
-        custom_parameters: tuple[ParameterDefinition, ...],
-        model: str,
-        include_addchem: bool,
-    ) -> tuple[EstimationFileSection, ...]:
+    ) -> tuple[ParsInitSection, ...]:
         return (
-            ParsInitFunctionHeaderSection(),
-            ParsInitModelMetadataSection(model=model),
-            ParsInitBaseParametersSection(
-                parameter_registry=parameter_registry,
-                custom_parameters=custom_parameters,
-            ),
-            ParsInitAddChemSection(include_addchem=include_addchem),
+            ParsInitFunctionHeader(),
+            AddModelMedatadaSection(),
+            InitializeParametersSection(),
+            ParsInitAddChemSection(),
             ParsInitPackingSection(),
         )
 
     @classmethod
-    def required_sections(
-        cls,
-        *,
-        parameter_registry: ParameterRegistry | None = None,
-        custom_parameters: tuple[ParameterDefinition, ...] = (),
-        model: str = "stx",
-        include_addchem: bool = True,
-    ) -> tuple[EstimationFileSection, ...]:
-        resolved_registry = (
-            build_default_parameter_registry() if parameter_registry is None else parameter_registry
-        )
-        return cls.base_required_sections(
-            parameter_registry=resolved_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
-        )
+    def required_sections(cls) -> tuple[ParsInitSection, ...]:
+        return cls.base_required_sections()
 
     @classmethod
-    def default_sections(
-        cls,
-        *,
-        parameter_registry: ParameterRegistry | None = None,
-        custom_parameters: tuple[ParameterDefinition, ...] = (),
-        model: str = "stx",
-        include_addchem: bool = True,
-    ) -> tuple[EstimationFileSection, ...]:
-        return cls.required_sections(
-            parameter_registry=parameter_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
-        )
+    def default_sections(cls) -> tuple[ParsInitSection, ...]:
+        return cls.required_sections()
 
     def get_section_key(self, section) -> str:
-        return section.slot_name
+        if not isinstance(section, ParsInitSection):
+            raise TypeError(
+                "pars_init template sections must be ParsInitSection instances, "
+                f"not {type(section).__name__}."
+            )
+        return section.key
 
     def render_section(self, section, context) -> str:
         return section.render(context)
@@ -242,32 +103,39 @@ class ParsInitProgrammaticTemplate(ParsInitTemplate, ProgrammaticTemplate):
     def __init__(
         self,
         *,
-        parameter_registry: ParameterRegistry | None = None,
-        custom_parameters: tuple[ParameterDefinition, ...] = (),
-        model: str = "stx",
-        include_addchem: bool = True,
-        sections: tuple[EstimationFileSection, ...] | None = None,
+        sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        ParsInitTemplate.__init__(
-            self,
-            parameter_registry=parameter_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
-        )
-        final_sections = self.required_sections(
-            parameter_registry=self.parameter_registry,
-            custom_parameters=self.custom_parameters,
-            model=self.model,
-            include_addchem=self.include_addchem,
-        ) if sections is None else tuple(sections)
+        final_sections = self.required_sections() if sections is None else tuple(sections)
         ProgrammaticTemplate.__init__(
             self,
             sections=final_sections,
-            allowed_section_keys=self.allowed_section_keys,
-            required_section_keys=self.required_section_keys,
+            allowed_section_keys=self.allowed_section_keys(),
+            required_section_keys=self.required_section_keys(),
             template_label=self.template_label,
         )
+
+
+class RegistryParsInitProgrammaticTemplate(ParsInitProgrammaticTemplate):
+    """Programmatic pars_init template backed by a parameter registry."""
+
+    def __init__(
+        self,
+        *,
+        parameter_registry: ParameterRegistry | None = None,
+        model: str = "nat",
+        include_addchem: bool = True,
+        sections: tuple[ParsInitSection, ...] | None = None,
+    ) -> None:
+        final_sections = (
+            build_registry_pars_init_sections(
+                parameter_registry=parameter_registry,
+                model=model,
+                include_addchem=include_addchem,
+            )
+            if sections is None
+            else tuple(sections)
+        )
+        super().__init__(sections=final_sections)
 
 
 class ParsInitSubstitutionTemplate(ParsInitTemplate, SubstitutionTemplate):
@@ -277,19 +145,8 @@ class ParsInitSubstitutionTemplate(ParsInitTemplate, SubstitutionTemplate):
         self,
         *,
         source: str | Path,
-        parameter_registry: ParameterRegistry | None = None,
-        custom_parameters: tuple[ParameterDefinition, ...] = (),
-        model: str = "stx",
-        include_addchem: bool = True,
-        sections: tuple[EstimationFileSection, ...] | None = None,
+        sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        ParsInitTemplate.__init__(
-            self,
-            parameter_registry=parameter_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
-        )
         SubstitutionTemplate.__init__(
             self,
             source=source,
@@ -298,9 +155,28 @@ class ParsInitSubstitutionTemplate(ParsInitTemplate, SubstitutionTemplate):
         )
 
     def get_default_sections(self) -> tuple:
-        return self.default_sections(
-            parameter_registry=self.parameter_registry,
-            custom_parameters=self.custom_parameters,
-            model=self.model,
-            include_addchem=self.include_addchem,
+        return self.default_sections()
+
+
+class RegistryParsInitSubstitutionTemplate(ParsInitSubstitutionTemplate):
+    """Source-backed pars_init template backed by a parameter registry."""
+
+    def __init__(
+        self,
+        *,
+        source: str | Path,
+        parameter_registry: ParameterRegistry | None = None,
+        model: str = "nat",
+        include_addchem: bool = True,
+        sections: tuple[ParsInitSection, ...] | None = None,
+    ) -> None:
+        final_sections = (
+            build_registry_pars_init_sections(
+                parameter_registry=parameter_registry,
+                model=model,
+                include_addchem=include_addchem,
+            )
+            if sections is None
+            else tuple(sections)
         )
+        super().__init__(source=source, sections=final_sections)

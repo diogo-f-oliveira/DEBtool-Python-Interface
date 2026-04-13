@@ -5,21 +5,19 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..estimation_files.pars_init import (
-    PARS_INIT_BASE_REQUIRED_KEYS,
-    PARS_INIT_SLOT_NAMES,
-    ParsInitProgrammaticTemplate,
     ParsInitSubstitutionTemplate,
     ParsInitTemplate,
+    build_registry_pars_init_sections,
 )
-from ..estimation_files.templates import EstimationFileSection, ProgrammaticTemplate
+from ..estimation_files.pars_init_base import ParsInitSection
+from ..estimation_files.templates import ProgrammaticTemplate
+from ..parameters import ParameterRegistry
 
 
-MULTITIER_PARS_INIT_SLOT_NAMES = PARS_INIT_SLOT_NAMES + ("tier_parameter_loops",)
-MULTITIER_PARS_INIT_REQUIRED_KEYS = PARS_INIT_BASE_REQUIRED_KEYS + ("tier_parameter_loops",)
-
-
-class MultitierParsInitLoopsSection(EstimationFileSection):
-    slot_name = "tier_parameter_loops"
+class MultitierParsInitLoopsSection(ParsInitSection):
+    key = "tier_parameter_loops"
+    template_families = ("multitier_pars_init",)
+    section_tags = ("tier_parameters",)
     matlab_code = """%% Set tier parameters
 for e = 1:length(metaData.entity_list)
     entity_id = metaData.entity_list{e};
@@ -45,44 +43,17 @@ end"""
 class MultitierParsInitTemplate(ParsInitTemplate):
     """Shared file-family behavior for multitier pars_init template classes."""
 
-    allowed_section_keys = MULTITIER_PARS_INIT_SLOT_NAMES
-    required_section_keys = MULTITIER_PARS_INIT_REQUIRED_KEYS
+    template_families = ("pars_init", "multitier_pars_init")
 
     @classmethod
-    def required_sections(
-        cls,
-        *,
-        parameter_registry=None,
-        custom_parameters=(),
-        model: str = "stx",
-        include_addchem: bool = True,
-    ) -> tuple[EstimationFileSection, ...]:
-        base_sections = list(
-            super().required_sections(
-                parameter_registry=parameter_registry,
-                custom_parameters=custom_parameters,
-                model=model,
-                include_addchem=include_addchem,
-            )
-        )
+    def required_sections(cls) -> tuple[ParsInitSection, ...]:
+        base_sections = list(super().required_sections())
         base_sections.insert(-1 if base_sections else 0, MultitierParsInitLoopsSection())
         return tuple(base_sections)
 
     @classmethod
-    def default_sections(
-        cls,
-        *,
-        parameter_registry=None,
-        custom_parameters=(),
-        model: str = "stx",
-        include_addchem: bool = True,
-    ) -> tuple[EstimationFileSection, ...]:
-        return cls.required_sections(
-            parameter_registry=parameter_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
-        )
+    def default_sections(cls) -> tuple[ParsInitSection, ...]:
+        return cls.required_sections()
 
 
 class MultitierParsInitProgrammaticTemplate(MultitierParsInitTemplate, ProgrammaticTemplate):
@@ -91,30 +62,14 @@ class MultitierParsInitProgrammaticTemplate(MultitierParsInitTemplate, Programma
     def __init__(
         self,
         *,
-        parameter_registry=None,
-        custom_parameters=(),
-        model: str = "stx",
-        include_addchem: bool = True,
-        sections: tuple[EstimationFileSection, ...] | None = None,
+        sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        ParsInitTemplate.__init__(
-            self,
-            parameter_registry=parameter_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
-        )
-        final_sections = self.required_sections(
-            parameter_registry=self.parameter_registry,
-            custom_parameters=self.custom_parameters,
-            model=self.model,
-            include_addchem=self.include_addchem,
-        ) if sections is None else tuple(sections)
+        final_sections = self.required_sections() if sections is None else tuple(sections)
         ProgrammaticTemplate.__init__(
             self,
             sections=final_sections,
-            allowed_section_keys=self.allowed_section_keys,
-            required_section_keys=self.required_section_keys,
+            allowed_section_keys=self.allowed_section_keys(),
+            required_section_keys=self.required_section_keys(),
             template_label=self.template_label,
         )
 
@@ -126,18 +81,51 @@ class MultitierParsInitSubstitutionTemplate(MultitierParsInitTemplate, ParsInitS
         self,
         *,
         source: str | Path,
-        parameter_registry=None,
-        custom_parameters=(),
-        model: str = "stx",
-        include_addchem: bool = True,
-        sections: tuple[EstimationFileSection, ...] | None = None,
+        sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
         ParsInitSubstitutionTemplate.__init__(
             self,
             source=source,
-            parameter_registry=parameter_registry,
-            custom_parameters=custom_parameters,
-            model=model,
-            include_addchem=include_addchem,
             sections=sections,
         )
+
+
+def build_registry_multitier_pars_init_sections(
+    *,
+    parameter_registry: ParameterRegistry | None = None,
+    model: str = "nat",
+    include_addchem: bool = True,
+) -> tuple[ParsInitSection, ...]:
+    sections = list(
+        build_registry_pars_init_sections(
+            parameter_registry=parameter_registry,
+            model=model,
+            include_addchem=include_addchem,
+        )
+    )
+    sections.insert(-1 if sections else 0, MultitierParsInitLoopsSection())
+    return tuple(sections)
+
+
+class RegistryMultitierParsInitSubstitutionTemplate(MultitierParsInitSubstitutionTemplate):
+    """Source-backed multitier pars_init template backed by a parameter registry."""
+
+    def __init__(
+        self,
+        *,
+        source: str | Path,
+        parameter_registry: ParameterRegistry | None = None,
+        model: str = "nat",
+        include_addchem: bool = True,
+        sections: tuple[ParsInitSection, ...] | None = None,
+    ) -> None:
+        final_sections = (
+            build_registry_multitier_pars_init_sections(
+                parameter_registry=parameter_registry,
+                model=model,
+                include_addchem=include_addchem,
+            )
+            if sections is None
+            else tuple(sections)
+        )
+        super().__init__(source=source, sections=final_sections)

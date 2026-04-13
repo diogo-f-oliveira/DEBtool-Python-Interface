@@ -11,7 +11,7 @@ from ..utils.data_conversion import (
 from ..utils.mydata_code_generation import generate_meta_data_code
 
 
-class MyDataFunctionHeaderSection(MyDataSection):
+class MyDataFunctionHeader(MyDataSection):
     key = "function_header"
     template_families = ("mydata",)
     matlab_code = """function [data, auxData, metaData, txtData, weights] = mydata_${species_name}

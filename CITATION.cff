@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use DEBtoolPyIF, please cite it using the metadata from this file."
+title: "DEBtoolPyIF"
+type: software
+authors:
+  - family-names: "Oliveira"
+    given-names: "Diogo F."
+    email: "diogo.miguel.oliveira@tecnico.ulisboa.pt"
+    orcid: "https://orcid.org/0000-0002-2675-8077"
+version: "0.2.1"
+license: MIT
+repository-code: "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface"
+url: "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface"
+abstract: "A Python interface for the MATLAB package DEBtool, providing tooling for Dynamic Energy Budget model parameter estimation and template-based generation of DEBtool species files."
+keywords:
+  - Dynamic Energy Budget
+  - DEB
+  - DEBtool
+  - ecological modeling
+  - bioenergetics
+  - parameter estimation
+  - MATLAB interface

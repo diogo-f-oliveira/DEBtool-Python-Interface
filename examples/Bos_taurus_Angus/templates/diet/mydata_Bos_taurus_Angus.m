@@ -1,25 +1,15 @@
-function [data, auxData, metaData, txtData, weights] = mydata_Bos_taurus_Angus
+$function_header
 
-%% set metaData
-metaData.phylum     = 'Chordata';
-metaData.class      = 'Mammalia';
-metaData.order      = 'Artiodactyla';
-metaData.family     = 'Bovidae';
-metaData.species    = 'Bos_taurus_Angus';
-metaData.species_en = 'Angus cattle';
-metaData.T_typical  = C2K(38.6);
-metaData.data_0     = {};
-metaData.data_1     = {};
+$metadata_block
 
-metaData.COMPLETE = 2.5; % using criteria of LikaKear2011
+$typical_temperature_block
 
-metaData.author   = {'Diogo Oliveira', 'Goncalo Marques'};
-% metaData.date_subm = [2024 02 02];
-% metaData.email    = {''};
-% metaData.address  = {''};
+$completeness_level_block
+
+$author_info_block
 
 %% Group data
-$group_data
+$group_data_block
 
 % group data types
 $group_data_types
@@ -28,7 +18,7 @@ $group_data_types
 $tier_groups
 
 %% Entity data
-$entity_data
+$entity_data_block
 
 % entity data types
 $entity_data_types
@@ -55,30 +45,16 @@ $tier_pars
 % Struct with form tier_par_init_values.(par).(entity_id) = value;
 $tier_par_init_values
 
-%% Set temperature data and remove weights for dummy variables
-weights = setweights(data, []);
+$weights_block
 
-metaData.data_fields = fieldnames(data);
+$save_fields_block
+
+$save_fields_by_variate_type_block
+
 temp = struct();
-for i = 1:length(metaData.data_fields)
-    % Add typical temperature only to fields without specified temperature
-    field = metaData.data_fields{i};
-    if ~isfield(temp, field)
-        temp.(field) = metaData.T_typical;
-        units.temp.(field) = 'K';
-        label.temp.(field) = 'temperature';
-    end
-    % Removing weight from dummy variables
-    if strcmp(label.(field), 'Dummy variable')
-        weights.(field) = 0;
-    end
-    % Saving data variable names in metaData
-    if length(data.(field)) > 1
-        metaData.data_1{end+1} = field; % univariate
-    else
-        metaData.data_0{end+1} = field; % zero-variate
-    end
-end
+$set_temperature_equal_to_typical_block
+
+$remove_dummy_weights_block
 
 %% Set weight of individual data
 cumulative_data_types = {'tW'};
@@ -118,36 +94,13 @@ for dt=1:length(metaData.group_data_types)
     end
 end
 
-%% Set pseudo-data for tier parameters
-for e=1:length(tiers.entity_list)
-    entity_id = tiers.entity_list{e};
-    for p=1:length(tiers.tier_pars)
-        par_name = tiers.tier_pars{p};
-        varname = [par_name '_' entity_id];
-        
-        data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
-        units.psd.(varname) = '';
-        label.psd.(varname) = '';
-        weights.psd.(varname) = $pseudo_data_weight;
-    end
-end
-
-
-%% pack auxData and txtData for output
-auxData.temp = temp;
-auxData.tiers = tiers;
-auxData.init = init;
-txtData.units = units;
-txtData.label = label;
-txtData.bibkey = bibkey;
-txtData.comment = comment;
-txtData.title = title;
-
-%% Discussion points
-D1 = '';
-D2 = '';
-metaData.discussion = struct('D1', D1, 'D2', D2);
+%% Set generic and multitier pseudo-data
+$add_pseudodata_block
+$multitier_pseudodata_block
 
 %% Data Sources and References
+%
+
+$packing_block
 
 

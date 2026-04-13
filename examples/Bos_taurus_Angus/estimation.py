@@ -1,6 +1,5 @@
 from examples.Bos_taurus_Angus.data import load_data
-from examples.Bos_taurus_Angus.tier_structure import create_tier_structure
-
+from examples.Bos_taurus_Angus.tier_structure import create_tier_structure, TIER_NAMES
 
 FAST_TEST_ESTIMATION_SETTINGS = {
     'breed': dict(n_runs=3, results_output_mode=0, n_steps=50, pars_init_method=2, tol_simplex=1e-4),
@@ -12,6 +11,11 @@ END_TO_END_ESTIMATION_SETTINGS = {
     'breed': dict(n_runs=50, results_output_mode=3, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
     'diet': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
     'individual': dict(n_runs=10, results_output_mode=0, n_steps=500, pars_init_method=2, tol_simplex=1e-4),
+}
+
+NELDER_MEAD_ESTIMATION_TEST_SETTINGS = {
+    tier: dict(n_steps=50, n_evals=100, simplex_size=0.25, tol_simplex=1e-4, pars_init_method=2, results_output_mode=0)
+    for tier in TIER_NAMES
 }
 
 
@@ -55,7 +59,7 @@ if __name__ == '__main__':
     # Create data and multitier structure and run the minimal example
     data = load_data('examples/Bos_taurus_Angus/data')
     multitier = create_tier_structure(data, matlab_session='auto')
-    run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION_SETTINGS)
+    # run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION_SETTINGS)
     # run_multitier_estimation(multitier, estimation_settings=END_TO_END_ESTIMATION_SETTINGS)
-
+    run_multitier_estimation(multitier, estimation_settings=NELDER_MEAD_ESTIMATION_TEST_SETTINGS)
     print('Done')

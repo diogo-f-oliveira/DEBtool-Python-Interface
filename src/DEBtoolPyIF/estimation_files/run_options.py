@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from numbers import Real
 
+import numpy as np
+
 from .run_sections import RunSection
 from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_string_to_matlab
 from ..utils.mydata_code_generation import is_valid_matlab_field_name
@@ -130,6 +132,18 @@ class NumericEstimOption(EstimOption):
         return convert_numeric_array_to_matlab(value)
 
 
+class IntegerEstimOption(NumericEstimOption):
+    """Typed integer ``estim_options`` argument."""
+
+    def validate_value(self, value) -> None:
+        if not isinstance(value, (int, np.integer)) or isinstance(value, (bool, np.bool_)):
+            raise TypeError(
+                f"estim_options('{self.argument_name}') expects an integer value, "
+                f"not {type(value).__name__}."
+            )
+        super().validate_value(value)
+
+
 class StringEstimOption(EstimOption):
     """Typed string ``estim_options`` argument."""
 
@@ -151,12 +165,12 @@ class StringEstimOption(EstimOption):
         return convert_string_to_matlab(value)
 
 
-class SetMaxStepNumberOption(NumericEstimOption):
+class SetMaxStepNumberOption(IntegerEstimOption):
     argument_name = "max_step_number"
     positive = True
 
 
-class SetMaxFunEvalsOption(NumericEstimOption):
+class SetMaxFunEvalsOption(IntegerEstimOption):
     argument_name = "max_fun_evals"
     positive = True
 
@@ -166,7 +180,7 @@ class SetSimplexSizeOption(NumericEstimOption):
     positive = True
 
 
-class SetFilterOption(NumericEstimOption):
+class SetFilterOption(IntegerEstimOption):
     argument_name = "filter"
     allowed_values = (0, 1)
 
@@ -176,12 +190,12 @@ class SetTolSimplexOption(NumericEstimOption):
     positive = True
 
 
-class SetParsInitMethodOption(NumericEstimOption):
+class SetParsInitMethodOption(IntegerEstimOption):
     argument_name = "pars_init_method"
     allowed_values = (0, 1, 2)
 
 
-class SetResultsOutputOption(NumericEstimOption):
+class SetResultsOutputOption(IntegerEstimOption):
     argument_name = "results_output"
     allowed_values = (0, 1, 2, 3)
 
@@ -241,6 +255,7 @@ __all__ = [
     "resolve_run_setting",
     "EstimOption",
     "NumericEstimOption",
+    "IntegerEstimOption",
     "StringEstimOption",
     "SetMaxStepNumberOption",
     "SetMaxFunEvalsOption",

@@ -10,7 +10,7 @@ from DEBtoolPyIF.estimation_files.mydata_temperature_sections import SetTypicalT
     TypicalTemperatureSection
 from DEBtoolPyIF.estimation_files.mydata_weight_sections import InitializeWeightsSection, RemoveDummyWeightsSection
 from DEBtoolPyIF.multitier.mydata_sections import MultitierPseudoDataSection, MultitierPackingSection
-from DEBtoolPyIF.estimation_files.algorithms import NelderMead
+from DEBtoolPyIF.estimation_files.algorithms import RestartingNelderMead
 
 
 def create_mydata_template(source_folder, species_name):
@@ -70,7 +70,9 @@ def build_estimation_templates(
 
             predict=CopyFileTemplate(base_template_folder / tier / f'predict_{species_name}.m'),
 
-            run=NelderMead(),
+            run=RestartingNelderMead(
+                simplex_size=0.25,
+            ),
         )
 
     return templates

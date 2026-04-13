@@ -2,7 +2,7 @@
 
 ## Project Purpose
 - `DEBtool-Python-Interface` has two primary goals:
-  - Provide Python tooling to interface with MATLAB DEBtool, including template-based generation of required species files:
+  - Provide Python tooling to interface with MATLAB DEBtool, including Python-driven generation of required species files through `estimation_templates`:
     - `mydata_<species>.m`
     - `pars_init_<species>.m`
     - `predict_<species>.m`
@@ -36,8 +36,30 @@
 - After introducing breaking API changes update all affected code and tests, including:
   - example scripts in `examples/`
   - integration tests in `tests/integration/`
+- Prefer the current public multitier workflow based on `estimation_templates` constructed in Python.
+- Treat `template_folder` and folder-conversion helpers as deprecated compatibility paths, not preferred architecture.
+- When discussing or updating estimation-file generation, use the current nomenclature:
+  - `estimation_templates` for the tier-name mapping passed into `MultiTierStructure`
+  - template classes such as `MultitierMyDataSubstitutionTemplate`, `MultitierParsInitSubstitutionTemplate`, `RunSubstitutionTemplate`, and `CopyFileTemplate`
+- Use the current example workflow under `examples/` as the source-of-truth for how multitier templates should be built and passed into `MultiTierStructure`.
+- Document maturity accurately when relevant:
+  - `mydata` and `run` generation are the most mature paths
+  - `pars_init` is usable but still evolving
+  - `predict` remains the most workflow-specific species file
+- `MyDataSection` and `RunSection` intentionally follow the same registry-backed section contract. When adding reusable sections for either file family:
+  - define a stable `key`
+  - set `template_families` directly on the subclass to opt into automatic discovery
+  - set `section_tags` when the section should be selected by tag helpers
+  - ensure the custom section module is imported before templates are constructed
+- Treat this shared section architecture as the direction for future `pars_init.m` and `predict.m` generation work unless the roadmap or user request says otherwise.
+- For `run.m` generation, prefer algorithm templates from `DEBtoolPyIF.estimation_files.algorithms` when a built-in optimizer fits the workflow.
+- For custom `run.m` generation, use `RunSection` classes and typed option classes from `run_options.py`.
+- The base run template required keys are `setup`, `set_options`, and `estimation_call`.
+- Keep optimizer-specific option defaults on algorithm templates, not on the base `RunTemplate` or generic `SetEstimOptionsSection`.
+- Use `RunSetting` or `render_key=...` for render-time values from `context.estimation_settings`; typed option classes should validate values after settings are resolved.
 - For changes affecting DEBtool generated files, preserve naming and expected DEBtool/add-my-pet conventions unless explicitly requested.
-- When generating MATLAB numeric arrays, preserve missing and infinite values as MATLAB-compatible `NaN`, `Inf`, and `-Inf` tokens; do not coerce or drop them.
+- When generating MATLAB values or code from Python values, use the shared conversion helpers in `src/DEBtoolPyIF/utils/data_conversion.py` or code-generation helpers in `src/DEBtoolPyIF/utils/mydata_code_generation.py`; do not add ad hoc MATLAB value formatters in feature modules.
+- When generating MATLAB numeric arrays or scalar values, preserve missing and infinite values as MATLAB-compatible `NaN`, `Inf`, and `-Inf` tokens; do not coerce or drop them.
 - Prefer small, targeted patches and keep public constructor signatures explicit.
 - Before proposing or implementing new architecture, broad abstractions, large refactors, or changes that may affect future extensibility, review `docs/ROADMAP.md` and align the design with the roadmap when reasonable.
 - For architecture and large-refactor work, prefer designs that preserve compatibility with the current workflow, keep future roadmap options open, and add only lightweight scaffolding for likely future changes when it improves extensibility without adding premature complexity.

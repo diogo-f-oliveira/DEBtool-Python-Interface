@@ -155,8 +155,9 @@ Generation for `run.m` files is moving from handwritten example templates toward
 - [x] Create `RunProgrammaticTemplate` and `RunSubstitutionTemplate` classes backed by the `RunSection` registry.
 - [x] Add typed `estim_options` objects so run-option rendering uses explicit numeric and string conversion with option-owned validation.
 - [x] Add an initial `NelderMead` algorithm template as the first programmatic optimizer-specific run template.
-- [ ] Complete `RestartingNelderMead` behavior using the same section and option architecture.
-- [ ] Add Restarting Alternating Nelder-Mead or MultiCalib4DEB-oriented templates once the required algorithm behavior is specified.
+- [x] Complete `RestartingNelderMead` behavior using the same section and option architecture.
+- [x] Add Restarting Alternating Nelder-Mead template using the same section and option architecture.
+- [ ] Add MultiCalib4DEB-oriented templates once the required algorithm behavior is specified.
 
 ### 4. Automated `mydata.m` generation
 

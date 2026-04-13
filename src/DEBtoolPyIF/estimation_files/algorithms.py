@@ -14,7 +14,8 @@ from .run_options import (
     SetSimplexSizeOption,
     SetTolSimplexOption,
 )
-from .run_sections import EstimationCallSection, RunSection, RunSetupSection, SavePredictionsSection
+from .run_sections import EstimationCallSection, RunSection, RunSetupSection, SavePredictionsSection, \
+    RestartLoopSection, GetResultsSection
 
 
 class AlgorithmRunTemplate(RunProgrammaticTemplate):
@@ -39,7 +40,7 @@ class AlgorithmRunTemplate(RunProgrammaticTemplate):
         sections = (
             RunSetupSection(),
             SetEstimOptionsSection(options=self.build_algorithm_options()),
-            EstimationCallSection(),
+            *self.build_estimation_sections(),
             *self.post_estimation_sections,
         )
         super().__init__(sections=sections)
@@ -70,9 +71,21 @@ class AlgorithmRunTemplate(RunProgrammaticTemplate):
             *(
                 self.build_algorithm_option(setting_key, value)
                 for setting_key, value in self.get_algorithm_settings().items()
+                if setting_key in self.option_classes
             ),
+            *self.get_builtin_algorithm_options(),
             *self.extra_options,
         )
+
+    def get_builtin_algorithm_options(self) -> tuple[EstimOption, ...]:
+        """Return fixed options owned by the algorithm but not exposed as public settings."""
+
+        return ()
+
+    def build_estimation_sections(self) -> tuple[RunSection, ...]:
+        """Return the section or sections that perform estimation."""
+
+        return (EstimationCallSection(),)
 
     def get_render_time_settings(self) -> dict[str, None]:
         """Return settings that must be supplied through ``context.estimation_settings``."""
@@ -138,20 +151,90 @@ class NelderMead(AlgorithmRunTemplate):
         return dict(self._algorithm_settings)
 
 
-class RestartingNelderMead(RunProgrammaticTemplate):
-    """Skeleton template for a restarting Nelder-Mead run.m algorithm."""
+class RestartingNelderMead(AlgorithmRunTemplate):
+    """Programmatic template for a restarting Nelder-Mead run.m algorithm."""
 
-    def __init__(self, *, sections: tuple[RunSection, ...] | None = None) -> None:
-        raise NotImplementedError(
-            "RestartingNelderMead is not implemented yet. Use NelderMead or compose "
-            "RunSection objects directly for custom restart behavior."
+    method = "nm"
+    option_classes = {
+        "n_steps": SetMaxStepNumberOption,
+        "n_evals": SetMaxFunEvalsOption,
+        "simplex_size": SetSimplexSizeOption,
+        "tol_simplex": SetTolSimplexOption,
+        "pars_init_method": SetParsInitMethodOption,
+    }
+
+    def __init__(
+        self,
+        *,
+        n_steps: int | None = None,
+        n_evals: int | None = None,
+        simplex_size: float | None = None,
+        tol_simplex: float | None = None,
+        pars_init_method: int | None = None,
+        n_runs: int | None = None,
+        tol_restart: float | None = None,
+        results_output_mode: int | None = None,
+        save_predictions: bool = True,
+        extra_options: tuple[EstimOption, ...] = (),
+        post_estimation_sections: tuple[RunSection, ...] | None = None,
+    ) -> None:
+        self._algorithm_settings = {
+            "n_steps": n_steps,
+            "n_evals": n_evals,
+            "simplex_size": simplex_size,
+            "tol_simplex": tol_simplex,
+            "pars_init_method": pars_init_method,
+            "n_runs": n_runs,
+            "tol_restart": tol_restart,
+            "results_output_mode": results_output_mode,
+        }
+        if post_estimation_sections is None:
+            post_estimation_sections = (SavePredictionsSection(),) if save_predictions else ()
+        super().__init__(
+            extra_options=extra_options,
+            post_estimation_sections=post_estimation_sections,
+        )
+
+    def get_algorithm_settings(self) -> dict[str, object | None]:
+        return dict(self._algorithm_settings)
+
+    def get_builtin_algorithm_options(self) -> tuple[EstimOption, ...]:
+        return (SetResultsOutputOption(0),)
+
+    def build_estimation_sections(self) -> tuple[RunSection, ...]:
+        settings = self.get_algorithm_settings()
+        return (
+            EstimationCallSection(),
+            RestartLoopSection(
+                n_runs=settings["n_runs"],
+                tol_restart=settings["tol_restart"],
+            ),
+            GetResultsSection(
+                results_output_mode=settings["results_output_mode"],
+            ),
         )
 
 
-class AlternatingRestartNelderMead(RunProgrammaticTemplate):
+class AlternatingRestartNelderMead(RestartingNelderMead):
+    """Programmatic template for alternating restarting Nelder-Mead."""
 
-    def __init__(self, *, sections: tuple[RunSection, ...] | None = None) -> None:
-        raise NotImplementedError(
-            "AlternatingRestartNelderMead is not implemented yet. Use NelderMead or compose "
-            "RunSection objects directly for custom alternating-restart behavior."
+    def build_algorithm_option(self, setting_key: str, value) -> EstimOption:
+        if setting_key != "simplex_size":
+            return super().build_algorithm_option(setting_key, value)
+        if value is None:
+            return SetSimplexSizeOption(render_key=setting_key, create_global_variable=True)
+        return SetSimplexSizeOption(value, create_global_variable=True)
+
+    def build_estimation_sections(self) -> tuple[RunSection, ...]:
+        settings = self.get_algorithm_settings()
+        return (
+            EstimationCallSection(),
+            RestartLoopSection(
+                n_runs=settings["n_runs"],
+                tol_restart=settings["tol_restart"],
+                alternate_simplex_size=True,
+            ),
+            GetResultsSection(
+                results_output_mode=settings["results_output_mode"],
+            ),
         )

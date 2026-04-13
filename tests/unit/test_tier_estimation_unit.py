@@ -8,10 +8,20 @@ from tests.unit.multitier_test_helpers import (
 )
 
 
+def _run_settings(*, n_runs: int, n_steps: int) -> dict:
+    return {
+        "n_runs": n_runs,
+        "n_steps": n_steps,
+        "tol_simplex": 1e-4,
+        "pars_init_method": 2,
+        "results_output_mode": 0,
+    }
+
+
 def test_estimate_accepts_settings_and_persists_them(template_folder):
     tier = build_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 5, "n_steps": 10}
+    estimation_settings = _run_settings(n_runs=5, n_steps=10)
     tier.estimate(
         save_results=False,
         print_results=False,
@@ -40,7 +50,7 @@ def test_estimate_requires_settings_when_no_default_exists(template_folder):
 def test_estimate_reuses_last_settings_when_not_overridden(template_folder):
     tier = build_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 3, "n_steps": 20}
+    estimation_settings = _run_settings(n_runs=3, n_steps=20)
     tier.estimate(
         save_results=False,
         print_results=False,
@@ -60,7 +70,7 @@ def test_estimate_tracks_per_group_iteration_times(template_folder):
         save_results=True,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
     )
 
     assert len(tier.estimation_iterations) == 2
@@ -78,7 +88,7 @@ def test_estimate_mixes_group_and_standalone_entity_iterations(template_folder):
         save_results=False,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
     )
 
     assert [iteration["estimation_target_name"] for iteration in tier.estimation_iterations] == [
@@ -123,7 +133,7 @@ def test_estimate_requested_entities_expands_group_and_warns(template_folder):
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list=["PT20", "PT42"],
         )
 
@@ -153,7 +163,7 @@ def test_estimate_requested_entities_rejects_unknown_entities(template_folder):
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list=["PT999"],
         )
 
@@ -165,7 +175,7 @@ def test_estimate_accepts_single_entity_string_for_ungrouped_entity(template_fol
         save_results=False,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
         entity_list="PT42",
     )
 
@@ -183,7 +193,7 @@ def test_estimate_accepts_single_entity_string_for_grouped_entity(template_folde
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list="PT20",
         )
 
@@ -202,6 +212,6 @@ def test_estimate_rejects_none_entity_list(template_folder):
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list=None,
         )

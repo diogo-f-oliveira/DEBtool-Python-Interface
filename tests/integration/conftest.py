@@ -102,9 +102,15 @@ def estimated_multitier(
         except Exception as exc:
             pytest.skip(f"MATLAB-backed estimation setup is unavailable: {exc}")
 
+        estimation_settings = getattr(
+            estimation_module,
+            "NELDER_MEAD_ESTIMATION_TEST_SETTINGS",
+            estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
+        )
+
         estimation_module.run_multitier_estimation(
             multitier,
-            estimation_settings=estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
+            estimation_settings=estimation_settings,
         )
 
         result = (multitier, Path(output_folder))

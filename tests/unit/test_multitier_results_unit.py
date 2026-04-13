@@ -14,10 +14,20 @@ from tests.unit.multitier_test_helpers import (
 )
 
 
+def _run_settings(*, n_runs: int, n_steps: int) -> dict:
+    return {
+        "n_runs": n_runs,
+        "n_steps": n_steps,
+        "tol_simplex": 1e-4,
+        "pars_init_method": 2,
+        "results_output_mode": 0,
+    }
+
+
 def test_save_results_writes_backward_compatible_csvs_and_metadata(template_folder):
     tier = build_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 5, "n_steps": 10}
+    estimation_settings = _run_settings(n_runs=5, n_steps=10)
     tier.estimate(
         save_results=True,
         print_results=False,
@@ -73,7 +83,7 @@ def test_save_results_writes_backward_compatible_csvs_and_metadata(template_fold
 def test_load_results_restores_saved_metadata_and_tables(template_folder):
     tier = build_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 7, "n_steps": 15}
+    estimation_settings = _run_settings(n_runs=7, n_steps=15)
     tier.estimate(
         save_results=True,
         print_results=False,
@@ -105,7 +115,7 @@ def test_load_results_remains_compatible_without_metadata_file(template_folder):
         save_results=True,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 2, "n_steps": 8},
+        estimation_settings=_run_settings(n_runs=2, n_steps=8),
     )
 
     (tier.output_folder / "result_metadata.json").unlink()
@@ -130,7 +140,7 @@ def test_load_results_rejects_previous_metadata_schema_version(template_folder):
         save_results=True,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 2, "n_steps": 8},
+        estimation_settings=_run_settings(n_runs=2, n_steps=8),
     )
 
     metadata_path = tier.output_folder / "result_metadata.json"
@@ -150,7 +160,7 @@ def test_group_result_metadata_preserves_iteration_output_folders(template_folde
         save_results=True,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
     )
 
     metadata = json.loads((tier.output_folder / "result_metadata.json").read_text(encoding="utf-8"))
@@ -168,7 +178,7 @@ def test_group_result_metadata_preserves_iteration_output_folders(template_folde
 def test_save_and_load_results_preserve_mixed_group_and_entity_iteration_metadata(template_folder):
     tier = build_mixed_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 4, "n_steps": 12}
+    estimation_settings = _run_settings(n_runs=4, n_steps=12)
     tier.estimate(
         save_results=True,
         print_results=False,

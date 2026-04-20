@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from abc import ABC
 from collections import defaultdict
+from pathlib import Path
 from typing import ClassVar
 
 from .templates import RegisteredTemplateSection
+from ..utils.data_conversion import convert_string_to_matlab
 
 
 class RunSection(RegisteredTemplateSection, ABC):
@@ -32,6 +34,40 @@ check_my_pet(pets);"""
 
     def get_render_substitutions(self, context) -> dict[str, str]:
         return {"species_name": context.species_name}
+
+
+class AddPathSection(RunSection):
+    """Render fixed MATLAB path additions for a run.m file."""
+
+    key = "add_paths"
+    template_families = ("run",)
+    section_tags = ("pre_estimation",)
+
+    def __init__(self, folders: list[str | Path] | tuple[str | Path, ...]) -> None:
+        self.folders = self._normalize_folders(folders)
+        matlab_code = "\n".join(
+            f"addpath({convert_string_to_matlab(folder)});"
+            for folder in self.folders
+        )
+        super().__init__(matlab_code=matlab_code)
+
+    @staticmethod
+    def _normalize_folders(folders: list[str | Path] | tuple[str | Path, ...]) -> tuple[str, ...]:
+        if not isinstance(folders, (list, tuple)):
+            raise TypeError(
+                "AddPathSection folders must be a list or tuple of str or Path values, "
+                f"not {type(folders).__name__}."
+            )
+
+        normalized_folders = []
+        for index, folder in enumerate(folders):
+            if not isinstance(folder, (str, Path)):
+                raise TypeError(
+                    "AddPathSection folders must contain only str or Path values; "
+                    f"item {index} is {type(folder).__name__}."
+                )
+            normalized_folders.append(str(folder))
+        return tuple(normalized_folders)
 
 
 class EstimationCallSection(RunSection):

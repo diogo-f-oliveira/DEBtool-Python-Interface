@@ -32,6 +32,10 @@
 
 ## Testing Expectations
 - For code changes, run relevant tests first, then broader tests if needed.
+- Add tests when they protect real package behavior, public contracts, bug regressions, or important workflow invariants.
+- Do not add tests that are only useful for one refactor iteration, mainly lock in private implementation details, or assert incidental call structure that users do not rely on.
+- Prefer a smaller number of durable, behavior-focused tests over many narrowly targeted tests that make future refactors harder without improving confidence.
+- If a refactor preserves behavior but makes an implementation-specific test obsolete, update or remove that test instead of preserving it just to match the old internal structure.
 - Minimum validation for multitier changes:
   - `conda run -n debtoolpyif_dev python -m pytest tests/integration -m integration -q`
 - When feasible, run:

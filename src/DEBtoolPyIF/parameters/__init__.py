@@ -4,7 +4,6 @@ from .definitions import (
     ALL_PARAMETER_DEFINITIONS,
     DEFAULT_PARAMETER_DEFINITIONS,
     PARAMETER_DEFINITIONS_BY_NAME,
-    CustomParameterDefinition,
     ParameterDefinition,
     ParameterDefinitions,
     E_G,
@@ -36,7 +35,6 @@ from .registry import ParameterRegistry, build_default_parameter_registry
 
 __all__ = [
     "ALL_PARAMETER_DEFINITIONS",
-    "CustomParameterDefinition",
     "DEFAULT_PARAMETER_DEFINITIONS",
     "PARAMETER_DEFINITIONS_BY_NAME",
     "ParameterDefinition",

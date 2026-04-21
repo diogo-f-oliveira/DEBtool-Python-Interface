@@ -61,11 +61,10 @@ from .multitier import (
     TierHierarchyError,
     build_estimation_templates_from_folder,
 )
-from .parameters import CustomParameterDefinition, ParameterDefinition, ParameterDefinitions, ParameterRegistry
+from .parameters import ParameterDefinition, ParameterDefinitions, ParameterRegistry
 
 __all__ = [
     "CopyFileTemplate",
-    "CustomParameterDefinition",
     "DataCollection",
     "EstimationTemplates",
     "EstimationFileSection",

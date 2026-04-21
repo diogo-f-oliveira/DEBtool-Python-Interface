@@ -4,11 +4,10 @@ from DEBtoolPyIF import (
     CopyFileTemplate,
     EstimationTemplates,
     MultitierMyDataSubstitutionTemplate,
-    ParameterDefinition,
-    ParameterDefinitions,
-    ParameterRegistry,
     RegistryMultitierParsInitProgrammaticTemplate,
+    get_parameter_registry_of_typified_model,
 )
+from DEBtoolPyIF.parameters import E_Hp, del_M, p_Am
 from DEBtoolPyIF.estimation_files.mydata_metadata_sections import SaveDataFieldsByVariateTypeSection, \
     MyDataFunctionHeader, SpeciesInfoMetadataSection, AuthorInfoMetadataSection, SaveFieldsSection, \
     CompletenessLevelSection
@@ -21,22 +20,24 @@ from DEBtoolPyIF.estimation_files.algorithms import RestartingNelderMead
 
 
 def build_angus_parameter_registry():
-    parameter_registry = ParameterRegistry.default()
+    parameter_registry = get_parameter_registry_of_typified_model("stx")
     for definition in (
-            ParameterDefinitions.p_Am,
-            ParameterDefinitions.t_0,
-            ParameterDefinitions.E_Hx,
-            ParameterDefinitions.del_M,
+            p_Am,
+            del_M,
     ):
         parameter_registry.add(definition)
     parameter_registry.add(
-        ParameterDefinition(
-            "p_Am_f",
-            "J/d.cm^2",
-            "Surface-specific maximum assimilation rate for females",
+        p_Am.replace(
+            name="p_Am_f",
+            label="Surface-specific maximum assimilation rate for females",
         )
     )
-    parameter_registry.add(ParameterDefinition("E_Hp_f", "J", "maturity at puberty for females"))
+    parameter_registry.add(
+        E_Hp.replace(
+            name="E_Hp_f",
+            label="maturity at puberty for females",
+        )
+    )
     return parameter_registry
 
 

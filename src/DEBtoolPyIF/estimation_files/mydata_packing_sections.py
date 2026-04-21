@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from .mydata_base import MyDataSection
 
+# TODO: Transform into a general "packing" section that can be used in multiple template families, and convert this module to a generic packing_sections module.
+# TODO: Add subclasses for each template family
 
 class PackingSection(MyDataSection):
     key = "packing_block"

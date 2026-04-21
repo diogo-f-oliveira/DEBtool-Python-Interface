@@ -12,8 +12,33 @@ from .mydata_base import BaseMyDataState
 from .pars_init import (
     ParsInitProgrammaticTemplate,
     ParsInitSubstitutionTemplate,
+    RegistryParsInitProgrammaticTemplate,
+    RegistryParsInitSubstitutionTemplate,
 )
-from .run import RunProgrammaticTemplate, RunSubstitutionTemplate
+from .pars_init_base import ParsInitSection
+from .run import (
+    RunProgrammaticTemplate,
+    RunSubstitutionTemplate,
+)
+from .run_options import (
+    EstimOption,
+    SetEstimOptionsSection,
+    IntegerEstimOption,
+    NumericEstimOption,
+    RunSetting,
+    SetDefaultEstimOptions,
+    SetFilterOption,
+    SetMaxFunEvalsOption,
+    SetMaxStepNumberOption,
+    SetMethodOption,
+    SetParsInitMethodOption,
+    SetResultsOutputOption,
+    SetSimplexSizeOption,
+    SetTolSimplexOption,
+    StringEstimOption,
+)
+from .run_sections import AddPathSection, RunSection
+from .algorithms import AlgorithmRunTemplate, AlternatingRestartNelderMead, NelderMead, RestartingNelderMead
 from .templates import (
     CopyFileTemplate,
     EstimationFileSection,
@@ -36,8 +61,32 @@ __all__ = [
     "MyDataSubstitutionTemplate",
     "ParsInitProgrammaticTemplate",
     "ParsInitSubstitutionTemplate",
+    "RegistryParsInitProgrammaticTemplate",
+    "RegistryParsInitSubstitutionTemplate",
+    "ParsInitSection",
+    "AddPathSection",
+    "RunSection",
+    "RunSetting",
+    "EstimOption",
+    "NumericEstimOption",
+    "IntegerEstimOption",
+    "StringEstimOption",
+    "SetDefaultEstimOptions",
+    "SetEstimOptionsSection",
+    "SetMaxStepNumberOption",
+    "SetMaxFunEvalsOption",
+    "SetSimplexSizeOption",
+    "SetFilterOption",
+    "SetTolSimplexOption",
+    "SetParsInitMethodOption",
+    "SetResultsOutputOption",
+    "SetMethodOption",
     "RunProgrammaticTemplate",
     "RunSubstitutionTemplate",
+    "AlgorithmRunTemplate",
+    "NelderMead",
+    "RestartingNelderMead",
+    "AlternatingRestartNelderMead",
     "build_mydata_state",
     "build_mydata_substitutions",
     "normalize_estimation_templates",

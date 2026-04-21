@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from .run import RunProgrammaticTemplate
 from .run_options import (
     EstimOption,
@@ -14,8 +16,15 @@ from .run_options import (
     SetSimplexSizeOption,
     SetTolSimplexOption,
 )
-from .run_sections import EstimationCallSection, RunSection, RunSetupSection, SavePredictionsSection, \
-    RestartLoopSection, GetResultsSection
+from .run_sections import (
+    AddPathSection,
+    EstimationCallSection,
+    GetResultsSection,
+    RestartLoopSection,
+    RunSection,
+    RunSetupSection,
+    SavePredictionsSection,
+)
 
 
 class AlgorithmRunTemplate(RunProgrammaticTemplate):
@@ -32,13 +41,23 @@ class AlgorithmRunTemplate(RunProgrammaticTemplate):
     def __init__(
         self,
         *,
+        add_path_dirs: list[str | Path] | tuple[str | Path, ...] | None = None,
         extra_options: tuple[EstimOption, ...] = (),
-        post_estimation_sections: tuple[RunSection, ...] = (),
+        post_estimation_sections: tuple[RunSection, ...] | None = None,
     ) -> None:
+        add_path_sections: tuple[RunSection, ...] = ()
+        self.add_path_dirs = None
+        if add_path_dirs is not None:
+            add_path_section = AddPathSection(add_path_dirs)
+            add_path_sections = (add_path_section,)
+            self.add_path_dirs = add_path_section.folders
         self.extra_options = tuple(extra_options)
+        if post_estimation_sections is None:
+            post_estimation_sections = ()
         self.post_estimation_sections = tuple(post_estimation_sections)
         sections = (
             RunSetupSection(),
+            *add_path_sections,
             SetEstimOptionsSection(options=self.build_algorithm_options()),
             *self.build_estimation_sections(),
             *self.post_estimation_sections,
@@ -129,6 +148,7 @@ class NelderMead(AlgorithmRunTemplate):
         pars_init_method: int | None = None,
         results_output_mode: int | None = None,
         save_predictions: bool = True,
+        add_path_dirs: list[str | Path] | tuple[str | Path, ...] | None = None,
         extra_options: tuple[EstimOption, ...] = (),
         post_estimation_sections: tuple[RunSection, ...] | None = None,
     ) -> None:
@@ -143,6 +163,7 @@ class NelderMead(AlgorithmRunTemplate):
         if post_estimation_sections is None:
             post_estimation_sections = (SavePredictionsSection(),) if save_predictions else ()
         super().__init__(
+            add_path_dirs=add_path_dirs,
             extra_options=extra_options,
             post_estimation_sections=post_estimation_sections,
         )
@@ -175,6 +196,7 @@ class RestartingNelderMead(AlgorithmRunTemplate):
         tol_restart: float | None = None,
         results_output_mode: int | None = None,
         save_predictions: bool = True,
+        add_path_dirs: list[str | Path] | tuple[str | Path, ...] | None = None,
         extra_options: tuple[EstimOption, ...] = (),
         post_estimation_sections: tuple[RunSection, ...] | None = None,
     ) -> None:
@@ -191,6 +213,7 @@ class RestartingNelderMead(AlgorithmRunTemplate):
         if post_estimation_sections is None:
             post_estimation_sections = (SavePredictionsSection(),) if save_predictions else ()
         super().__init__(
+            add_path_dirs=add_path_dirs,
             extra_options=extra_options,
             post_estimation_sections=post_estimation_sections,
         )

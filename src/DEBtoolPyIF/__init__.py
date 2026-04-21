@@ -61,7 +61,11 @@ from .multitier import (
     TierHierarchyError,
     build_estimation_templates_from_folder,
 )
-from .parameters import ParameterDefinition, ParameterDefinitions, ParameterRegistry
+from .parameters import (
+    ParameterDefinition,
+    ParameterRegistry,
+    get_parameter_registry_of_typified_model,
+)
 
 __all__ = [
     "CopyFileTemplate",
@@ -79,8 +83,8 @@ __all__ = [
     "EstimationRunner",
     "DEBModelParametrizationProblem",
     "ParameterDefinition",
-    "ParameterDefinitions",
     "ParameterRegistry",
+    "get_parameter_registry_of_typified_model",
     "MyDataProgrammaticTemplate",
     "MyDataSubstitutionTemplate",
     "MultitierMyDataProgrammaticTemplate",

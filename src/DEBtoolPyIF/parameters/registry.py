@@ -30,14 +30,6 @@ class ParameterRegistry:
     def copy(self) -> "ParameterRegistry":
         return ParameterRegistry(list(self._definitions.values()))
 
-    @classmethod
-    def default(cls) -> "ParameterRegistry":
-        from .definitions import ParameterDefinitions
-
-        return cls(list(ParameterDefinitions.default()))
-
-    # TODO: Add classmethods for getting a parameter registry based on model type, e.g., stx would include also E_Hx.
-
     def merged(self, extra_definitions: list[ParameterDefinition] | None = None) -> "ParameterRegistry":
         merged_registry = self.copy()
         if extra_definitions:
@@ -49,5 +41,33 @@ class ParameterRegistry:
         return name in self._definitions
 
 
-def build_default_parameter_registry() -> ParameterRegistry:
-    return ParameterRegistry.default()
+class StdParameterRegistry(ParameterRegistry):
+    def __init__(self) -> None:
+        from .definitions import DEFAULT_PARAMETER_DEFINITIONS
+
+        super().__init__(list(DEFAULT_PARAMETER_DEFINITIONS))
+
+
+class StxParameterRegistry(StdParameterRegistry):
+    def __init__(self) -> None:
+        from .definitions import E_Hx, t_0
+
+        super().__init__()
+        self.add(E_Hx)
+        self.add(t_0)
+
+
+def get_parameter_registry_of_typified_model(model: str) -> ParameterRegistry:
+    if model == "std":
+        return StdParameterRegistry()
+    if model == "stx":
+        return StxParameterRegistry()
+    if model == "nat":
+        raise ValueError(
+            "No built-in parameter registry is available for model 'nat'. "
+            "Provide a custom ParameterRegistry explicitly."
+        )
+    raise ValueError(
+        f"No built-in parameter registry is available for model '{model}'. "
+        "Built-in registries are only available for 'std' and 'stx'."
+    )

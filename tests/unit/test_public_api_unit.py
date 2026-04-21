@@ -6,12 +6,16 @@ from DEBtoolPyIF import (
     DEBModelParametrizationProblem,
     DataCollection,
     EstimationRunner,
+    get_parameter_registry_of_typified_model,
     MATLABWrapper,
     MultiTierStructure,
+    ParameterDefinition,
+    ParameterRegistry,
     TierEstimator,
     TierHierarchy,
     TierHierarchyError,
 )
+from DEBtoolPyIF.parameters import StdParameterRegistry, StxParameterRegistry, p_Am
 from DEBtoolPyIF.data_sources import (
     AgeWeightTwinsEntityDataSource,
     DataSourceBase,
@@ -51,6 +55,16 @@ def test_root_public_api_exports_expected_symbols():
     assert MATLABWrapper.__name__ == "MATLABWrapper"
     assert EstimationRunner.__name__ == "EstimationRunner"
     assert DEBModelParametrizationProblem.__name__ == "DEBModelParametrizationProblem"
+    assert ParameterDefinition.__name__ == "ParameterDefinition"
+    assert ParameterRegistry.__name__ == "ParameterRegistry"
+    assert get_parameter_registry_of_typified_model.__name__ == "get_parameter_registry_of_typified_model"
+    assert p_Am.name == "p_Am"
+
+
+def test_root_public_api_does_not_export_typified_registry_classes():
+    assert not hasattr(DEBtoolPyIF, "StdParameterRegistry")
+    assert not hasattr(DEBtoolPyIF, "StxParameterRegistry")
+    assert hasattr(DEBtoolPyIF, "get_parameter_registry_of_typified_model")
 
 
 def test_subpackage_public_api_exports_expected_symbols():
@@ -80,6 +94,8 @@ def test_subpackage_public_api_exports_expected_symbols():
     assert MultiTierStructureFromSubpackage is MultiTierStructure
     assert TierEstimatorFromSubpackage is TierEstimator
     assert TierVisualizer.__name__ == "TierVisualizer"
+    assert StdParameterRegistry.__name__ == "StdParameterRegistry"
+    assert StxParameterRegistry.__name__ == "StxParameterRegistry"
 
 
 def test_root_exported_hierarchy_types_work_without_matlab():
@@ -101,6 +117,8 @@ def test_multitier_template_exports_follow_package_ownership():
     assert hasattr(multitier, "MultitierMyDataSubstitutionTemplate")
     assert hasattr(multitier, "MultitierParsInitProgrammaticTemplate")
     assert hasattr(multitier, "MultitierParsInitSubstitutionTemplate")
+    assert hasattr(multitier, "RegistryMultitierParsInitProgrammaticTemplate")
+    assert hasattr(DEBtoolPyIF, "RegistryMultitierParsInitProgrammaticTemplate")
     assert not hasattr(DEBtoolPyIF, "TierEstimationFiles")
     assert not hasattr(estimation_files, "TierEstimationFiles")
     assert not hasattr(estimation_files, "MultitierMyDataProgrammaticTemplate")

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "DEBtoolPyIF"
-version = "0.2.1"
+version = "0.3.0"
 authors = [
     { name = "Diogo F. Oliveira", email = "diogo.miguel.oliveira@tecnico.ulisboa.pt" },
 ]
@@ -48,6 +48,9 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["DEBtoolPyIF*"]
 exclude = ["DEBtoolPyIF.add_my_pet*"]
+
+[tool.setuptools.package-data]
+"DEBtoolPyIF.multitier.resources.generic" = ["*.m"]
 
 [project.urls]
 Homepage = "https://github.com/diogo-f-oliveira/DEBtool-Python-Interface"

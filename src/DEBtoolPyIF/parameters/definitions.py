@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as dataclass_replace
+
+
+class _UnsetType:
+    """Sentinel for replace() arguments that were not provided."""
+
+
+_UNSET = _UnsetType()
 
 
 @dataclass(frozen=True)
@@ -15,10 +22,33 @@ class ParameterDefinition:
     float_format: str | None = None
     latex_label: str | None = None
 
-# TODO: Delete this, serves no purpose since a new parameter definition will simply use ParameterDefinition
-@dataclass(frozen=True)
-class CustomParameterDefinition(ParameterDefinition):
-    """User-defined parameter metadata."""
+    def replace(
+        self,
+        *,
+        name: str | _UnsetType = _UNSET,
+        units: str | _UnsetType = _UNSET,
+        label: str | _UnsetType = _UNSET,
+        default_value: float | int | None | _UnsetType = _UNSET,
+        default_free: int | _UnsetType = _UNSET,
+        float_format: str | None | _UnsetType = _UNSET,
+        latex_label: str | None | _UnsetType = _UNSET,
+    ) -> "ParameterDefinition":
+        changes = {}
+        if name is not _UNSET:
+            changes["name"] = name
+        if units is not _UNSET:
+            changes["units"] = units
+        if label is not _UNSET:
+            changes["label"] = label
+        if default_value is not _UNSET:
+            changes["default_value"] = default_value
+        if default_free is not _UNSET:
+            changes["default_free"] = default_free
+        if float_format is not _UNSET:
+            changes["float_format"] = float_format
+        if latex_label is not _UNSET:
+            changes["latex_label"] = latex_label
+        return dataclass_replace(self, **changes)
 
 
 T_ref = ParameterDefinition("T_ref", "K", "Reference temperature", default_value=293.15)
@@ -152,7 +182,6 @@ __all__ = [
     "ALL_PARAMETER_DEFINITIONS",
     "DEFAULT_PARAMETER_DEFINITIONS",
     "PARAMETER_DEFINITIONS_BY_NAME",
-    "CustomParameterDefinition",
     "ParameterDefinition",
     "ParameterDefinitions",
     "E_G",

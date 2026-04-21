@@ -125,15 +125,31 @@ The template layer is intentionally split by behavior.
 
 - Target: generic `pars_init`.
 - Style: programmatic.
-- Customization: replace or extend generic `EstimationFileSection` objects.
+- Customization: compose generic `ParsInitSection` objects directly.
+- Current use: low-level generic `pars_init` section assembly.
+- Current maturity: usable, but still evolving compared with `mydata`.
+
+`RegistryParsInitProgrammaticTemplate`
+
+- Target: generic `pars_init`.
+- Style: programmatic.
+- Customization: provide a parameter registry, model name, or addchem flag to build the default section set. The model defaults to `"nat"` so no typified-model filters are implied unless selected explicitly.
 - Current use: automated parameter-struct construction from parameter definitions.
 - Current maturity: usable, but still evolving compared with `mydata`.
+
+`RegistryParsInitSubstitutionTemplate`
+
+- Target: generic `pars_init`.
+- Style: placeholder-substitution.
+- Customization: provide a parameter registry, model name, or addchem flag while rendering through source placeholders. The model defaults to `"nat"`.
+- Current use: source-backed automated parameter-struct construction from parameter definitions.
+- Current maturity: usable, still evolving.
 
 `ParsInitSubstitutionTemplate`
 
 - Target: generic `pars_init`.
 - Style: placeholder-substitution.
-- Customization: edit a source template with slots such as `$function_header`, `$base_parameters`, and `$packing`.
+- Customization: edit a source template with registered section keys such as `$function_header`, `$base_parameters`, and `$packing`; pass custom `ParsInitSection` objects when default section behavior should change.
 - Current use: source-backed generic `pars_init`.
 - Current maturity: usable, still evolving.
 
@@ -145,12 +161,28 @@ The template layer is intentionally split by behavior.
 - Current use: automatic expansion of current-tier parameter names into entity-specific free fields.
 - Current maturity: usable, still evolving.
 
+`RegistryMultitierParsInitProgrammaticTemplate`
+
+- Target: multitier `pars_init`.
+- Style: programmatic.
+- Customization: provide a parameter registry, model name, or addchem flag while using programmatic section assembly. The model defaults to `"nat"`.
+- Current use: preferred multitier `pars_init` generation when parameter definitions are available in Python.
+- Current maturity: usable, still evolving.
+
 `MultitierParsInitSubstitutionTemplate`
 
 - Target: multitier `pars_init`.
 - Style: placeholder-substitution.
 - Customization: start from a source template and bind multitier sections such as `tier_parameter_loops`.
 - Current use: the main multitier `pars_init` source-backed path.
+- Current maturity: usable, still evolving.
+
+`RegistryMultitierParsInitSubstitutionTemplate`
+
+- Target: multitier `pars_init`.
+- Style: placeholder-substitution.
+- Customization: provide a parameter registry, model name, or addchem flag while rendering multitier source placeholders. The model defaults to `"nat"`.
+- Current use: source-backed multitier parameter generation when species-specific parameter definitions are needed.
 - Current maturity: usable, still evolving.
 
 ### `run` template families
@@ -185,10 +217,14 @@ The package uses sections to keep file-family logic composable.
 
 ### Section contracts
 
-`EstimationFileSection`
+`ParsInitSection`
 
-- Used by generic slot-based files such as `pars_init`.
-- Each section renders one named slot, for example `function_header`, `base_parameters`, or `algorithm`.
+- Used by `pars_init`.
+- Each section renders one canonical `pars_init` key.
+- Section classes can opt into automatic discovery by declaring `template_families` and optional `section_tags`.
+- Required base `pars_init` keys are `function_header`, `model_metadata`, `base_parameters`, `addchem`, and `packing`.
+- `allowed_section_keys()` is derived from the `ParsInitSection` registry.
+- Duplicate registered keys are rejected within the same template family.
 
 `RunSection`
 
@@ -206,6 +242,35 @@ The package uses sections to keep file-family logic composable.
 - Section classes can opt into automatic discovery by declaring `template_families` and optional `section_tags`.
 
 `mydata` is special because many of its sections need shared derived state, not just direct access to the top-level context.
+
+### `pars_init` sections
+
+`ParsInitSection` follows the same registry pattern as `RunSection` for the `pars_init` file family:
+
+- define a stable `key`
+- set `template_families = ("pars_init",)` directly on the subclass to opt into discovery
+- set `section_tags` when the section should be selectable by tag helpers
+- import custom section modules before constructing templates
+
+Built-in generic pars-init sections include:
+
+- `ParsInitFunctionHeader`
+- `AddModelMedatadaSection`
+- `InitializeParametersSection`
+- `ParsInitAddChemSection`
+- `ParsInitPackingSection`
+
+The multitier family adds `MultitierParsInitLoopsSection` through `template_families = ("multitier_pars_init",)`.
+
+### Parameter definition catalog
+
+Reusable parameter metadata lives in `DEBtoolPyIF.parameters.definitions`.
+
+- Import named DEBtool-style objects when code needs direct reuse, for example `ParameterDefinitions.p_Am` or `from DEBtoolPyIF.parameters.definitions import p_Am`.
+- Use `ParameterDefinitions.get(name)` or `get_parameter_definition(name)` for dynamic lookup.
+- Use `ParameterRegistry.default()` for the reusable default registry.
+- Add non-default reusable definitions, such as `p_Am`, `t_0`, `E_Hx`, and `del_M`, deliberately when a model or example needs them.
+- Define species- or workflow-specific parameters, such as Angus-only female parameters, next to that workflow and add them to the registry there.
 
 ### `run` sections and options
 
@@ -297,6 +362,7 @@ section = SetEstimOptionsSection(
 - Subclasses define `method`, `option_classes`, and `get_algorithm_settings()`.
 - Constructor values are rendered directly into `estim_options(...)`.
 - Omitted constructor values become render-time keys resolved from `context.estimation_settings`.
+- Accepts `add_path_dirs=...` for fixed MATLAB folders rendered as `addpath(...)` after setup.
 - `get_algorithm_settings()` may include non-`estim_options` settings used by algorithm sections.
 - `build_algorithm_options()` renders only settings declared in `option_classes`.
 - `get_fixed_settings()` returns constructor-provided settings.
@@ -306,6 +372,7 @@ section = SetEstimOptionsSection(
 
 - Uses `method='nm'`.
 - Supports fixed or render-time values for `n_steps`, `n_evals`, `simplex_size`, `tol_simplex`, `pars_init_method`, and `results_output_mode`.
+- Accepts `add_path_dirs=...` for folders added to the MATLAB path before option initialization.
 - Accepts `extra_options=...` for additional typed `estim_options(...)` calls appended after built-in algorithm options.
 - Accepts `post_estimation_sections=...` for sections rendered after the `estim_pars` call.
 - Uses `SavePredictionsSection()` as the default post-estimation section when `save_predictions=True`.
@@ -343,6 +410,11 @@ run_template = NelderMead(
     extra_options=(SetFilterOption(1),),
 )
 
+run_template = NelderMead(
+    add_path_dirs=("data_pipeline", "ode"),
+    n_steps=500,
+)
+
 # Replace the default post-estimation sections explicitly.
 run_template = NelderMead(
     save_predictions=False,
@@ -365,13 +437,13 @@ run_template = AlternatingRestartNelderMead(
 )
 ```
 
-High-level algorithm templates intentionally expose only option customization and post-estimation sections. If a workflow needs arbitrary section insertion between setup, option initialization, and the estimation call, compose `RunSection` objects directly with `RunProgrammaticTemplate`.
+High-level algorithm templates intentionally expose path additions, option customization, and post-estimation sections. If a workflow needs arbitrary section insertion between setup, option initialization, and the estimation call, compose `RunSection` objects directly with `RunProgrammaticTemplate`.
 
 Source-backed run templates still work, but their placeholders must match registered section keys. For the base run contract, use `$setup`, `$set_options`, and `$estimation_call`. Do not use `$algorithm` as a required base placeholder.
 
-### Automatic `mydata` section registry
+### Automatic section registries
 
-`MyDataSection` subclasses now self-register when the class is defined.
+`MyDataSection`, `ParsInitSection`, and `RunSection` subclasses self-register when the class is defined.
 
 Registration is opt-in:
 
@@ -383,12 +455,19 @@ Only imported section classes are registered. If a project defines custom sectio
 
 Inherited `template_families` do not opt a subclass into registration by themselves. A subclass that should register must set `template_families` directly in its class body.
 
-`MyDataTemplate` does not maintain a handwritten global list of allowed section keys. Instead:
+Registry-backed templates do not maintain handwritten global lists of allowed section keys. For `mydata`:
 
 - `MyDataTemplate.template_families = ("mydata",)`
 - `MultitierMyDataTemplate.template_families = ("mydata", "multitier_mydata")`
 - `available_section_classes()` asks the registry for all section classes in those families
 - `allowed_section_keys()` is derived from the registered classes
+- `section_classes_for_tag(tag)` and `sections_for_tag(tag)` select registered classes by tag
+
+For `pars_init`:
+
+- `ParsInitTemplate.template_families = ("pars_init",)`
+- `MultitierParsInitTemplate.template_families = ("pars_init", "multitier_pars_init")`
+- `allowed_section_keys()` is derived from the registered `ParsInitSection` classes
 - `section_classes_for_tag(tag)` and `sections_for_tag(tag)` select registered classes by tag
 
 The family list also defines override precedence. If a template family asks for more than one family, later families can replace earlier classes with the same key. This is how a multitier-specific section can specialize a generic `mydata` block while preserving the same placeholder key.
@@ -411,6 +490,9 @@ Current important tags include:
 - `pseudodata`
 - `packing`
 - `extra_info`
+- `parameters`
+- `chemistry`
+- `tier_parameters`
 
 `sections_for_tag(tag)` instantiates matching section classes with no arguments. Any section intended to be returned by these helpers must therefore be safe to instantiate with no required constructor arguments.
 
@@ -510,6 +592,34 @@ Use both families only when the same class should be registered independently fo
 Duplicate keys are rejected within the same registered family at class-definition time. If a class omits `template_families`, it is not registered and does not add a new allowed key automatically.
 
 Unregistered section classes are still useful for replacing an already-allowed key in a specific template instance. For example, a one-off section with `key = "metadata_block"` can replace the default metadata block because that key is already allowed by the registered generic metadata section.
+
+### Defining new `ParsInitSection` classes
+
+Use this behavior when adding a reusable `pars_init` section class.
+
+1. Subclass `ParsInitSection`.
+2. Define a stable non-empty `key`.
+3. Add `template_families` if the key should become available automatically.
+4. Add `section_tags` if the section should be discoverable by tag helpers.
+5. Make no-argument construction work if the section will be used by `sections_for_tag(...)`.
+6. Implement `render(context)` directly, or set `matlab_code` and use `get_init_substitutions()` / `get_render_substitutions()`.
+
+Minimal registered section:
+
+```python
+from DEBtoolPyIF.estimation_files.pars_init_base import ParsInitSection
+
+
+class CustomParsInitCommentSection(ParsInitSection):
+    key = "custom_comment"
+    template_families = ("pars_init",)
+    section_tags = ("metadata",)
+    matlab_code = "% custom pars_init note"
+```
+
+Use `template_families = ("pars_init",)` when the section should be available to generic `pars_init` templates and inherited by multitier templates.
+
+Use `template_families = ("multitier_pars_init",)` when the section should only be available to multitier `pars_init` templates.
 
 ### Required sections vs default sections
 
@@ -626,7 +736,7 @@ For one tier estimation target, the current flow is:
 2. It builds `MultitierGenerationContext.from_tier_estimator(...)`.
 3. `write_tier_estimation_files(...)` iterates over the tier's four template objects.
 4. `mydata` templates build derived state and render section content from both context and state.
-5. `pars_init` templates render their slots directly from the context, and `run` templates render their registered sections directly from the context.
+5. `pars_init` and `run` templates render their registered sections directly from the context.
 6. `predict` is copied or rendered according to its template strategy.
 7. The writer stores the final MATLAB files in the current output folder.
 
@@ -644,13 +754,13 @@ from DEBtoolPyIF.estimation_files import EstimationTemplates, CopyFileTemplate
 from DEBtoolPyIF.estimation_files.algorithms import NelderMead
 from DEBtoolPyIF.multitier import (
     MultitierMyDataSubstitutionTemplate,
-    MultitierParsInitSubstitutionTemplate,
+    RegistryMultitierParsInitProgrammaticTemplate,
 )
 
 estimation_templates = {
     "diet": EstimationTemplates(
         mydata=MultitierMyDataSubstitutionTemplate(...),
-        pars_init=MultitierParsInitSubstitutionTemplate(...),
+        pars_init=RegistryMultitierParsInitProgrammaticTemplate(...),
         predict=CopyFileTemplate(...),
         run=NelderMead(),
     ),

@@ -13,16 +13,20 @@ from .pars_init_sections import (
     ParsInitPackingSection,
 )
 from .templates import ProgrammaticTemplate, SubstitutionTemplate
-from ..parameters import ParameterRegistry
+from ..parameters import ParameterRegistry, get_parameter_registry_of_typified_model
 
 
 def build_registry_pars_init_sections(
     *,
     parameter_registry: ParameterRegistry | None = None,
-    model: str = "nat",
+    model: str = "std",
     include_addchem: bool = True,
 ) -> tuple[ParsInitSection, ...]:
-    resolved_registry = ParameterRegistry.default() if parameter_registry is None else parameter_registry
+    resolved_registry = (
+        parameter_registry
+        if parameter_registry is not None
+        else get_parameter_registry_of_typified_model(model)
+    )
     return (
         ParsInitFunctionHeader(),
         AddModelMedatadaSection(model=model),
@@ -122,7 +126,7 @@ class RegistryParsInitProgrammaticTemplate(ParsInitProgrammaticTemplate):
         self,
         *,
         parameter_registry: ParameterRegistry | None = None,
-        model: str = "nat",
+        model: str = "std",
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
@@ -166,7 +170,7 @@ class RegistryParsInitSubstitutionTemplate(ParsInitSubstitutionTemplate):
         *,
         source: str | Path,
         parameter_registry: ParameterRegistry | None = None,
-        model: str = "nat",
+        model: str = "std",
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:

@@ -57,7 +57,7 @@ class InitializeParametersSection(ParsInitSection):
         *,
         parameter_registry: ParameterRegistry | None = None,
     ) -> None:
-        self.parameter_registry = ParameterRegistry.default() if parameter_registry is None else parameter_registry
+        self.parameter_registry = ParameterRegistry() if parameter_registry is None else parameter_registry
 
     def render(self, context) -> str:
         registry = self.parameter_registry

@@ -81,7 +81,7 @@ class RegistryMultitierParsInitProgrammaticTemplate(MultitierParsInitProgrammati
         self,
         *,
         parameter_registry: ParameterRegistry | None = None,
-        model: str = "nat",
+        model: str = "std",
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
@@ -116,7 +116,7 @@ class MultitierParsInitSubstitutionTemplate(MultitierParsInitTemplate, ParsInitS
 def build_registry_multitier_pars_init_sections(
     *,
     parameter_registry: ParameterRegistry | None = None,
-    model: str = "nat",
+    model: str = "std",
     include_addchem: bool = True,
 ) -> tuple[ParsInitSection, ...]:
     sections = list(
@@ -138,7 +138,7 @@ class RegistryMultitierParsInitSubstitutionTemplate(MultitierParsInitSubstitutio
         *,
         source: str | Path,
         parameter_registry: ParameterRegistry | None = None,
-        model: str = "nat",
+        model: str = "std",
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:

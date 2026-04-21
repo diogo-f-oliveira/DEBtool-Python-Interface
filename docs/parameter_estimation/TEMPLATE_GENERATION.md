@@ -133,7 +133,7 @@ The template layer is intentionally split by behavior.
 
 - Target: generic `pars_init`.
 - Style: programmatic.
-- Customization: provide a parameter registry, model name, or addchem flag to build the default section set. The model defaults to `"nat"` so no typified-model filters are implied unless selected explicitly.
+- Customization: provide a parameter registry, model name, or addchem flag to build the default section set. The model defaults to `"std"`. Built-in registries are available for `"std"` and `"stx"`; `"nat"` requires an explicit custom `ParameterRegistry`.
 - Current use: automated parameter-struct construction from parameter definitions.
 - Current maturity: usable, but still evolving compared with `mydata`.
 
@@ -141,7 +141,7 @@ The template layer is intentionally split by behavior.
 
 - Target: generic `pars_init`.
 - Style: placeholder-substitution.
-- Customization: provide a parameter registry, model name, or addchem flag while rendering through source placeholders. The model defaults to `"nat"`.
+- Customization: provide a parameter registry, model name, or addchem flag while rendering through source placeholders. The model defaults to `"std"` and `"nat"` requires an explicit custom registry.
 - Current use: source-backed automated parameter-struct construction from parameter definitions.
 - Current maturity: usable, still evolving.
 
@@ -165,7 +165,7 @@ The template layer is intentionally split by behavior.
 
 - Target: multitier `pars_init`.
 - Style: programmatic.
-- Customization: provide a parameter registry, model name, or addchem flag while using programmatic section assembly. The model defaults to `"nat"`.
+- Customization: provide a parameter registry, model name, or addchem flag while using programmatic section assembly. The model defaults to `"std"` and `"nat"` requires an explicit custom registry.
 - Current use: preferred multitier `pars_init` generation when parameter definitions are available in Python.
 - Current maturity: usable, still evolving.
 
@@ -181,7 +181,7 @@ The template layer is intentionally split by behavior.
 
 - Target: multitier `pars_init`.
 - Style: placeholder-substitution.
-- Customization: provide a parameter registry, model name, or addchem flag while rendering multitier source placeholders. The model defaults to `"nat"`.
+- Customization: provide a parameter registry, model name, or addchem flag while rendering multitier source placeholders. The model defaults to `"std"` and `"nat"` requires an explicit custom registry.
 - Current use: source-backed multitier parameter generation when species-specific parameter definitions are needed.
 - Current maturity: usable, still evolving.
 
@@ -266,9 +266,11 @@ The multitier family adds `MultitierParsInitLoopsSection` through `template_fami
 
 Reusable parameter metadata lives in `DEBtoolPyIF.parameters.definitions`.
 
-- Import named DEBtool-style objects when code needs direct reuse, for example `ParameterDefinitions.p_Am` or `from DEBtoolPyIF.parameters.definitions import p_Am`.
-- Use `ParameterDefinitions.get(name)` or `get_parameter_definition(name)` for dynamic lookup.
-- Use `ParameterRegistry.default()` for the reusable default registry.
+- Import named DEBtool-style objects when code needs direct reuse, for example `from DEBtoolPyIF.parameters import p_Am`.
+- Use `get_parameter_definition(name)` or `require_parameter_definition(name)` for dynamic lookup.
+- Use `get_parameter_registry_of_typified_model("std")` or `...("stx")` for built-in typified-model registries.
+- Use `ParameterRegistry(...)` directly for custom or `nat` workflows.
+- Use `DEBtoolPyIF.parameters` directly only when you specifically need the concrete typified registry classes.
 - Add non-default reusable definitions, such as `p_Am`, `t_0`, `E_Hx`, and `del_M`, deliberately when a model or example needs them.
 - Define species- or workflow-specific parameters, such as Angus-only female parameters, next to that workflow and add them to the registry there.
 

@@ -14,6 +14,7 @@ This approach is useful when individual-level datasets are too sparse to support
 
 
 You can find more details on the multitier workflow and its implementation in [`docs/parameter_estimation/`](docs/parameter_estimation/). The [`README.md`](docs/parameter_estimation/README.md) inside provides a description of what each document covers and how they relate to each other.
+For a compact map of the source tree and module responsibilities, see [`docs/PACKAGE_STRUCTURE.md`](docs/PACKAGE_STRUCTURE.md).
 For a concrete example of a multitier DEB estimation, see [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/). 
 
 ## Quick Start Imports

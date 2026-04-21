@@ -13,12 +13,16 @@
 
 ## Environment And Command Defaults
 - Always run Python commands in the `debtoolpyif_dev` conda environment.
+- Prefer keeping `DEBtoolPyIF` installed in editable mode in that environment from the current repo root:
+  - `conda run -n debtoolpyif_dev python -m pip uninstall DEBtoolPyIF`
+  - `conda run -n debtoolpyif_dev python -m pip install -e .`
 - Always run tests via conda environment:
   - `conda run -n debtoolpyif_dev python -m pytest ...`
 - If a command uses package imports, prefer:
   - `conda run -n debtoolpyif_dev python ...`
-- If a command needs `PYTHONPATH`, use:
-  - `conda run -n debtoolpyif_dev python -m pytest ...` with `src` layout assumptions handled by project config or explicit env var only when needed.
+- `pytest.ini` adds `src` to the pytest import path for repo-root test runs, so the standard pytest commands should work without setting `PYTHONPATH` manually.
+- If a non-pytest command needs import-path help from the repo root before the editable install is repaired, set it explicitly in PowerShell:
+  - `$env:PYTHONPATH=(Resolve-Path src); conda run -n debtoolpyif_dev python ...`
 
 ## Testing Expectations
 - For code changes, run relevant tests first, then broader tests if needed.
@@ -26,6 +30,8 @@
   - `conda run -n debtoolpyif_dev python -m pytest tests/integration -m integration -q`
 - When feasible, run:
   - `conda run -n debtoolpyif_dev python -m pytest -q`
+- MATLAB-backed integration tests depend on MATLAB plus the expected DEBtool/add-my-pet functions being available on the MATLAB path.
+- In partially configured environments, those tests may be skipped when MATLAB cannot be launched or fail with missing MATLAB-function errors such as `check_my_pet`.
 - Keep unit tests fast and isolated from example folders and MATLAB.
 - Keep integration tests aligned with the shared example workflow contract under `examples/`.
 - When changing `examples/` structure, `load_data`, `create_tier_structure`, or `DataCollection` semantics, review and update both unit and integration tests together.

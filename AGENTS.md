@@ -11,6 +11,12 @@
 - Prefer preserving compatibility with existing example workflows unless explicitly requested otherwise.
 - Current status is pre-1.0; prioritize reliability and API clarity to support a near-term major release.
 
+## Package Map
+- For the current package/module layout under `src/DEBtoolPyIF`, see:
+  - `docs/PACKAGE_STRUCTURE.md`
+- Use that document when deciding where code belongs or which subpackage owns a responsibility boundary.
+- Use the `docs/parameter_estimation/` documents when you need the deeper multitier workflow or template-generation architecture.
+
 ## Environment And Command Defaults
 - Always run Python commands in the `debtoolpyif_dev` conda environment.
 - Prefer keeping `DEBtoolPyIF` installed in editable mode in that environment from the current repo root:

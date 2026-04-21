@@ -4,6 +4,8 @@ This folder contains shared documentation for humans and agents who are building
 
 Start here if the working environment only has the installed package and the user's own project files. Do not assume the repo `examples/` folder is available at runtime.
 
+For a compact map of the package layout outside the estimation-specific docs in this folder, see [`../PACKAGE_STRUCTURE.md`](../PACKAGE_STRUCTURE.md).
+
 ## What This Package Exposes
 
 For the main parameter estimation workflow, prefer the curated top-level imports:

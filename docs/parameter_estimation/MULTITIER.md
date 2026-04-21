@@ -264,7 +264,7 @@ What changes in the current architecture is how those files are produced:
 - `mydata` is rendered from the most mature multitier template family
 - `pars_init` is rendered from multitier-aware parameter-expansion templates
 - `predict` is usually copied from a workflow-authored MATLAB source
-- `run` is rendered from generic slot-based run templates
+- `run` is rendered from registry-backed run templates or algorithm templates
 
 For each tier estimation target, these four templates are rendered into one concrete output folder.
 

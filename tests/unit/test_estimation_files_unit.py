@@ -21,6 +21,7 @@ from DEBtoolPyIF.estimation_files import (
     NumericEstimOption,
     ParsInitProgrammaticTemplate,
     ParsInitChemicalParametersSection,
+    ParsInitReferenceTemperatureSection,
     ParsInitSection,
     ParsInitSubstitutionTemplate,
     ProgrammaticTemplate,
@@ -1023,6 +1024,7 @@ def test_pars_init_template_required_sections_returns_complete_valid_tuple():
     assert tuple(section.key for section in template.get_sections()) == (
         "function_header",
         "model_metadata",
+        "reference_temperature",
         "base_parameters",
         "addchem",
         "packing",
@@ -1037,6 +1039,7 @@ def test_multitier_pars_init_template_required_sections_returns_complete_valid_t
     assert tuple(section.key for section in template.get_sections()) == (
         "function_header",
         "model_metadata",
+        "reference_temperature",
         "base_parameters",
         "addchem",
         "tier_parameter_loops",
@@ -1150,12 +1153,36 @@ def test_pars_init_chemical_parameters_section_is_auto_registered():
     assert "chemical_parameters" in ParsInitTemplate.allowed_section_keys()
 
 
+def test_pars_init_reference_temperature_section_renders_default_kelvin_value():
+    rendered = ParsInitReferenceTemperatureSection().render(SimpleNamespace())
+
+    assert rendered == (
+        "par.T_ref = 293.15; free.T_ref = 0; units.T_ref = 'K'; "
+        "label.T_ref = 'Reference temperature';"
+    )
+
+
+def test_pars_init_reference_temperature_section_converts_celsius_at_construction_time():
+    section = ParsInitReferenceTemperatureSection(t_ref=20, is_celsius=True)
+
+    rendered = section.render(SimpleNamespace(unused_value="ignored"))
+
+    assert rendered == (
+        "par.T_ref = C2K(20); free.T_ref = 0; units.T_ref = 'K'; "
+        "label.T_ref = 'Reference temperature';"
+    )
+
+
 def test_pars_init_template_accepts_explicit_chemical_parameters_section():
     template = ParsInitProgrammaticTemplate(
         sections=(
             InlineParsInitSection(key="function_header", content="function test"),
             InlineParsInitSection(key="model_metadata", content="metaPar.model = 'std';"),
-            InlineParsInitSection(key="base_parameters", content="par.T_ref = 293.15;"),
+            InlineParsInitSection(
+                key="reference_temperature",
+                content="par.T_ref = 293.15; free.T_ref = 0; units.T_ref = 'K'; label.T_ref = 'Reference temperature';",
+            ),
+            InlineParsInitSection(key="base_parameters", content=""),
             InlineParsInitSection(key="addchem", content="[par, units, label, free] = addchem(...);"),
             ParsInitChemicalParametersSection(
                 chemical_parameter_values=(
@@ -1237,7 +1264,6 @@ def test_parameter_definition_catalog_views_stay_in_sync():
     assert all_names == tuple(PARAMETER_DEFINITIONS_BY_NAME.keys())
     assert all(PARAMETER_DEFINITIONS_BY_NAME[name] is definition for name, definition in zip(all_names, ALL_PARAMETER_DEFINITIONS))
     assert tuple(definition.name for definition in DEFAULT_PARAMETER_DEFINITIONS) == (
-        "T_ref",
         "T_A",
         "z",
         "F_m",
@@ -1535,9 +1561,9 @@ def test_std_parameter_registry_uses_default_definitions_only():
     parameter_names = {definition.name for definition in DEFAULT_PARAMETER_DEFINITIONS}
     registry = StdParameterRegistry()
 
-    assert "T_ref" in parameter_names
+    assert "T_ref" not in parameter_names
     assert "kap_X" in parameter_names
-    assert registry.get("T_ref").default_value == 293.15
+    assert registry.get("T_ref") is None
     assert registry.get("kap_X").units == "-"
     for parameter_name in ("p_Am", "t_0", "E_Hx", "del_M", "p_Am_f", "E_Hp_f"):
         assert parameter_name not in parameter_names
@@ -1548,8 +1574,10 @@ def test_stx_parameter_registry_extends_std_with_stx_specific_definitions():
     std_registry = StdParameterRegistry()
     stx_registry = StxParameterRegistry()
 
-    for parameter_name in ("T_ref", "kap_X", "E_Hp"):
+    for parameter_name in ("kap_X", "E_Hp"):
         assert stx_registry.require(parameter_name) is std_registry.require(parameter_name)
+    assert std_registry.get("T_ref") is None
+    assert stx_registry.get("T_ref") is None
     assert stx_registry.require("E_Hx") is E_Hx
     assert stx_registry.require("t_0") is t_0
     assert stx_registry.get("p_Am") is None
@@ -1654,6 +1682,32 @@ def test_pars_init_template_requires_explicit_registry_for_parameter_rendering()
 
     with pytest.raises(ValueError, match="Provide a ParameterRegistry"):
         ParsInitProgrammaticTemplate().render(context)
+
+
+def test_pars_init_template_rejects_legacy_t_ref_in_full_pars_dict():
+    context = SimpleNamespace(
+        species_name="Test_species",
+        full_pars_dict={"T_ref": 300.15},
+        tier_pars=[],
+        get_file_sections=lambda file_key: (),
+    )
+
+    with pytest.raises(ValueError, match="ParsInitReferenceTemperatureSection"):
+        RegistryParsInitProgrammaticTemplate().render(context)
+
+
+def test_pars_init_template_rejects_legacy_t_ref_in_parameter_registry():
+    parameter_registry = StdParameterRegistry()
+    parameter_registry.add(require_parameter_definition("T_ref"))
+    context = SimpleNamespace(
+        species_name="Test_species",
+        full_pars_dict={"kap_X": 0.25},
+        tier_pars=[],
+        get_file_sections=lambda file_key: (),
+    )
+
+    with pytest.raises(ValueError, match="ParsInitReferenceTemperatureSection"):
+        RegistryParsInitProgrammaticTemplate(parameter_registry=parameter_registry, model="nat").render(context)
 
 
 def test_pars_init_template_accepts_custom_parameter_registry():

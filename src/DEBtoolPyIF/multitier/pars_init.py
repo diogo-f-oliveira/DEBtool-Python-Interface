@@ -7,6 +7,7 @@ from pathlib import Path
 from ..estimation_files.pars_init import (
     ParsInitSubstitutionTemplate,
     ParsInitTemplate,
+    _merge_registry_pars_init_sections,
     build_registry_pars_init_sections,
 )
 from ..estimation_files.pars_init_base import ParsInitSection
@@ -85,14 +86,13 @@ class RegistryMultitierParsInitProgrammaticTemplate(MultitierParsInitProgrammati
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        final_sections = (
+        final_sections = _merge_registry_pars_init_sections(
             build_registry_multitier_pars_init_sections(
                 parameter_registry=parameter_registry,
                 model=model,
                 include_addchem=include_addchem,
-            )
-            if sections is None
-            else tuple(sections)
+            ),
+            sections,
         )
         super().__init__(sections=final_sections)
 
@@ -145,13 +145,12 @@ class RegistryMultitierParsInitSubstitutionTemplate(MultitierParsInitSubstitutio
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        final_sections = (
+        final_sections = _merge_registry_pars_init_sections(
             build_registry_multitier_pars_init_sections(
                 parameter_registry=parameter_registry,
                 model=model,
                 include_addchem=include_addchem,
-            )
-            if sections is None
-            else tuple(sections)
+            ),
+            sections,
         )
         super().__init__(source=source, sections=final_sections)

@@ -133,7 +133,7 @@ The template layer is intentionally split by behavior.
 
 - Target: generic `pars_init`.
 - Style: programmatic.
-- Customization: provide a parameter registry, model name, or addchem flag to build the default section set. The model defaults to `"std"`. Built-in registries are available for `"std"` and `"stx"`; `"nat"` requires an explicit custom `ParameterRegistry`.
+- Customization: provide a parameter registry, model name, or addchem flag to build the default section set. The model defaults to `"std"`. Built-in registries are available for `"std"` and `"stx"`; `"nat"` requires an explicit custom `ParameterRegistry`. When `sections=...` is supplied, those sections are inserted before `packing`; they do not replace the registry-built core sections.
 - Current use: automated parameter-struct construction from parameter definitions.
 - Current maturity: usable, but still evolving compared with `mydata`.
 
@@ -141,7 +141,7 @@ The template layer is intentionally split by behavior.
 
 - Target: generic `pars_init`.
 - Style: placeholder-substitution.
-- Customization: provide a parameter registry, model name, or addchem flag while rendering through source placeholders. The model defaults to `"std"` and `"nat"` requires an explicit custom registry.
+- Customization: provide a parameter registry, model name, or addchem flag while rendering through source placeholders. The model defaults to `"std"` and `"nat"` requires an explicit custom registry. When `sections=...` is supplied, those sections are added alongside the registry-built sections rather than replacing them.
 - Current use: source-backed automated parameter-struct construction from parameter definitions.
 - Current maturity: usable, still evolving.
 
@@ -165,7 +165,7 @@ The template layer is intentionally split by behavior.
 
 - Target: multitier `pars_init`.
 - Style: programmatic.
-- Customization: provide a parameter registry, model name, or addchem flag while using programmatic section assembly. The model defaults to `"std"` and `"nat"` requires an explicit custom registry.
+- Customization: provide a parameter registry, model name, or addchem flag while using programmatic section assembly. The model defaults to `"std"` and `"nat"` requires an explicit custom registry. When `sections=...` is supplied, those sections are inserted after the built multitier loop block and before `packing`.
 - Current use: preferred multitier `pars_init` generation when parameter definitions are available in Python.
 - Current maturity: usable, still evolving.
 
@@ -181,7 +181,7 @@ The template layer is intentionally split by behavior.
 
 - Target: multitier `pars_init`.
 - Style: placeholder-substitution.
-- Customization: provide a parameter registry, model name, or addchem flag while rendering multitier source placeholders. The model defaults to `"std"` and `"nat"` requires an explicit custom registry.
+- Customization: provide a parameter registry, model name, or addchem flag while rendering multitier source placeholders. The model defaults to `"std"` and `"nat"` requires an explicit custom registry. When `sections=...` is supplied, those sections augment the registry-built multitier sections instead of replacing them.
 - Current use: source-backed multitier parameter generation when species-specific parameter definitions are needed.
 - Current maturity: usable, still evolving.
 
@@ -222,7 +222,7 @@ The package uses sections to keep file-family logic composable.
 - Used by `pars_init`.
 - Each section renders one canonical `pars_init` key.
 - Section classes can opt into automatic discovery by declaring `template_families` and optional `section_tags`.
-- Required base `pars_init` keys are `function_header`, `model_metadata`, `base_parameters`, `addchem`, and `packing`.
+- Required base `pars_init` keys are `function_header`, `model_metadata`, `reference_temperature`, `base_parameters`, `addchem`, and `packing`.
 - `allowed_section_keys()` is derived from the `ParsInitSection` registry.
 - Duplicate registered keys are rejected within the same template family.
 
@@ -256,6 +256,7 @@ Built-in generic pars-init sections include:
 
 - `ParsInitFunctionHeader`
 - `AddModelMedatadaSection`
+- `ParsInitReferenceTemperatureSection`
 - `InitializeParametersSection`
 - `ParsInitAddChemSection`
 - `ParsInitChemicalParametersSection`
@@ -271,6 +272,7 @@ Reusable parameter metadata lives in `DEBtoolPyIF.parameters.definitions`.
 - Use `get_parameter_definition(name)` or `require_parameter_definition(name)` for dynamic lookup.
 - Use `get_parameter_registry_of_typified_model("std")` or `...("stx")` for built-in typified-model registries.
 - Use `ParameterRegistry(...)` directly for custom or `nat` workflows.
+- `T_ref` remains available as a reusable parameter definition, but it is intentionally not part of the built-in default registries because default `pars_init` templates now render it through `ParsInitReferenceTemperatureSection`.
 - Use `DEBtoolPyIF.parameters` directly only when you specifically need the concrete typified registry classes.
 - Add non-default reusable definitions, such as `p_Am`, `t_0`, `E_Hx`, and `del_M`, deliberately when a model or example needs them.
 - Define species- or workflow-specific parameters, such as Angus-only female parameters, next to that workflow and add them to the registry there.
@@ -633,6 +635,10 @@ Use `template_families = ("pars_init",)` when the section should be available to
 
 Use `template_families = ("multitier_pars_init",)` when the section should only be available to multitier `pars_init` templates.
 
+For reference temperature, the built-in `ParsInitReferenceTemperatureSection` is the default helper. It renders `par.T_ref` as fixed MATLAB code at construction time, supports Kelvin or Celsius input, and replaces the older pattern of treating `T_ref` as a registry parameter.
+
+For registry-backed `pars_init` templates, the package always constructs the built-in core sections from the selected registry/model/addchem settings. Supplying `sections=...` to `RegistryParsInitProgrammaticTemplate`, `RegistryParsInitSubstitutionTemplate`, `RegistryMultitierParsInitProgrammaticTemplate`, or `RegistryMultitierParsInitSubstitutionTemplate` adds extra sections before `packing`; it does not replace the built section set. Duplicate keys that collide with built sections are rejected. Use the generic `ParsInitProgrammaticTemplate`, `ParsInitSubstitutionTemplate`, `MultitierParsInitProgrammaticTemplate`, or `MultitierParsInitSubstitutionTemplate` when a workflow needs full section replacement.
+
 For chemical overrides, the built-in `ParsInitChemicalParametersSection` is the preferred helper. It renders only the explicitly supplied chemical values and is intended to be inserted after `ParsInitAddChemSection()` when a workflow needs to override the defaults established by MATLAB `addchem(...)`.
 
 Example:
@@ -662,6 +668,32 @@ template = ParsInitProgrammaticTemplate(
 ```
 
 For source-backed templates, add `$chemical_parameters` to the MATLAB source and pass the same section explicitly. This section is opt-in; the default registry-backed `pars_init` builders do not include it automatically.
+
+Example of registry-backed augmentation:
+
+```python
+from DEBtoolPyIF.estimation_files import (
+    RegistryParsInitProgrammaticTemplate,
+    ParsInitSection,
+)
+from DEBtoolPyIF.parameters import ParameterRegistry, p_Am
+
+
+class CustomParsInitCommentSection(ParsInitSection):
+    key = "custom_comment"
+    template_families = ("pars_init",)
+    matlab_code = "% custom registry-backed block"
+
+
+template = RegistryParsInitProgrammaticTemplate(
+    parameter_registry=ParameterRegistry([p_Am]),
+    model="nat",
+    include_addchem=False,
+    sections=(CustomParsInitCommentSection(),),
+)
+```
+
+This keeps the built `function_header`, `model_metadata`, `reference_temperature`, `base_parameters`, and `packing` blocks, disables the rendered `addchem(...)` block, and inserts `custom_comment` immediately before `packing`.
 
 ### Required sections vs default sections
 

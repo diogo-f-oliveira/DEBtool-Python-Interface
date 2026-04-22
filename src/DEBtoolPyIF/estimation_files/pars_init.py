@@ -38,6 +38,44 @@ def build_registry_pars_init_sections(
     )
 
 
+def _merge_registry_pars_init_sections(
+    base_sections: tuple[ParsInitSection, ...],
+    extra_sections: tuple[ParsInitSection, ...] | None = None,
+) -> tuple[ParsInitSection, ...]:
+    if extra_sections is None:
+        return tuple(base_sections)
+
+    base_sections = tuple(base_sections)
+    extra_sections = tuple(extra_sections)
+    base_keys = {section.key for section in base_sections}
+    duplicate_keys: list[str] = []
+
+    for section in extra_sections:
+        if not isinstance(section, ParsInitSection):
+            raise TypeError(
+                "pars_init template sections must be ParsInitSection instances, "
+                f"not {type(section).__name__}."
+            )
+
+        if section.key in base_keys and section.key not in duplicate_keys:
+            duplicate_keys.append(section.key)
+
+    if duplicate_keys:
+        raise ValueError(
+            "Registry-backed pars_init templates only accept extra sections with new keys. "
+            "Duplicate built section keys are not allowed: "
+            + ", ".join(duplicate_keys)
+            + ". Use ParsInitProgrammaticTemplate, ParsInitSubstitutionTemplate, "
+            "MultitierParsInitProgrammaticTemplate, or MultitierParsInitSubstitutionTemplate "
+            "for full custom section replacement."
+        )
+
+    packing_index = next(
+        index for index, section in reversed(tuple(enumerate(base_sections))) if section.key == "packing"
+    )
+    return base_sections[:packing_index] + extra_sections + base_sections[packing_index:]
+
+
 class ParsInitTemplate:
     """Shared file-family behavior for pars_init template classes."""
 
@@ -133,14 +171,13 @@ class RegistryParsInitProgrammaticTemplate(ParsInitProgrammaticTemplate):
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        final_sections = (
+        final_sections = _merge_registry_pars_init_sections(
             build_registry_pars_init_sections(
                 parameter_registry=parameter_registry,
                 model=model,
                 include_addchem=include_addchem,
-            )
-            if sections is None
-            else tuple(sections)
+            ),
+            sections,
         )
         super().__init__(sections=final_sections)
 
@@ -177,13 +214,12 @@ class RegistryParsInitSubstitutionTemplate(ParsInitSubstitutionTemplate):
         include_addchem: bool = True,
         sections: tuple[ParsInitSection, ...] | None = None,
     ) -> None:
-        final_sections = (
+        final_sections = _merge_registry_pars_init_sections(
             build_registry_pars_init_sections(
                 parameter_registry=parameter_registry,
                 model=model,
                 include_addchem=include_addchem,
-            )
-            if sections is None
-            else tuple(sections)
+            ),
+            sections,
         )
         super().__init__(source=source, sections=final_sections)

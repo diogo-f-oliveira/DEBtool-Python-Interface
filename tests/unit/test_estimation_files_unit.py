@@ -1113,6 +1113,132 @@ def test_pars_init_source_template_allows_partial_placeholder_sets():
     )
 
 
+def test_registry_pars_init_programmatic_template_inserts_extra_sections_before_packing():
+    context = SimpleNamespace(
+        species_name="Test_species",
+        full_pars_dict={"p_Am": 12.5},
+        tier_pars=[],
+        get_file_sections=lambda file_key: (),
+    )
+
+    contents = RegistryParsInitProgrammaticTemplate(
+        parameter_registry=_pars_init_registry_with(p_Am),
+        model="nat",
+        include_addchem=False,
+        sections=(InlineParsInitSection(key="chemical_parameters", content="% custom extra"),),
+    ).render(context)
+
+    assert "metaPar.model = 'nat';" in contents
+    assert "par.p_Am = 12.5;" in contents
+    assert "[par, units, label, free] = addchem" not in contents
+    assert contents.index("% custom extra") < contents.index("txtPar.units = units;")
+
+
+def test_registry_pars_init_programmatic_template_rejects_duplicate_built_section_keys():
+    with pytest.raises(ValueError, match="Duplicate built section keys are not allowed: addchem"):
+        RegistryParsInitProgrammaticTemplate(
+            sections=(InlineParsInitSection(key="addchem", content="% duplicate addchem"),),
+        )
+
+
+def test_registry_pars_init_substitution_template_keeps_registry_behavior_when_extra_sections_are_supplied():
+    context = SimpleNamespace(
+        species_name="Test_species",
+        full_pars_dict={"p_Am": 12.5},
+        tier_pars=[],
+    )
+    source = "\n".join(
+        [
+            "$function_header",
+            "$model_metadata",
+            "$base_parameters",
+            "$addchem",
+            "$chemical_parameters",
+            "$packing",
+        ]
+    )
+
+    contents = RegistryParsInitSubstitutionTemplate(
+        source=source,
+        parameter_registry=_pars_init_registry_with(p_Am),
+        model="nat",
+        include_addchem=False,
+        sections=(InlineParsInitSection(key="chemical_parameters", content="% custom extra"),),
+    ).render(context)
+
+    assert "metaPar.model = 'nat';" in contents
+    assert "par.p_Am = 12.5;" in contents
+    assert "[par, units, label, free] = addchem" not in contents
+    assert "% custom extra" in contents
+
+
+def test_registry_multitier_pars_init_programmatic_template_inserts_extra_sections_before_packing():
+    context = SimpleNamespace(
+        species_name="Test_species",
+        full_pars_dict={"p_Am": 12.5},
+        tier_pars=["p_Am"],
+        tier_name="top",
+        entity_list=["entity_1"],
+        tier_par_init_values={"p_Am": {"entity_1": 1.0}},
+    )
+
+    contents = RegistryMultitierParsInitProgrammaticTemplate(
+        parameter_registry=_pars_init_registry_with(p_Am),
+        model="nat",
+        include_addchem=False,
+        sections=(InlineParsInitSection(key="chemical_parameters", content="% custom extra"),),
+    ).render(context)
+
+    assert "metaPar.model = 'nat';" in contents
+    assert "varname = [par_name '_' entity_id];" in contents
+    assert "[par, units, label, free] = addchem" not in contents
+    assert contents.index("% custom extra") < contents.index("txtPar.units = units;")
+
+
+def test_registry_multitier_pars_init_substitution_template_rejects_duplicate_built_section_keys():
+    with pytest.raises(ValueError, match="Duplicate built section keys are not allowed: tier_parameter_loops"):
+        RegistryMultitierParsInitSubstitutionTemplate(
+            source="$tier_parameter_loops\n$packing",
+            sections=(InlineParsInitSection(key="tier_parameter_loops", content="% duplicate loop"),),
+        )
+
+
+def test_registry_multitier_pars_init_substitution_template_keeps_registry_behavior_when_extra_sections_are_supplied():
+    context = SimpleNamespace(
+        species_name="Test_species",
+        full_pars_dict={"p_Am": 12.5},
+        tier_pars=["p_Am"],
+        tier_name="top",
+        entity_list=["entity_1"],
+        tier_par_init_values={"p_Am": {"entity_1": 1.0}},
+    )
+    source = "\n".join(
+        [
+            "$function_header",
+            "$model_metadata",
+            "$base_parameters",
+            "$addchem",
+            "$tier_parameter_loops",
+            "$chemical_parameters",
+            "$packing",
+        ]
+    )
+
+    contents = RegistryMultitierParsInitSubstitutionTemplate(
+        source=source,
+        parameter_registry=_pars_init_registry_with(p_Am),
+        model="nat",
+        include_addchem=False,
+        sections=(InlineParsInitSection(key="chemical_parameters", content="% custom extra"),),
+    ).render(context)
+
+    assert "metaPar.model = 'nat';" in contents
+    assert "par.p_Am = 12.5;" in contents
+    assert "varname = [par_name '_' entity_id];" in contents
+    assert "[par, units, label, free] = addchem" not in contents
+    assert "% custom extra" in contents
+
+
 def test_pars_init_chemical_parameters_section_renders_only_supplied_properties():
     section = ParsInitChemicalParametersSection(
         chemical_parameter_values=(

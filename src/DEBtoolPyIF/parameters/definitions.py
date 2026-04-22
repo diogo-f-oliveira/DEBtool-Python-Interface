@@ -80,7 +80,7 @@ def _register_builtin(
     return definition
 
 
-T_ref = _register_builtin("T_ref", "K", "Reference temperature", default_value=293.15, include_in_default=True)
+T_ref = _register_builtin("T_ref", "K", "Reference temperature", default_value=293.15)
 T_A = _register_builtin("T_A", "K", "Arrhenius temperature", default_value=8000, include_in_default=True)
 z = _register_builtin("z", "-", "zoom factor", default_value=13, include_in_default=True)
 F_m = _register_builtin(

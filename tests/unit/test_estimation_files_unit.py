@@ -20,6 +20,7 @@ from DEBtoolPyIF.estimation_files import (
     MyDataSubstitutionTemplate,
     NumericEstimOption,
     ParsInitProgrammaticTemplate,
+    ParsInitChemicalParametersSection,
     ParsInitSection,
     ParsInitSubstitutionTemplate,
     ProgrammaticTemplate,
@@ -63,6 +64,7 @@ from DEBtoolPyIF.estimation_files.mydata_metadata_sections import (
 from DEBtoolPyIF.estimation_files.mydata_packing_sections import PackingSection
 from DEBtoolPyIF.estimation_files.mydata_temperature_sections import TypicalTemperatureSection
 from DEBtoolPyIF.estimation_files.pars_init import ParsInitFunctionHeader, ParsInitTemplate
+from DEBtoolPyIF.estimation_files.pars_init_sections import ParsInitAddChemSection
 from DEBtoolPyIF.estimation_files.run_sections import RestartLoopSection
 from DEBtoolPyIF.multitier.pars_init import build_registry_multitier_pars_init_sections
 from DEBtoolPyIF.multitier import (
@@ -89,6 +91,7 @@ from DEBtoolPyIF.multitier.mydata_sections import (
 )
 from DEBtoolPyIF.parameters import (
     ALL_PARAMETER_DEFINITIONS,
+    ChemicalParameters,
     DEFAULT_PARAMETER_DEFINITIONS,
     PARAMETER_DEFINITIONS_BY_NAME,
     E_Hx,
@@ -97,10 +100,18 @@ from DEBtoolPyIF.parameters import (
     StdParameterRegistry,
     StxParameterRegistry,
     del_M,
+    get_chemical_parameters_of,
     get_parameter_definition,
     p_Am,
     require_parameter_definition,
     t_0,
+)
+from DEBtoolPyIF.parameters.chemical import (
+    ChemicalParameterValues,
+    ChemicalPotentialDefinition,
+    HydrogenChemicalIndexDefinition,
+    NitrogenChemicalIndexDefinition,
+    OxygenChemicalIndexDefinition,
 )
 import DEBtoolPyIF.parameters.registry as parameter_registry_module
 import DEBtoolPyIF.parameters.definitions as parameter_definitions_module
@@ -1097,6 +1108,88 @@ def test_pars_init_source_template_allows_partial_placeholder_sets():
     )
 
 
+def test_pars_init_chemical_parameters_section_renders_only_supplied_properties():
+    chemical_parameters = get_chemical_parameters_of("N")
+    section = ParsInitChemicalParametersSection(
+        chemical_parameter_values=(
+            ChemicalParameterValues(
+                chemical_parameters=chemical_parameters,
+                mu=518181,
+                n_H=2.216,
+            ),
+        )
+    )
+
+    rendered = section.render(SimpleNamespace())
+
+    assert "par.mu_N = 518181;" in rendered
+    assert "free.mu_N = 0;" in rendered
+    assert "units.mu_N = 'J/ mol';" in rendered
+    assert "label.mu_N = 'chem. potential of n-waste';" in rendered
+    assert "par.n_HN = 2.216;" in rendered
+    assert "free.n_HN = 0;" in rendered
+    assert "par.n_ON" not in rendered
+    assert "par.n_NN" not in rendered
+
+
+def test_pars_init_chemical_parameters_section_renders_empty_string_without_overrides():
+    assert ParsInitChemicalParametersSection().render(SimpleNamespace()) == ""
+
+
+def test_pars_init_chemical_parameters_section_rejects_non_value_entries():
+    with pytest.raises(TypeError, match="ChemicalParameterValues instances"):
+        ParsInitChemicalParametersSection(chemical_parameter_values=("bad",))
+
+
+def test_pars_init_chemical_parameters_section_is_auto_registered():
+    assert "chemical_parameters" in ParsInitTemplate.allowed_section_keys()
+
+
+def test_pars_init_template_accepts_explicit_chemical_parameters_section():
+    chemical_parameters = get_chemical_parameters_of("N")
+    template = ParsInitProgrammaticTemplate(
+        sections=(
+            InlineParsInitSection(key="function_header", content="function test"),
+            InlineParsInitSection(key="model_metadata", content="metaPar.model = 'std';"),
+            InlineParsInitSection(key="base_parameters", content="par.T_ref = 293.15;"),
+            InlineParsInitSection(key="addchem", content="[par, units, label, free] = addchem(...);"),
+            ParsInitChemicalParametersSection(
+                chemical_parameter_values=(
+                    ChemicalParameterValues(chemical_parameters=chemical_parameters, n_N=0.897),
+                )
+            ),
+            InlineParsInitSection(key="packing", content="end"),
+        )
+    )
+
+    rendered = template.render(SimpleNamespace())
+
+    assert "par.n_NN = 0.897;" in rendered
+    assert "free.n_NN = 0;" in rendered
+
+
+def test_pars_init_source_template_accepts_explicit_chemical_parameters_section():
+    chemical_parameters = get_chemical_parameters_of("N")
+    template = ParsInitSubstitutionTemplate(
+        source="$function_header\n$addchem\n$chemical_parameters\n$packing",
+        sections=(
+            ParsInitFunctionHeader(species_name="Test_species"),
+            ParsInitAddChemSection(),
+            ParsInitChemicalParametersSection(
+                chemical_parameter_values=(
+                    ChemicalParameterValues(chemical_parameters=chemical_parameters, n_O=0.594),
+                )
+            ),
+            InlineParsInitSection(key="packing", content="end"),
+        ),
+    )
+
+    rendered = template.render(SimpleNamespace(species_name="Ignored"))
+
+    assert "function [par, metaPar, txtPar] = pars_init_Test_species(metaData)" in rendered
+    assert "par.n_ON = 0.594;" in rendered
+
+
 def test_pars_init_template_rejects_missing_required_sections():
     with pytest.raises(ValueError, match="Missing required pars_init sections"):
         ParsInitProgrammaticTemplate(sections=(InlineParsInitSection(key="function_header", content="header"),))
@@ -1176,7 +1269,81 @@ def test_parameters_package_all_excludes_individual_builtin_definition_names():
     assert "StxParameterRegistry" in parameters_package.__all__
     assert "get_parameter_definition" in parameters_package.__all__
     assert "require_parameter_definition" in parameters_package.__all__
+    assert "ChemicalParameters" in parameters_package.__all__
+    assert "get_chemical_parameters_of" in parameters_package.__all__
     assert builtin_names.isdisjoint(parameters_package.__all__)
+
+
+def test_chemical_parameter_definition_classes_derive_metadata_from_compound():
+    mu = ChemicalPotentialDefinition("N", "n-waste", default_value=518181)
+    n_h = HydrogenChemicalIndexDefinition("N", "n-waste", default_value=2.216)
+    n_o = OxygenChemicalIndexDefinition("N", "n-waste", default_value=0.594)
+    n_n = NitrogenChemicalIndexDefinition("N", "n-waste", default_value=0.897)
+
+    assert isinstance(mu, ParameterDefinition)
+    assert isinstance(n_h, ParameterDefinition)
+    assert isinstance(n_o, ParameterDefinition)
+    assert isinstance(n_n, ParameterDefinition)
+    assert (
+        mu.name,
+        mu.units,
+        mu.label,
+        mu.default_value,
+        mu.default_free,
+    ) == ("mu_N", "J/ mol", "chem. potential of n-waste", 518181, 0)
+    assert (
+        n_h.name,
+        n_h.units,
+        n_h.label,
+        n_h.default_value,
+        n_h.default_free,
+    ) == ("n_HN", "-", "chem. index of hydrogen in n-waste", 2.216, 0)
+    assert (
+        n_o.name,
+        n_o.units,
+        n_o.label,
+        n_o.default_value,
+        n_o.default_free,
+    ) == ("n_ON", "-", "chem. index of oxygen in n-waste", 0.594, 0)
+    assert (
+        n_n.name,
+        n_n.units,
+        n_n.label,
+        n_n.default_value,
+        n_n.default_free,
+    ) == ("n_NN", "-", "chem. index of nitrogen in n-waste", 0.897, 0)
+
+
+def test_get_chemical_parameters_of_returns_grouped_chemical_parameters():
+    chemical_parameters = get_chemical_parameters_of(" N ")
+
+    assert isinstance(chemical_parameters, ChemicalParameters)
+    assert chemical_parameters.compound_symbol == "N"
+    assert chemical_parameters.compound_name == "n-waste"
+    assert chemical_parameters.definitions == (
+        chemical_parameters.mu,
+        chemical_parameters.n_H,
+        chemical_parameters.n_O,
+        chemical_parameters.n_N,
+    )
+    assert tuple(definition.name for definition in chemical_parameters.as_tuple()) == (
+        "mu_N",
+        "n_HN",
+        "n_ON",
+        "n_NN",
+    )
+
+
+def test_get_chemical_parameters_of_accepts_standard_names_and_aliases():
+    assert get_chemical_parameters_of("food").compound_symbol == "X"
+    assert get_chemical_parameters_of("faeces").compound_symbol == "P"
+    assert get_chemical_parameters_of("feces").compound_symbol == "P"
+    assert get_chemical_parameters_of("carbon dioxide").compound_symbol == "C"
+
+
+def test_get_chemical_parameters_of_rejects_unknown_compounds():
+    with pytest.raises(ValueError, match="Unknown chemical compound 'bad'"):
+        get_chemical_parameters_of("bad")
 
 
 def test_parameter_definition_replace_preserves_unspecified_fields():

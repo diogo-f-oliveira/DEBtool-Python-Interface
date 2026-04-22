@@ -138,6 +138,7 @@ f = _register_builtin(
 p_Am = _register_builtin("p_Am", "J/d.cm^2", "Surface-specific maximum assimilation rate")
 t_0 = _register_builtin("t_0", "d", "time at start development")
 del_M = _register_builtin("del_M", "-", "shape coefficent")
+V_0 = _register_builtin("V_0", "cm^3", "initial structure at fertilization")
 
 # TODO: Add classes for parameters that often have variants, e.g., maturity levels, food levels, chemical parameters
 

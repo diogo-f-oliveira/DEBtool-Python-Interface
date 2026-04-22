@@ -100,6 +100,7 @@ from DEBtoolPyIF.parameters import (
     StdParameterRegistry,
     StxParameterRegistry,
     del_M,
+    get_chemical_parameter_values_of,
     get_chemical_parameters_of,
     get_parameter_definition,
     p_Am,
@@ -1110,11 +1111,11 @@ def test_pars_init_source_template_allows_partial_placeholder_sets():
 
 
 def test_pars_init_chemical_parameters_section_renders_only_supplied_properties():
-    chemical_parameters = get_chemical_parameters_of("N")
     section = ParsInitChemicalParametersSection(
         chemical_parameter_values=(
-            ChemicalParameterValues(
-                chemical_parameters=chemical_parameters,
+            ChemicalParameterValues.from_compound(
+                compound_symbol="N",
+                compound_name="n-waste",
                 mu=518181,
                 n_C=1,
                 n_H=2.216,
@@ -1150,7 +1151,6 @@ def test_pars_init_chemical_parameters_section_is_auto_registered():
 
 
 def test_pars_init_template_accepts_explicit_chemical_parameters_section():
-    chemical_parameters = get_chemical_parameters_of("N")
     template = ParsInitProgrammaticTemplate(
         sections=(
             InlineParsInitSection(key="function_header", content="function test"),
@@ -1159,7 +1159,11 @@ def test_pars_init_template_accepts_explicit_chemical_parameters_section():
             InlineParsInitSection(key="addchem", content="[par, units, label, free] = addchem(...);"),
             ParsInitChemicalParametersSection(
                 chemical_parameter_values=(
-                    ChemicalParameterValues(chemical_parameters=chemical_parameters, n_N=0.897),
+                    ChemicalParameterValues.from_compound(
+                        compound_symbol="N",
+                        compound_name="n-waste",
+                        n_N=0.897,
+                    ),
                 )
             ),
             InlineParsInitSection(key="packing", content="end"),
@@ -1173,7 +1177,6 @@ def test_pars_init_template_accepts_explicit_chemical_parameters_section():
 
 
 def test_pars_init_source_template_accepts_explicit_chemical_parameters_section():
-    chemical_parameters = get_chemical_parameters_of("N")
     template = ParsInitSubstitutionTemplate(
         source="$function_header\n$addchem\n$chemical_parameters\n$packing",
         sections=(
@@ -1181,7 +1184,11 @@ def test_pars_init_source_template_accepts_explicit_chemical_parameters_section(
             ParsInitAddChemSection(),
             ParsInitChemicalParametersSection(
                 chemical_parameter_values=(
-                    ChemicalParameterValues(chemical_parameters=chemical_parameters, n_O=0.594),
+                    ChemicalParameterValues.from_compound(
+                        compound_symbol="N",
+                        compound_name="n-waste",
+                        n_O=0.594,
+                    ),
                 )
             ),
             InlineParsInitSection(key="packing", content="end"),
@@ -1274,6 +1281,7 @@ def test_parameters_package_all_excludes_individual_builtin_definition_names():
     assert "get_parameter_definition" in parameters_package.__all__
     assert "require_parameter_definition" in parameters_package.__all__
     assert "ChemicalParameters" in parameters_package.__all__
+    assert "get_chemical_parameter_values_of" in parameters_package.__all__
     assert "get_chemical_parameters_of" in parameters_package.__all__
     assert builtin_names.isdisjoint(parameters_package.__all__)
 
@@ -1360,6 +1368,104 @@ def test_get_chemical_parameters_of_accepts_standard_names_and_aliases():
 def test_get_chemical_parameters_of_rejects_unknown_compounds():
     with pytest.raises(ValueError, match="Unknown chemical compound 'bad'"):
         get_chemical_parameters_of("bad")
+
+
+def test_get_chemical_parameter_values_of_returns_food_defaults():
+    chemical_values = get_chemical_parameter_values_of("food")
+
+    assert chemical_values.chemical_parameters.compound_symbol == "X"
+    assert chemical_values.chemical_parameters.compound_name == "food"
+    assert (
+        chemical_values.mu,
+        chemical_values.n_C,
+        chemical_values.n_H,
+        chemical_values.n_O,
+        chemical_values.n_N,
+    ) == (525000, 1, 1.8, 0.5, 0.15)
+
+
+def test_get_chemical_parameter_values_of_returns_standard_gas_defaults():
+    carbon_dioxide = get_chemical_parameter_values_of("carbon dioxide")
+    water = get_chemical_parameter_values_of("water")
+    oxygen = get_chemical_parameter_values_of("O")
+
+    assert carbon_dioxide.chemical_parameters.compound_symbol == "C"
+    assert (carbon_dioxide.mu, carbon_dioxide.n_C, carbon_dioxide.n_H, carbon_dioxide.n_O, carbon_dioxide.n_N) == (
+        0,
+        1,
+        0,
+        2,
+        0,
+    )
+    assert water.chemical_parameters.compound_symbol == "H"
+    assert (water.mu, water.n_C, water.n_H, water.n_O, water.n_N) == (0, 0, 2, 1, 0)
+    assert oxygen.chemical_parameters.compound_symbol == "O"
+    assert (oxygen.mu, oxygen.n_C, oxygen.n_H, oxygen.n_O, oxygen.n_N) == (0, 0, 0, 2, 0)
+
+
+def test_get_chemical_parameter_values_of_returns_named_n_waste_variant_defaults():
+    ammonia = get_chemical_parameter_values_of("ammonia")
+    urea = get_chemical_parameter_values_of("urea")
+    uric_acid = get_chemical_parameter_values_of("uric acid")
+
+    assert ammonia.chemical_parameters.compound_symbol == "N"
+    assert (ammonia.mu, ammonia.n_C, ammonia.n_H, ammonia.n_O, ammonia.n_N) == (339250, 0, 3, 0, 1)
+    assert urea.chemical_parameters.compound_symbol == "N"
+    assert (urea.mu, urea.n_C, urea.n_H, urea.n_O, urea.n_N) == (662200, 1, 4, 1, 2)
+    assert uric_acid.chemical_parameters.compound_symbol == "N"
+    assert (uric_acid.mu, uric_acid.n_C, uric_acid.n_H, uric_acid.n_O, uric_acid.n_N) == (
+        417480,
+        1,
+        0.8,
+        0.6,
+        0.8,
+    )
+
+
+def test_get_chemical_parameter_values_of_returns_methane_defaults():
+    methane = get_chemical_parameter_values_of("methane")
+
+    assert methane.chemical_parameters.compound_symbol == "M"
+    assert methane.chemical_parameters.compound_name == "methane"
+    assert (methane.mu, methane.n_C, methane.n_H, methane.n_O, methane.n_N) == (816000, 1, 4, 0, 0)
+
+
+def test_get_chemical_parameter_values_of_accepts_overrides():
+    chemical_values = get_chemical_parameter_values_of("food", mu=530000, n_O=0.7)
+
+    assert (chemical_values.mu, chemical_values.n_C, chemical_values.n_H, chemical_values.n_O, chemical_values.n_N) == (
+        530000,
+        1,
+        1.8,
+        0.7,
+        0.15,
+    )
+
+
+def test_get_chemical_parameter_values_of_rejects_ambiguous_n_waste_defaults():
+    with pytest.raises(ValueError, match="ambiguous"):
+        get_chemical_parameter_values_of("N")
+    with pytest.raises(ValueError, match="ambiguous"):
+        get_chemical_parameter_values_of("n-waste")
+
+
+def test_chemical_parameter_values_convenience_constructors_reduce_manual_wiring():
+    common = ChemicalParameterValues.from_common_compound("methane", n_H=4.1)
+    custom = ChemicalParameterValues.from_compound(
+        compound_symbol="Q",
+        compound_name="custom compound",
+        mu=123,
+        n_C=1,
+        n_H=2,
+        n_O=3,
+        n_N=4,
+    )
+
+    assert common.chemical_parameters.compound_symbol == "M"
+    assert (common.mu, common.n_C, common.n_H, common.n_O, common.n_N) == (816000, 1, 4.1, 0, 0)
+    assert custom.chemical_parameters.compound_symbol == "Q"
+    assert custom.chemical_parameters.compound_name == "custom compound"
+    assert (custom.mu, custom.n_C, custom.n_H, custom.n_O, custom.n_N) == (123, 1, 2, 3, 4)
 
 
 def test_parameter_definition_replace_preserves_unspecified_fields():

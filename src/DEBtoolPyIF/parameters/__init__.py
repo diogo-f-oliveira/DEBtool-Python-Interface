@@ -1,6 +1,10 @@
 """Parameter metadata and registries for estimation-file rendering."""
 
-from .chemical import ChemicalParameters, get_chemical_parameters_of
+from .chemical import (
+    ChemicalParameters,
+    get_chemical_parameter_values_of,
+    get_chemical_parameters_of,
+)
 from .definitions import (
     ALL_PARAMETER_DEFINITIONS,
     DEFAULT_PARAMETER_DEFINITIONS,
@@ -50,5 +54,6 @@ __all__ = [
     "get_parameter_definition",
     "require_parameter_definition",
     "ChemicalParameters",
+    "get_chemical_parameter_values_of",
     "get_chemical_parameters_of",
 ]

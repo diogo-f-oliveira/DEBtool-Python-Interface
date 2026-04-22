@@ -279,6 +279,8 @@ Chemical override helpers live in `DEBtoolPyIF.parameters.chemical`.
 
 - `ChemicalParameters` groups the standard chemical definitions for one compound: `mu`, `n_C`, `n_H`, `n_O`, and `n_N`.
 - `get_chemical_parameters_of(...)` accepts either a standard compound symbol such as `"N"` or a standard name such as `"n-waste"` and returns one grouped `ChemicalParameters` object.
+- `get_chemical_parameter_values_of(...)` returns a ready-to-render `ChemicalParameterValues` object with built-in defaults for standard compounds and selected named variants such as `ammonia`, `urea`, `uric acid`, and `methane`.
+- `ChemicalParameterValues.from_common_compound(...)` and `.from_compound(...)` are convenience constructors when the workflow should build render values in one call.
 - These chemical definitions are intentionally not added to the default parameter registries because `addchem(...)` remains the baseline source of DEBtool chemical defaults.
 - Use them when a workflow needs explicit non-default chemical overrides rendered after `addchem(...)`.
 
@@ -638,10 +640,7 @@ Example:
 ```python
 from DEBtoolPyIF.estimation_files import ParsInitChemicalParametersSection, ParsInitProgrammaticTemplate
 from DEBtoolPyIF.estimation_files.pars_init_sections import ParsInitAddChemSection
-from DEBtoolPyIF.parameters import get_chemical_parameters_of
-from DEBtoolPyIF.parameters.chemical import ChemicalParameterValues
-
-n_waste = get_chemical_parameters_of("n-waste")
+from DEBtoolPyIF.parameters import get_chemical_parameter_values_of
 
 template = ParsInitProgrammaticTemplate(
     sections=(
@@ -649,8 +648,8 @@ template = ParsInitProgrammaticTemplate(
         ParsInitAddChemSection(),
         ParsInitChemicalParametersSection(
             chemical_parameter_values=(
-                ChemicalParameterValues(
-                    chemical_parameters=n_waste,
+                get_chemical_parameter_values_of(
+                    "urea",
                     mu=518181,
                     n_C=1,
                     n_H=2.216,

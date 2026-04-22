@@ -258,6 +258,7 @@ Built-in generic pars-init sections include:
 - `AddModelMedatadaSection`
 - `InitializeParametersSection`
 - `ParsInitAddChemSection`
+- `ParsInitChemicalParametersSection`
 - `ParsInitPackingSection`
 
 The multitier family adds `MultitierParsInitLoopsSection` through `template_families = ("multitier_pars_init",)`.
@@ -273,6 +274,13 @@ Reusable parameter metadata lives in `DEBtoolPyIF.parameters.definitions`.
 - Use `DEBtoolPyIF.parameters` directly only when you specifically need the concrete typified registry classes.
 - Add non-default reusable definitions, such as `p_Am`, `t_0`, `E_Hx`, and `del_M`, deliberately when a model or example needs them.
 - Define species- or workflow-specific parameters, such as Angus-only female parameters, next to that workflow and add them to the registry there.
+
+Chemical override helpers live in `DEBtoolPyIF.parameters.chemical`.
+
+- `ChemicalParameters` groups the standard chemical definitions for one compound: `mu`, `n_H`, `n_O`, and `n_N`.
+- `get_chemical_parameters_of(...)` accepts either a standard compound symbol such as `"N"` or a standard name such as `"n-waste"` and returns one grouped `ChemicalParameters` object.
+- These chemical definitions are intentionally not added to the default parameter registries because `addchem(...)` remains the baseline source of DEBtool chemical defaults.
+- Use them when a workflow needs explicit non-default chemical overrides rendered after `addchem(...)`.
 
 ### `run` sections and options
 
@@ -622,6 +630,38 @@ class CustomParsInitCommentSection(ParsInitSection):
 Use `template_families = ("pars_init",)` when the section should be available to generic `pars_init` templates and inherited by multitier templates.
 
 Use `template_families = ("multitier_pars_init",)` when the section should only be available to multitier `pars_init` templates.
+
+For chemical overrides, the built-in `ParsInitChemicalParametersSection` is the preferred helper. It renders only the explicitly supplied chemical values and is intended to be inserted after `ParsInitAddChemSection()` when a workflow needs to override the defaults established by MATLAB `addchem(...)`.
+
+Example:
+
+```python
+from DEBtoolPyIF.estimation_files import ParsInitChemicalParametersSection, ParsInitProgrammaticTemplate
+from DEBtoolPyIF.estimation_files.pars_init_sections import ParsInitAddChemSection
+from DEBtoolPyIF.parameters import get_chemical_parameters_of
+from DEBtoolPyIF.parameters.chemical import ChemicalParameterValues
+
+n_waste = get_chemical_parameters_of("n-waste")
+
+template = ParsInitProgrammaticTemplate(
+    sections=(
+        ...,
+        ParsInitAddChemSection(),
+        ParsInitChemicalParametersSection(
+            chemical_parameter_values=(
+                ChemicalParameterValues(
+                    chemical_parameters=n_waste,
+                    mu=518181,
+                    n_H=2.216,
+                ),
+            )
+        ),
+        ...,
+    )
+)
+```
+
+For source-backed templates, add `$chemical_parameters` to the MATLAB source and pass the same section explicitly. This section is opt-in; the default registry-backed `pars_init` builders do not include it automatically.
 
 ### Required sections vs default sections
 

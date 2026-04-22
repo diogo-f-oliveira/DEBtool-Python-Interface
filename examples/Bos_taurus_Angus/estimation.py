@@ -102,6 +102,6 @@ if __name__ == '__main__':
     # Create data and multitier structure and run the minimal example
     data = load_data('examples/Bos_taurus_Angus/data')
     multitier = create_tier_structure(data, matlab_session='auto')
-    # run_multitier_estimation(multitier, estimation_settings=END_TO_END_ESTIMATION_SETTINGS)
-    run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION_SETTINGS)
+    run_multitier_estimation(multitier, estimation_settings=END_TO_END_ESTIMATION_SETTINGS)
+    # run_multitier_estimation(multitier, estimation_settings=FAST_TEST_ESTIMATION_SETTINGS)
     print('Done')

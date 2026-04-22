@@ -1,22 +1,22 @@
 function [data, auxData, metaData, txtData, weights] = mydata_Bos_taurus_Angus
+% Baseline generic mydata template for DEBtoolPyIF.
 
 %% set metaData
-metaData.phylum     = 'Chordata';
-metaData.class      = 'Mammalia';
-metaData.order      = 'Artiodactyla';
-metaData.family     = 'Bovidae';
-metaData.species    = 'Bos_taurus_Angus';
+metaData.phylum = 'Chordata';
+metaData.class = 'Mammalia';
+metaData.order = 'Artiodactyla';
+metaData.family = 'Bovidae';
+metaData.species = 'Bos taurus Angus';
 metaData.species_en = 'Angus cattle';
-metaData.T_typical  = C2K(38.6);
-metaData.data_0     = {};
-metaData.data_1     = {};
 
-metaData.COMPLETE = 2.5; % using criteria of LikaKear2011
+metaData.T_typical = C2K(38.6); % K, body temperature
 
-metaData.author   = {'Diogo Oliveira', 'Goncalo Marques'};
-% metaData.date_subm = [2024 02 02];
-% metaData.email    = {''};
-% metaData.address  = {''};
+metaData.COMPLETE = 3; % using criteria of LikaKear2011
+
+%% Author information
+metaData.author = {'Diogo F. Oliveira', 'Goncalo M. Marques'};
+metaData.email = 'diogo.miguel.oliveira@tecnico.ulisboa.pt';
+metaData.address = 'Instituto Superior Tecnico, Universidade de Lisboa, Portugal';
 
 %% Group data
 %% Time vs Group daily feed consumption data
@@ -43,16 +43,10 @@ units.tiers.tier_groups = '-'; label.tiers.tier_groups = 'List of groups ids for
 %% Entity data
 %% Time vs Weight data 
 
-data.tW_PT433843806 = [0 507; 14 532; 21 532; 35 568; 50 600; 63 607; 83 628];
-units.tW_PT433843806 = {'d', 'kg'}; label.tW_PT433843806 = {'Time since start', 'Wet weight'}; comment.tW_PT433843806 = 'Data from GreenBeef trial 1'; title.tW_PT433843806 = 'Wet weight growth curve, individual PT433843806'; bibkey.tW_PT433843806 = 'GreenBeefTrial1';
-init.tW_PT433843806 = 507;
-units.init.tW_PT433843806 = 'kg'; label.init.tW_PT433843806 = 'Initial weight'; 
-
-
-data.tW_PT933843912 = [0 545; 14 561; 21 565; 35 581; 50 616; 63 649; 83 668];
-units.tW_PT933843912 = {'d', 'kg'}; label.tW_PT933843912 = {'Time since start', 'Wet weight'}; comment.tW_PT933843912 = 'Data from GreenBeef trial 1'; title.tW_PT933843912 = 'Wet weight growth curve, individual PT933843912'; bibkey.tW_PT933843912 = 'GreenBeefTrial1';
-init.tW_PT933843912 = 545;
-units.init.tW_PT933843912 = 'kg'; label.init.tW_PT933843912 = 'Initial weight'; 
+data.tW_PT833653644 = [0 548; 14 544; 21 553; 35 579; 50 603; 63 623; 83 652];
+units.tW_PT833653644 = {'d', 'kg'}; label.tW_PT833653644 = {'Time since start', 'Wet weight'}; comment.tW_PT833653644 = 'Data from GreenBeef trial 1'; title.tW_PT833653644 = 'Wet weight growth curve, individual PT833653644'; bibkey.tW_PT833653644 = 'GreenBeefTrial1';
+init.tW_PT833653644 = 548;
+units.init.tW_PT833653644 = 'kg'; label.init.tW_PT833653644 = 'Initial weight'; 
 
 
 data.tW_PT624139868 = [0 464; 14 470; 21 480; 35 508; 50 542; 63 558; 83 582];
@@ -61,16 +55,22 @@ init.tW_PT624139868 = 464;
 units.init.tW_PT624139868 = 'kg'; label.init.tW_PT624139868 = 'Initial weight'; 
 
 
-data.tW_PT833653644 = [0 548; 14 544; 21 553; 35 579; 50 603; 63 623; 83 652];
-units.tW_PT833653644 = {'d', 'kg'}; label.tW_PT833653644 = {'Time since start', 'Wet weight'}; comment.tW_PT833653644 = 'Data from GreenBeef trial 1'; title.tW_PT833653644 = 'Wet weight growth curve, individual PT833653644'; bibkey.tW_PT833653644 = 'GreenBeefTrial1';
-init.tW_PT833653644 = 548;
-units.init.tW_PT833653644 = 'kg'; label.init.tW_PT833653644 = 'Initial weight'; 
+data.tW_PT433843806 = [0 507; 14 532; 21 532; 35 568; 50 600; 63 607; 83 628];
+units.tW_PT433843806 = {'d', 'kg'}; label.tW_PT433843806 = {'Time since start', 'Wet weight'}; comment.tW_PT433843806 = 'Data from GreenBeef trial 1'; title.tW_PT433843806 = 'Wet weight growth curve, individual PT433843806'; bibkey.tW_PT433843806 = 'GreenBeefTrial1';
+init.tW_PT433843806 = 507;
+units.init.tW_PT433843806 = 'kg'; label.init.tW_PT433843806 = 'Initial weight'; 
 
 
 data.tW_PT424401157 = [0 469; 14 482; 21 486; 35 512; 50 540; 63 549; 83 571];
 units.tW_PT424401157 = {'d', 'kg'}; label.tW_PT424401157 = {'Time since start', 'Wet weight'}; comment.tW_PT424401157 = 'Data from GreenBeef trial 1'; title.tW_PT424401157 = 'Wet weight growth curve, individual PT424401157'; bibkey.tW_PT424401157 = 'GreenBeefTrial1';
 init.tW_PT424401157 = 469;
 units.init.tW_PT424401157 = 'kg'; label.init.tW_PT424401157 = 'Initial weight'; 
+
+
+data.tW_PT933843912 = [0 545; 14 561; 21 565; 35 581; 50 616; 63 649; 83 668];
+units.tW_PT933843912 = {'d', 'kg'}; label.tW_PT933843912 = {'Time since start', 'Wet weight'}; comment.tW_PT933843912 = 'Data from GreenBeef trial 1'; title.tW_PT933843912 = 'Wet weight growth curve, individual PT933843912'; bibkey.tW_PT933843912 = 'GreenBeefTrial1';
+init.tW_PT933843912 = 545;
+units.init.tW_PT933843912 = 'kg'; label.init.tW_PT933843912 = 'Initial weight'; 
 
 
 
@@ -90,14 +90,14 @@ metaData.entity_list = tiers.entity_list;
 % Struct with form tier_entities.(tier_name) = list_of_entities_of_tier
 data.tier_entities = 10;
 units.tier_entities = '-'; label.tier_entities = 'Dummy variable'; 
-tiers.tier_entities = struct('individual', {{'PT433843806', 'PT933843912', 'PT624139868', 'PT833653644', 'PT424401157'}});
+tiers.tier_entities = struct('individual', {{'PT833653644', 'PT624139868', 'PT433843806', 'PT424401157', 'PT933843912'}});
 units.tiers.tier_entities = '-'; label.tiers.tier_entities = 'List of entity ids for each tier'; 
 
 
 % Struct with form groups_of_entity.(entity_id) = list_of_groups_ids_entity_belongs_to
 data.groups_of_entity = 10;
 units.groups_of_entity = '-'; label.groups_of_entity = 'Dummy variable'; 
-tiers.groups_of_entity = struct('PT433843806', {{'Pen_2'}}, 'PT933843912', {{'Pen_2'}}, 'PT624139868', {{'Pen_2'}}, 'PT833653644', {{'Pen_2'}}, 'PT424401157', {{'Pen_2'}});
+tiers.groups_of_entity = struct('PT833653644', {{'Pen_2'}}, 'PT624139868', {{'Pen_2'}}, 'PT433843806', {{'Pen_2'}}, 'PT424401157', {{'Pen_2'}}, 'PT933843912', {{'Pen_2'}});
 units.tiers.groups_of_entity = '-'; label.tiers.groups_of_entity = 'Groups each entity belongs to'; 
 
     
@@ -121,31 +121,44 @@ metaData.tier_pars = tiers.tier_pars;
 
 % Initial values for each tier parameter and entity
 % Struct with form tier_par_init_values.(par).(entity_id) = value;
-metaData.tier_par_init_values = struct('p_Am', struct('PT424401157', 2243.270339476187, 'PT433843806', 2243.270339476187, 'PT624139868', 2243.270339476187, 'PT833653644', 2243.270339476187, 'PT933843912', 2243.270339476187), 'kap_X', struct('PT424401157', 0.2410477191416388, 'PT433843806', 0.2410477191416388, 'PT624139868', 0.2410477191416388, 'PT833653644', 0.2410477191416388, 'PT933843912', 0.2410477191416388)); 
+metaData.tier_par_init_values = struct('p_Am', struct('PT424401157', 5588.926425728412, 'PT433843806', 5588.926425728412, 'PT624139868', 5588.926425728412, 'PT833653644', 5588.926425728412, 'PT933843912', 5588.926425728412), 'kap_X', struct('PT424401157', 0.21959189993722267, 'PT433843806', 0.21959189993722267, 'PT624139868', 0.21959189993722267, 'PT833653644', 0.21959189993722267, 'PT933843912', 0.21959189993722267)); 
 
 
-%% Set temperature data and remove weights for dummy variables
+%% Set default weights
 weights = setweights(data, []);
 
+%% Save dataset field names
 metaData.data_fields = fieldnames(data);
-temp = struct();
+
+%% Save data fields into zero-variate and univariate
+metaData.data_0     = {};
+metaData.data_1     = {};
 for i = 1:length(metaData.data_fields)
-    % Add typical temperature only to fields without specified temperature
     field = metaData.data_fields{i};
+    if length(data.(field)) > 1
+        metaData.data_1{end+1} = field; %#ok<AGROW>
+    else
+        metaData.data_0{end+1} = field; %#ok<AGROW>
+    end
+end
+
+temp = struct();
+%% Set temperature metadata
+for i = 1:length(metaData.data_fields)
+    field = metaData.data_fields{i};
+
     if ~isfield(temp, field)
         temp.(field) = metaData.T_typical;
         units.temp.(field) = 'K';
         label.temp.(field) = 'temperature';
     end
-    % Removing weight from dummy variables
+end
+
+%% Remove weights from dummy variables
+for i = 1:length(metaData.data_fields)
+    field = metaData.data_fields{i};
     if strcmp(label.(field), 'Dummy variable')
         weights.(field) = 0;
-    end
-    % Saving data variable names in metaData
-    if length(data.(field)) > 1
-        metaData.data_1{end+1} = field; % univariate
-    else
-        metaData.data_0{end+1} = field; % zero-variate
     end
 end
 
@@ -189,20 +202,25 @@ for dt=1:length(metaData.group_data_types)
 end
 
 
-%% Set pseudo-data for tier parameters
-for e=1:length(tiers.entity_list)
+%% Set generic and multitier pseudo-data
+%% Add generic pseudo-data
+[data, units, label, weights] = addpseudodata(data, units, label, weights);
+%% Add multitier pseudo-data from previous-tier estimates
+for e = 1:length(tiers.entity_list)
     entity_id = tiers.entity_list{e};
-    for p=1:length(tiers.tier_pars)
+    for p = 1:length(tiers.tier_pars)
         par_name = tiers.tier_pars{p};
         varname = [par_name '_' entity_id];
-        
+
         data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
         units.psd.(varname) = '';
         label.psd.(varname) = '';
         weights.psd.(varname) = 0.1;
     end
 end
-    
+
+%% Data Sources and References
+%
 %% pack auxData and txtData for output
 auxData.temp = temp;
 auxData.tiers = tiers;
@@ -213,11 +231,5 @@ txtData.bibkey = bibkey;
 txtData.comment = comment;
 txtData.title = title;
 
-%% Discussion points
-D1 = '';
-D2 = '';
-metaData.discussion = struct('D1', D1, 'D2', D2);
-
-%% Data Sources and References
-
+end
 

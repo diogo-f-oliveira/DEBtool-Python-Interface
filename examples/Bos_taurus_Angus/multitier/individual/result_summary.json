@@ -1,14 +1,14 @@
 {
-  "elapsed_duration_seconds": 94.993219,
+  "elapsed_duration_seconds": 145.942953,
   "mean_entity_errors_by_tier": {
-    "individual": 0.020732509798275466
+    "individual": 0.02212608319916108
   },
   "mean_estimated_parameters": {
-    "kap_X": 0.2319801280347375,
-    "p_Am": 2307.2430740739433
+    "kap_X": 0.20960052400579268,
+    "p_Am": 5740.270053436574
   },
   "mean_group_errors_by_tier": {
-    "individual": 0.07798001371816238
+    "individual": 0.07777733706571527
   },
   "n_tier_entities": 20,
   "n_tier_groups": 4,

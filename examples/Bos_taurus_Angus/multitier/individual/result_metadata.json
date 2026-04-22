@@ -1,9 +1,9 @@
 {
-  "elapsed_duration_seconds": 94.993219,
-  "estimation_end_time": "2026-04-03T12:17:31.339905",
+  "elapsed_duration_seconds": 145.942953,
+  "estimation_end_time": "2026-04-22T16:49:13.136625",
   "estimation_iterations": [
     {
-      "elapsed_duration_seconds": 23.924002,
+      "elapsed_duration_seconds": 38.317117,
       "entity_list": [
         "PT424401157",
         "PT433843806",
@@ -11,15 +11,15 @@
         "PT833653644",
         "PT933843912"
       ],
-      "estimation_end_time": "2026-04-03T12:16:20.270688",
-      "estimation_start_time": "2026-04-03T12:15:56.346686",
+      "estimation_end_time": "2026-04-22T16:47:25.511789",
+      "estimation_start_time": "2026-04-22T16:46:47.194672",
       "estimation_target_name": "Pen_2",
       "estimation_target_type": "group",
       "relative_output_folder": "Pen_2",
       "success": 1.0
     },
     {
-      "elapsed_duration_seconds": 23.997053,
+      "elapsed_duration_seconds": 38.297975,
       "entity_list": [
         "PT333842562",
         "PT524401180",
@@ -27,15 +27,15 @@
         "PT833653649",
         "PT933843894"
       ],
-      "estimation_end_time": "2026-04-03T12:16:44.407837",
-      "estimation_start_time": "2026-04-03T12:16:20.410784",
+      "estimation_end_time": "2026-04-22T16:48:03.952079",
+      "estimation_start_time": "2026-04-22T16:47:25.654104",
       "estimation_target_name": "Pen_3",
       "estimation_target_type": "group",
       "relative_output_folder": "Pen_3",
       "success": 1.0
     },
     {
-      "elapsed_duration_seconds": 23.364132,
+      "elapsed_duration_seconds": 36.021936,
       "entity_list": [
         "PT224401177",
         "PT524956505",
@@ -43,15 +43,15 @@
         "PT924401183",
         "PT933602927"
       ],
-      "estimation_end_time": "2026-04-03T12:17:07.906405",
-      "estimation_start_time": "2026-04-03T12:16:44.542273",
+      "estimation_end_time": "2026-04-22T16:48:40.115357",
+      "estimation_start_time": "2026-04-22T16:48:04.093421",
       "estimation_target_name": "Pen_4",
       "estimation_target_type": "group",
       "relative_output_folder": "Pen_4",
       "success": 1.0
     },
     {
-      "elapsed_duration_seconds": 23.151507,
+      "elapsed_duration_seconds": 32.721573,
       "entity_list": [
         "PT033634130",
         "PT233843883",
@@ -59,8 +59,8 @@
         "PT533358890",
         "PT724523831"
       ],
-      "estimation_end_time": "2026-04-03T12:17:31.194649",
-      "estimation_start_time": "2026-04-03T12:17:08.043142",
+      "estimation_end_time": "2026-04-22T16:49:12.993899",
+      "estimation_start_time": "2026-04-22T16:48:40.272326",
       "estimation_target_name": "Pen_5",
       "estimation_target_type": "group",
       "relative_output_folder": "Pen_5",
@@ -68,13 +68,15 @@
     }
   ],
   "estimation_settings": {
+    "n_evals": 50000,
     "n_runs": 10,
     "n_steps": 500,
     "pars_init_method": 2,
     "results_output_mode": 0,
+    "tol_restart": 0.0001,
     "tol_simplex": 0.0001
   },
-  "estimation_start_time": "2026-04-03T12:15:56.346686",
+  "estimation_start_time": "2026-04-22T16:46:47.193672",
   "schema_version": 2,
   "species_name": "Bos_taurus_Angus",
   "stable_output_files": [
@@ -85,26 +87,26 @@
     "result_summary.json"
   ],
   "tier_entities": [
-    "PT333842562",
-    "PT533358890",
+    "PT933602927",
+    "PT333653651",
+    "PT933843894",
+    "PT033634130",
+    "PT424401157",
+    "PT533987885",
+    "PT833653649",
+    "PT833653644",
+    "PT624139868",
+    "PT224401177",
+    "PT724523831",
+    "PT924401183",
+    "PT524401180",
     "PT433843806",
     "PT524956505",
-    "PT333653651",
-    "PT933602927",
-    "PT524401180",
-    "PT424401157",
-    "PT033634130",
-    "PT924401183",
-    "PT833653649",
-    "PT224401177",
     "PT233843883",
-    "PT933843912",
-    "PT624139868",
-    "PT833653644",
-    "PT724523831",
-    "PT933843894",
-    "PT533987885",
-    "PT533843896"
+    "PT533843896",
+    "PT533358890",
+    "PT333842562",
+    "PT933843912"
   ],
   "tier_groups": [
     "Pen_2",

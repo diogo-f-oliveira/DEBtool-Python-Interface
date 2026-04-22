@@ -112,6 +112,9 @@ class MultitierParsInitSubstitutionTemplate(MultitierParsInitTemplate, ParsInitS
             sections=sections,
         )
 
+    def get_default_sections(self) -> tuple[ParsInitSection, ...]:
+        return build_registry_multitier_pars_init_sections()
+
 
 def build_registry_multitier_pars_init_sections(
     *,

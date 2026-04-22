@@ -11,6 +11,7 @@ from .pars_init_sections import (
     ParsInitAddChemSection,
     ParsInitFunctionHeader,
     ParsInitPackingSection,
+    ParsInitReferenceTemperatureSection,
 )
 from .templates import ProgrammaticTemplate, SubstitutionTemplate
 from ..parameters import ParameterRegistry, get_parameter_registry_of_typified_model
@@ -30,6 +31,7 @@ def build_registry_pars_init_sections(
     return (
         ParsInitFunctionHeader(),
         AddModelMedatadaSection(model=model),
+        ParsInitReferenceTemperatureSection(),
         InitializeParametersSection(parameter_registry=resolved_registry),
         ParsInitAddChemSection(include_addchem=include_addchem),
         ParsInitPackingSection(),
@@ -76,6 +78,7 @@ class ParsInitTemplate:
         return (
             ParsInitFunctionHeader(),
             AddModelMedatadaSection(),
+            ParsInitReferenceTemperatureSection(),
             InitializeParametersSection(),
             ParsInitAddChemSection(),
             ParsInitPackingSection(),
@@ -159,7 +162,7 @@ class ParsInitSubstitutionTemplate(ParsInitTemplate, SubstitutionTemplate):
         )
 
     def get_default_sections(self) -> tuple:
-        return self.default_sections()
+        return build_registry_pars_init_sections()
 
 
 class RegistryParsInitSubstitutionTemplate(ParsInitSubstitutionTemplate):

@@ -107,6 +107,7 @@ from DEBtoolPyIF.parameters import (
     t_0,
 )
 from DEBtoolPyIF.parameters.chemical import (
+    CarbonChemicalIndexDefinition,
     ChemicalParameterValues,
     ChemicalPotentialDefinition,
     HydrogenChemicalIndexDefinition,
@@ -1115,6 +1116,7 @@ def test_pars_init_chemical_parameters_section_renders_only_supplied_properties(
             ChemicalParameterValues(
                 chemical_parameters=chemical_parameters,
                 mu=518181,
+                n_C=1,
                 n_H=2.216,
             ),
         )
@@ -1126,6 +1128,8 @@ def test_pars_init_chemical_parameters_section_renders_only_supplied_properties(
     assert "free.mu_N = 0;" in rendered
     assert "units.mu_N = 'J/ mol';" in rendered
     assert "label.mu_N = 'chem. potential of n-waste';" in rendered
+    assert "par.n_CN = 1;" in rendered
+    assert "free.n_CN = 0;" in rendered
     assert "par.n_HN = 2.216;" in rendered
     assert "free.n_HN = 0;" in rendered
     assert "par.n_ON" not in rendered
@@ -1276,11 +1280,13 @@ def test_parameters_package_all_excludes_individual_builtin_definition_names():
 
 def test_chemical_parameter_definition_classes_derive_metadata_from_compound():
     mu = ChemicalPotentialDefinition("N", "n-waste", default_value=518181)
+    n_c = CarbonChemicalIndexDefinition("N", "n-waste")
     n_h = HydrogenChemicalIndexDefinition("N", "n-waste", default_value=2.216)
     n_o = OxygenChemicalIndexDefinition("N", "n-waste", default_value=0.594)
     n_n = NitrogenChemicalIndexDefinition("N", "n-waste", default_value=0.897)
 
     assert isinstance(mu, ParameterDefinition)
+    assert isinstance(n_c, ParameterDefinition)
     assert isinstance(n_h, ParameterDefinition)
     assert isinstance(n_o, ParameterDefinition)
     assert isinstance(n_n, ParameterDefinition)
@@ -1291,6 +1297,13 @@ def test_chemical_parameter_definition_classes_derive_metadata_from_compound():
         mu.default_value,
         mu.default_free,
     ) == ("mu_N", "J/ mol", "chem. potential of n-waste", 518181, 0)
+    assert (
+        n_c.name,
+        n_c.units,
+        n_c.label,
+        n_c.default_value,
+        n_c.default_free,
+    ) == ("n_CN", "-", "chem. index of carbon in n-waste", 1, 0)
     assert (
         n_h.name,
         n_h.units,
@@ -1322,16 +1335,19 @@ def test_get_chemical_parameters_of_returns_grouped_chemical_parameters():
     assert chemical_parameters.compound_name == "n-waste"
     assert chemical_parameters.definitions == (
         chemical_parameters.mu,
+        chemical_parameters.n_C,
         chemical_parameters.n_H,
         chemical_parameters.n_O,
         chemical_parameters.n_N,
     )
     assert tuple(definition.name for definition in chemical_parameters.as_tuple()) == (
         "mu_N",
+        "n_CN",
         "n_HN",
         "n_ON",
         "n_NN",
     )
+    assert chemical_parameters.n_C.default_value == 1
 
 
 def test_get_chemical_parameters_of_accepts_standard_names_and_aliases():

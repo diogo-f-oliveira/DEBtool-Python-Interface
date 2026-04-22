@@ -277,7 +277,7 @@ Reusable parameter metadata lives in `DEBtoolPyIF.parameters.definitions`.
 
 Chemical override helpers live in `DEBtoolPyIF.parameters.chemical`.
 
-- `ChemicalParameters` groups the standard chemical definitions for one compound: `mu`, `n_H`, `n_O`, and `n_N`.
+- `ChemicalParameters` groups the standard chemical definitions for one compound: `mu`, `n_C`, `n_H`, `n_O`, and `n_N`.
 - `get_chemical_parameters_of(...)` accepts either a standard compound symbol such as `"N"` or a standard name such as `"n-waste"` and returns one grouped `ChemicalParameters` object.
 - These chemical definitions are intentionally not added to the default parameter registries because `addchem(...)` remains the baseline source of DEBtool chemical defaults.
 - Use them when a workflow needs explicit non-default chemical overrides rendered after `addchem(...)`.
@@ -652,6 +652,7 @@ template = ParsInitProgrammaticTemplate(
                 ChemicalParameterValues(
                     chemical_parameters=n_waste,
                     mu=518181,
+                    n_C=1,
                     n_H=2.216,
                 ),
             )

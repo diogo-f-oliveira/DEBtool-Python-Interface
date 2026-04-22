@@ -55,6 +55,29 @@ class ChemicalPotentialDefinition(ParameterDefinition):
         )
 
 
+class CarbonChemicalIndexDefinition(ParameterDefinition):
+    def __init__(
+        self,
+        compound_symbol: str,
+        compound_name: str,
+        *,
+        default_value: float | int | None = 1,
+        float_format: str | None = None,
+        latex_label: str | None = None,
+    ) -> None:
+        compound_symbol = _normalize_compound_symbol(compound_symbol)
+        compound_name = _normalize_compound_name(compound_name)
+        super().__init__(
+            name=f"n_C{compound_symbol}",
+            units="-",
+            label=f"chem. index of carbon in {compound_name}",
+            default_value=default_value,
+            default_free=0,
+            float_format=float_format,
+            latex_label=latex_label,
+        )
+
+
 class HydrogenChemicalIndexDefinition(ParameterDefinition):
     def __init__(
         self,
@@ -129,6 +152,7 @@ class ChemicalParameters:
     compound_symbol: str
     compound_name: str
     mu: ChemicalPotentialDefinition
+    n_C: CarbonChemicalIndexDefinition
     n_H: HydrogenChemicalIndexDefinition
     n_O: OxygenChemicalIndexDefinition
     n_N: NitrogenChemicalIndexDefinition
@@ -142,16 +166,18 @@ class ChemicalParameters:
         self,
     ) -> tuple[
         ChemicalPotentialDefinition,
+        CarbonChemicalIndexDefinition,
         HydrogenChemicalIndexDefinition,
         OxygenChemicalIndexDefinition,
         NitrogenChemicalIndexDefinition,
     ]:
-        return (self.mu, self.n_H, self.n_O, self.n_N)
+        return (self.mu, self.n_C, self.n_H, self.n_O, self.n_N)
 
     def as_tuple(
         self,
     ) -> tuple[
         ChemicalPotentialDefinition,
+        CarbonChemicalIndexDefinition,
         HydrogenChemicalIndexDefinition,
         OxygenChemicalIndexDefinition,
         NitrogenChemicalIndexDefinition,
@@ -163,6 +189,7 @@ class ChemicalParameters:
 class ChemicalParameterValues:
     chemical_parameters: ChemicalParameters
     mu: float | int | None = None
+    n_C: float | int | None = None
     n_H: float | int | None = None
     n_O: float | int | None = None
     n_N: float | int | None = None
@@ -178,6 +205,7 @@ class ChemicalParameterValues:
         supplied_values: list[tuple[ParameterDefinition, float | int]] = []
         for field_name, definition in (
             ("mu", self.chemical_parameters.mu),
+            ("n_C", self.chemical_parameters.n_C),
             ("n_H", self.chemical_parameters.n_H),
             ("n_O", self.chemical_parameters.n_O),
             ("n_N", self.chemical_parameters.n_N),
@@ -212,6 +240,7 @@ def _build_chemical_parameters(compound_symbol: str, compound_name: str) -> Chem
         compound_symbol=compound_symbol,
         compound_name=compound_name,
         mu=ChemicalPotentialDefinition(compound_symbol, compound_name),
+        n_C=CarbonChemicalIndexDefinition(compound_symbol, compound_name),
         n_H=HydrogenChemicalIndexDefinition(compound_symbol, compound_name),
         n_O=OxygenChemicalIndexDefinition(compound_symbol, compound_name),
         n_N=NitrogenChemicalIndexDefinition(compound_symbol, compound_name),
@@ -234,6 +263,7 @@ def get_chemical_parameters_of(compound: str) -> ChemicalParameters:
 __all__ = [
     "ChemicalParameterValues",
     "ChemicalParameters",
+    "CarbonChemicalIndexDefinition",
     "ChemicalPotentialDefinition",
     "HydrogenChemicalIndexDefinition",
     "NitrogenChemicalIndexDefinition",

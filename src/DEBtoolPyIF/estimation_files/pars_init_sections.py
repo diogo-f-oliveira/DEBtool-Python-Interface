@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .pars_init_base import ParsInitSection
 from ..parameters import ParameterRegistry
+from ..parameters.chemical import ChemicalParameterValues
 from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_string_to_matlab
 
 
@@ -112,6 +113,41 @@ class ParsInitAddChemSection(ParsInitSection):
         if not self.include_addchem:
             return ""
         return super().render(context)
+
+
+class ParsInitChemicalParametersSection(ParsInitSection):
+    key = "chemical_parameters"
+    template_families = ("pars_init",)
+    section_tags = ("chemistry",)
+
+    def __init__(
+        self,
+        *,
+        chemical_parameter_values: tuple[ChemicalParameterValues, ...] = (),
+    ) -> None:
+        self.chemical_parameter_values = tuple(chemical_parameter_values)
+        super().__init__(matlab_code=self._build_matlab_code())
+
+    def _build_matlab_code(self) -> str:
+        lines = []
+        for chemical_values in self.chemical_parameter_values:
+            if not isinstance(chemical_values, ChemicalParameterValues):
+                raise TypeError(
+                    "chemical_parameter_values must contain ChemicalParameterValues instances, "
+                    f"not {type(chemical_values).__name__}."
+                )
+
+            for definition, value in chemical_values.iter_supplied_values():
+                lines.append(
+                    "par.{name} = {value}; free.{name} = 0; units.{name} = {units}; "
+                    "label.{name} = {label};".format(
+                        name=definition.name,
+                        value=convert_numeric_array_to_matlab(value, format_codes=definition.float_format),
+                        units=convert_string_to_matlab(definition.units),
+                        label=convert_string_to_matlab(definition.label),
+                    )
+                )
+        return "\n".join(lines)
 
 
 class ParsInitPackingSection(ParsInitSection):

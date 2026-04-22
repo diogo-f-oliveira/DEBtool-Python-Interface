@@ -16,6 +16,7 @@ from .pars_init import (
     RegistryParsInitSubstitutionTemplate,
 )
 from .pars_init_base import ParsInitSection
+from .pars_init_sections import ParsInitChemicalParametersSection
 from .run import (
     RunProgrammaticTemplate,
     RunSubstitutionTemplate,
@@ -64,6 +65,7 @@ __all__ = [
     "RegistryParsInitProgrammaticTemplate",
     "RegistryParsInitSubstitutionTemplate",
     "ParsInitSection",
+    "ParsInitChemicalParametersSection",
     "AddPathSection",
     "RunSection",
     "RunSetting",

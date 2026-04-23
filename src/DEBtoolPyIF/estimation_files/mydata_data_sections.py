@@ -84,10 +84,9 @@ class GroupsOfEntitySection(MyDataSection):
         return generate_struct_variable_code(
             var_name="groups_of_entity",
             converted_data=convert_dict_to_matlab(
-                {
-                    entity_id: convert_list_of_strings_to_matlab(group_ids, double_brackets=True)
-                    for entity_id, group_ids in state.groups_of_entity.items()
-                }
+                state.groups_of_entity,
+                convert_values_to="list_of_strings",
+                convert_value_kwargs={"double_brackets": True},
             ),
             struct_name=self.struct_name,
             label="Groups each entity belongs to",

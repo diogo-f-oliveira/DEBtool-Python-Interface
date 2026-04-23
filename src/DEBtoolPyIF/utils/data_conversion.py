@@ -26,8 +26,9 @@ CONVERSION_INPUT_TYPE_MAP = {
         "value": "str | list[str] | tuple[str, ...]",
     },
     "convert_dict_to_matlab": {
-        "dict_data": "dict[str, str | bool | np.bool_ | int | float | np.integer | np.floating]",
-        "is_string_data": "bool",
+        "dict_data": "dict[str, object]",
+        "convert_values_to": "'string' | 'scalar' | 'list_of_strings' | 'array' | None",
+        "convert_value_kwargs": "dict[str, object] | None",
     },
 }
 
@@ -35,6 +36,12 @@ CONVERSION_INPUT_TYPE_MAP = {
 _NUMERIC_SCALAR_TYPES = (int, float, np.integer, np.floating)
 _BOOLEAN_TYPES = (bool, np.bool_)
 _STRING_COLLECTION_TYPES = (list, tuple)
+_DICT_VALUE_CONVERTER_KWARGS = {
+    "string": frozenset(),
+    "scalar": frozenset(),
+    "list_of_strings": frozenset({"double_brackets"}),
+    "array": frozenset({"format_codes"}),
+}
 
 
 def _expected_type_description(function_name: str, parameter_name: str) -> str:
@@ -133,24 +140,61 @@ def _validate_numeric_array(array) -> None:
     _validate_real_numeric_scalar("convert_numeric_array_to_matlab", "array", array)
 
 
-def _validate_dict_data(dict_data: dict) -> None:
-    for key, value in dict_data.items():
+def _validate_dict_keys(dict_data: dict) -> None:
+    for key in dict_data:
         if not isinstance(key, str):
             raise TypeError(
                 "convert_dict_to_matlab expected every key in dict_data to be str, "
                 f"not {type(key).__name__}."
             )
-        if isinstance(value, str):
-            continue
-        if isinstance(value, _BOOLEAN_TYPES):
-            continue
-        if _is_real_numeric_scalar(value):
-            continue
-        expected_type = _expected_type_description("convert_dict_to_matlab", "dict_data")
-        raise TypeError(
-            "convert_dict_to_matlab expected every value in dict_data to match "
-            f"{expected_type}, not {type(value).__name__}."
+
+
+def _validate_convert_values_to(mode: str | None) -> None:
+    if mode is None:
+        return
+    if not isinstance(mode, str):
+        _raise_type_error("convert_dict_to_matlab", "convert_values_to", mode)
+    if mode not in _DICT_VALUE_CONVERTER_KWARGS:
+        valid_modes = ", ".join(repr(name) for name in _DICT_VALUE_CONVERTER_KWARGS)
+        raise ValueError(
+            "convert_dict_to_matlab expected convert_values_to to be one of "
+            f"{valid_modes}, or None, not {mode!r}."
         )
+
+
+def _validate_convert_value_kwargs(mode: str | None, convert_value_kwargs):
+    if mode is None:
+        if convert_value_kwargs is not None:
+            raise ValueError(
+                "convert_dict_to_matlab does not accept convert_value_kwargs when "
+                "convert_values_to is None."
+            )
+        return {}
+
+    if convert_value_kwargs is None:
+        return {}
+    _validate_parameter_type(
+        "convert_dict_to_matlab",
+        "convert_value_kwargs",
+        convert_value_kwargs,
+        dict,
+    )
+    for key in convert_value_kwargs:
+        if not isinstance(key, str):
+            raise TypeError(
+                "convert_dict_to_matlab expected every key in convert_value_kwargs "
+                f"to be str, not {type(key).__name__}."
+            )
+
+    unsupported_kwargs = set(convert_value_kwargs) - _DICT_VALUE_CONVERTER_KWARGS[mode]
+    if unsupported_kwargs:
+        allowed_kwargs = sorted(_DICT_VALUE_CONVERTER_KWARGS[mode])
+        raise ValueError(
+            "convert_dict_to_matlab does not support "
+            f"{sorted(unsupported_kwargs)!r} for convert_values_to={mode!r}; "
+            f"allowed kwargs are {allowed_kwargs!r}."
+        )
+    return dict(convert_value_kwargs)
 
 
 def convert_string_to_matlab(string: str) -> str:
@@ -260,20 +304,65 @@ def convert_string_or_collection_to_matlab(value: str | list[str] | tuple[str, .
     _raise_type_error("convert_string_or_collection_to_matlab", "value", value)
 
 
-def convert_dict_to_matlab(dict_data: dict, is_string_data=False):
+_DICT_VALUE_CONVERTERS = {
+    "string": convert_string_to_matlab,
+    "scalar": convert_scalar_to_matlab,
+    "list_of_strings": convert_list_of_strings_to_matlab,
+    "array": convert_numeric_array_to_matlab,
+}
+
+
+def _convert_dict_value_to_matlab(
+    key: str,
+    value,
+    convert_values_to: str | None,
+    convert_value_kwargs: dict[str, object],
+) -> str:
+    if convert_values_to is None:
+        if not isinstance(value, str):
+            raise TypeError(
+                "convert_dict_to_matlab expected every value in dict_data to be str "
+                "when convert_values_to is None, "
+                f"but key {key!r} has value type {type(value).__name__}."
+            )
+        return value
+
+    converter = _DICT_VALUE_CONVERTERS[convert_values_to]
+    try:
+        return converter(value, **convert_value_kwargs)
+    except (TypeError, ValueError) as exc:
+        raise type(exc)(
+            f"convert_dict_to_matlab could not convert value for key {key!r} "
+            f"using convert_values_to={convert_values_to!r}: {exc}"
+        ) from exc
+
+
+def convert_dict_to_matlab(
+    dict_data: dict,
+    convert_values_to: str | None = None,
+    convert_value_kwargs: dict[str, object] | None = None,
+):
+    """Convert a Python dict with string keys into a MATLAB struct literal."""
+
     _validate_parameter_type("convert_dict_to_matlab", "dict_data", dict_data, dict)
-    _validate_bool_parameter("convert_dict_to_matlab", "is_string_data", is_string_data)
-    _validate_dict_data(dict_data)
+    _validate_convert_values_to(convert_values_to)
+    normalized_convert_value_kwargs = _validate_convert_value_kwargs(
+        convert_values_to,
+        convert_value_kwargs,
+    )
+    _validate_dict_keys(dict_data)
 
     # Return empty struct if dict is empty
     if not dict_data:
         return 'struct()'
     matlab_code = 'struct('
     for k, v in dict_data.items():
-        if is_string_data:
-            v = convert_string_to_matlab(str(v))
-        elif not isinstance(v, str):
-            v = convert_scalar_to_matlab(v)
+        v = _convert_dict_value_to_matlab(
+            k,
+            v,
+            convert_values_to,
+            normalized_convert_value_kwargs,
+        )
         matlab_code += f"{convert_string_to_matlab(k)}, {v}, "
     matlab_code = matlab_code[:-2] + ')'
     return matlab_code

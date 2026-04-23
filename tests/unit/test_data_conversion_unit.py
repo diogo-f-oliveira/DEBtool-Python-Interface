@@ -37,8 +37,9 @@ def test_conversion_input_type_map_documents_all_conversion_functions():
             "value": "str | list[str] | tuple[str, ...]",
         },
         "convert_dict_to_matlab": {
-            "dict_data": "dict[str, str | bool | np.bool_ | int | float | np.integer | np.floating]",
-            "is_string_data": "bool",
+            "dict_data": "dict[str, object]",
+            "convert_values_to": "'string' | 'scalar' | 'list_of_strings' | 'array' | None",
+            "convert_value_kwargs": "dict[str, object] | None",
         },
     }
 
@@ -244,31 +245,63 @@ def test_convert_string_or_collection_to_matlab_rejects_non_string_collection_it
 
 
 @pytest.mark.parametrize(
-    ("value", "is_string_data", "expected"),
+    ("value", "convert_values_to", "convert_value_kwargs", "expected"),
     [
-        ({}, False, "struct()"),
-        ({"PT1": 507, "PT2": 545}, False, "struct('PT1', 507, 'PT2', 545)"),
-        ({"PT1": np.nan, "PT2": np.inf, "PT3": -np.inf}, False, "struct('PT1', NaN, 'PT2', Inf, 'PT3', -Inf)"),
-        ({"enabled": True, "disabled": np.bool_(False)}, False, "struct('enabled', 1, 'disabled', 0)"),
+        ({}, None, None, "struct()"),
+        ({"PT1": 507, "PT2": 545}, "scalar", None, "struct('PT1', 507, 'PT2', 545)"),
+        (
+            {"PT1": np.nan, "PT2": np.inf, "PT3": -np.inf},
+            "scalar",
+            None,
+            "struct('PT1', NaN, 'PT2', Inf, 'PT3', -Inf)",
+        ),
+        (
+            {"enabled": True, "disabled": np.bool_(False)},
+            "scalar",
+            None,
+            "struct('enabled', 1, 'disabled', 0)",
+        ),
         (
             {"individual": "{{'Pen_2'}}"},
-            False,
+            None,
+            None,
             "struct('individual', {{'Pen_2'}})",
         ),
         (
             {"species": "Bos_taurus_Angus"},
-            True,
+            "string",
+            None,
             "struct('species', 'Bos_taurus_Angus')",
         ),
         (
             {"species": "O'Brien"},
-            True,
+            "string",
+            None,
             "struct('species', 'O''Brien')",
+        ),
+        (
+            {"PT1": ["Pen_2"], "PT2": ["Pen_2", "Pen_5"]},
+            "list_of_strings",
+            {"double_brackets": True},
+            "struct('PT1', {{'Pen_2'}}, 'PT2', {{'Pen_2', 'Pen_5'}})",
+        ),
+        (
+            {"weights": np.array([[1.234, 5.678]])},
+            "array",
+            {"format_codes": [".1f", ".0f"]},
+            "struct('weights', [1.2 6])",
         ),
     ],
 )
-def test_convert_dict_to_matlab(value, is_string_data, expected):
-    assert convert_dict_to_matlab(value, is_string_data=is_string_data) == expected
+def test_convert_dict_to_matlab(value, convert_values_to, convert_value_kwargs, expected):
+    assert (
+        convert_dict_to_matlab(
+            value,
+            convert_values_to=convert_values_to,
+            convert_value_kwargs=convert_value_kwargs,
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize("value", [[], None, "not a dict"])
@@ -277,9 +310,46 @@ def test_convert_dict_to_matlab_rejects_non_dict_values(value):
         convert_dict_to_matlab(value)
 
 
-def test_convert_dict_to_matlab_rejects_invalid_is_string_data_type():
-    with pytest.raises(TypeError, match="is_string_data"):
-        convert_dict_to_matlab({"value": "x"}, is_string_data=1)
+def test_convert_dict_to_matlab_rejects_invalid_convert_values_to_type():
+    with pytest.raises(TypeError, match="convert_values_to"):
+        convert_dict_to_matlab({"value": "x"}, convert_values_to=1)
+
+
+def test_convert_dict_to_matlab_rejects_unknown_convert_values_to():
+    with pytest.raises(ValueError, match="one of"):
+        convert_dict_to_matlab({"value": "x"}, convert_values_to="unknown")
+
+
+@pytest.mark.parametrize("value", [1, object(), [("double_brackets", True)]])
+def test_convert_dict_to_matlab_rejects_invalid_convert_value_kwargs_type(value):
+    with pytest.raises(TypeError, match="convert_value_kwargs"):
+        convert_dict_to_matlab({"value": ["x"]}, convert_values_to="list_of_strings", convert_value_kwargs=value)
+
+
+def test_convert_dict_to_matlab_rejects_non_string_convert_value_kwargs_keys():
+    with pytest.raises(TypeError, match="every key in convert_value_kwargs"):
+        convert_dict_to_matlab(
+            {"value": ["x"]},
+            convert_values_to="list_of_strings",
+            convert_value_kwargs={1: True},
+        )
+
+
+def test_convert_dict_to_matlab_rejects_convert_value_kwargs_when_passthrough_mode():
+    with pytest.raises(ValueError, match="does not accept convert_value_kwargs"):
+        convert_dict_to_matlab(
+            {"value": "struct('a', 1)"},
+            convert_value_kwargs={},
+        )
+
+
+def test_convert_dict_to_matlab_rejects_unsupported_convert_value_kwargs():
+    with pytest.raises(ValueError, match="does not support"):
+        convert_dict_to_matlab(
+            {"value": "x"},
+            convert_values_to="string",
+            convert_value_kwargs={"double_brackets": True},
+        )
 
 
 @pytest.mark.parametrize("value", [{1: "x"}, {None: "x"}])
@@ -297,16 +367,51 @@ def test_convert_dict_to_matlab_rejects_non_string_keys(value):
         {"value": 1 + 2j},
     ],
 )
-def test_convert_dict_to_matlab_rejects_invalid_values(value):
-    with pytest.raises(TypeError, match="every value in dict_data"):
+def test_convert_dict_to_matlab_rejects_invalid_passthrough_values(value):
+    with pytest.raises(TypeError, match="every value in dict_data to be str"):
         convert_dict_to_matlab(value)
+
+
+@pytest.mark.parametrize(
+    ("value", "convert_values_to", "convert_value_kwargs", "match"),
+    [
+        ({"value": 1}, "string", None, "could not convert value"),
+        ({"value": ["x"]}, "scalar", None, "could not convert value"),
+        ({"value": "x"}, "list_of_strings", None, "could not convert value"),
+        ({"value": np.array([1, 2])}, "array", None, "could not convert value"),
+        (
+            {"value": ["x"]},
+            "list_of_strings",
+            {"double_brackets": 1},
+            "could not convert value",
+        ),
+        (
+            {"value": np.array([[1.0, 2.0]])},
+            "array",
+            {"format_codes": 1},
+            "could not convert value",
+        ),
+    ],
+)
+def test_convert_dict_to_matlab_rejects_invalid_values_for_selected_mode(
+    value,
+    convert_values_to,
+    convert_value_kwargs,
+    match,
+):
+    with pytest.raises((TypeError, ValueError), match=match):
+        convert_dict_to_matlab(
+            value,
+            convert_values_to=convert_values_to,
+            convert_value_kwargs=convert_value_kwargs,
+        )
 
 
 def test_convert_dict_to_matlab_preserves_insertion_order():
     data = {"second": 2, "first": 1, "third": 3}
 
     assert (
-        convert_dict_to_matlab(data)
+        convert_dict_to_matlab(data, convert_values_to="scalar")
         == "struct('second', 2, 'first', 1, 'third', 3)"
     )
 
@@ -315,35 +420,53 @@ def test_group_initial_weights_contract_matches_group_datasource_usage():
     initial_weights = {"PT1": 507, "PT2": 545}
 
     assert (
-        convert_dict_to_matlab(initial_weights)
+        convert_dict_to_matlab(initial_weights, convert_values_to="scalar")
         == "struct('PT1', 507, 'PT2', 545)"
     )
 
 
 def test_multitier_nested_struct_contract_matches_mydata_generation_usage():
     tier_groups = {
-        "diet": convert_list_of_strings_to_matlab([], double_brackets=True),
-        "individual": convert_list_of_strings_to_matlab(["Pen_2"], double_brackets=True),
+        "diet": [],
+        "individual": ["Pen_2"],
     }
     groups_of_entity = {
-        "PT1": convert_list_of_strings_to_matlab(["Pen_2"], double_brackets=True),
-        "PT2": convert_list_of_strings_to_matlab(["Pen_2", "Pen_5"], double_brackets=True),
+        "PT1": ["Pen_2"],
+        "PT2": ["Pen_2", "Pen_5"],
     }
     tier_par_init_values = {
-        "p_Am": convert_dict_to_matlab({"PT1": 1.1, "PT2": 2.2}),
-        "kap_X": convert_dict_to_matlab({"PT1": 0.3, "PT2": 0.4}),
+        "p_Am": convert_dict_to_matlab({"PT1": 1.1, "PT2": 2.2}, convert_values_to="scalar"),
+        "kap_X": convert_dict_to_matlab({"PT1": 0.3, "PT2": 0.4}, convert_values_to="scalar"),
+    }
+    entity_path = {
+        "PT1": convert_dict_to_matlab(
+            {"diet": "Diet_1", "individual": "Pen_2"},
+            convert_values_to="string",
+        ),
     }
 
     assert (
-        convert_dict_to_matlab(tier_groups)
+        convert_dict_to_matlab(
+            tier_groups,
+            convert_values_to="list_of_strings",
+            convert_value_kwargs={"double_brackets": True},
+        )
         == "struct('diet', {{}}, 'individual', {{'Pen_2'}})"
     )
     assert (
-        convert_dict_to_matlab(groups_of_entity)
+        convert_dict_to_matlab(
+            groups_of_entity,
+            convert_values_to="list_of_strings",
+            convert_value_kwargs={"double_brackets": True},
+        )
         == "struct('PT1', {{'Pen_2'}}, 'PT2', {{'Pen_2', 'Pen_5'}})"
     )
     # Nested struct values are expected to be pre-converted by callers and inserted verbatim.
     assert (
         convert_dict_to_matlab(tier_par_init_values)
         == "struct('p_Am', struct('PT1', 1.1, 'PT2', 2.2), 'kap_X', struct('PT1', 0.3, 'PT2', 0.4))"
+    )
+    assert (
+        convert_dict_to_matlab(entity_path)
+        == "struct('PT1', struct('diet', 'Diet_1', 'individual', 'Pen_2'))"
     )

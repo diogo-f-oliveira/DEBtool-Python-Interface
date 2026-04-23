@@ -137,10 +137,9 @@ class TierEntitiesSection(MyDataSection):
         return generate_tier_variable_code(
             var_name="tier_entities",
             converted_data=convert_dict_to_matlab(
-                {
-                    tier_name: convert_list_of_strings_to_matlab(entity_ids, double_brackets=True)
-                    for tier_name, entity_ids in state.tier_entities.items()
-                }
+                state.tier_entities,
+                convert_values_to="list_of_strings",
+                convert_value_kwargs={"double_brackets": True},
             ),
             label="List of entity ids for each tier",
         )
@@ -155,10 +154,9 @@ class TierGroupsSection(MyDataSection):
         return generate_tier_variable_code(
             var_name="tier_groups",
             converted_data=convert_dict_to_matlab(
-                {
-                    tier_name: convert_list_of_strings_to_matlab(group_ids, double_brackets=True)
-                    for tier_name, group_ids in state.tier_groups.items()
-                }
+                state.tier_groups,
+                convert_values_to="list_of_strings",
+                convert_value_kwargs={"double_brackets": True},
             ),
             label="List of groups ids for each tier",
         )
@@ -181,10 +179,9 @@ class EntityDescendantsSection(MyDataSection):
             converted_data=convert_dict_to_matlab(
                 {
                     entity_id: convert_dict_to_matlab(
-                        {
-                            tier_name: convert_list_of_strings_to_matlab(entity_ids, double_brackets=True)
-                            for tier_name, entity_ids in descendants.items()
-                        }
+                        descendants,
+                        convert_values_to="list_of_strings",
+                        convert_value_kwargs={"double_brackets": True},
                     )
                     for entity_id, descendants in state.entity_descendants.items()
                 }
@@ -203,7 +200,10 @@ class EntityPathSection(MyDataSection):
             var_name="entity_path",
             converted_data=convert_dict_to_matlab(
                 {
-                    entity_id: convert_dict_to_matlab(path_by_tier, is_string_data=True)
+                    entity_id: convert_dict_to_matlab(
+                        path_by_tier,
+                        convert_values_to="string",
+                    )
                     for entity_id, path_by_tier in state.entity_path.items()
                 }
             ),
@@ -236,7 +236,10 @@ class TierParInitValuesSection(MyDataSection):
             var_name="tier_par_init_values",
             converted_data=convert_dict_to_matlab(
                 {
-                    parameter_name: convert_dict_to_matlab(initial_values)
+                    parameter_name: convert_dict_to_matlab(
+                        initial_values,
+                        convert_values_to="scalar",
+                    )
                     for parameter_name, initial_values in state.tier_par_init_values.items()
                 }
             ),

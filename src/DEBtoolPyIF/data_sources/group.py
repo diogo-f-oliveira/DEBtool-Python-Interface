@@ -64,7 +64,10 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
             feed_data = group_data[self.feed_col].values
             data = np.column_stack([time_data, feed_data])
 
-            conv_aux_data = convert_dict_to_matlab(initial_weights)
+            conv_aux_data = convert_dict_to_matlab(
+                initial_weights,
+                convert_values_to="scalar",
+            )
             my_data_code += self.generate_dataset_code(id_=group_id, data=data, converted_aux_data=conv_aux_data,
                                                        auxdata_struct_name='init')
 

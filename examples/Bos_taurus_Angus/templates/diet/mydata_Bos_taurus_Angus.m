@@ -34,8 +34,11 @@ $groups_of_entity
     
 % Tier subtree
 % Lists entities that are below entity_id for each tier below
-% Struct with form tier_subtree.(entity_id).(tier_name) = list_of_entities_below
-$tier_subtree
+% Struct with form entity_descendants.(entity_id).(tier_name) = list_of_entities_below
+$entity_descendants
+
+% Struct with form entity_path.(entity_id).(tier_name) = ancestor_or_self_id
+$entity_path
 
 %% Tier parameters
 % Cell array with tier parameters

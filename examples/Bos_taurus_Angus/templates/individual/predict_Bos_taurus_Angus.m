@@ -77,7 +77,8 @@ end
 prdData.entity_list = 10;
 prdData.tier_entities = 10;
 prdData.tier_groups = 10;
-prdData.tier_subtree = 10;
+prdData.entity_descendants = 10;
+prdData.entity_path = 10;
 prdData.groups_of_entity = 10;
 prdData.tier_pars = 10;
 

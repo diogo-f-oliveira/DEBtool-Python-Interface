@@ -87,7 +87,7 @@ t_m = get_tm_mod('stx', pars_tm, f);           % -, scaled mean life span at T_r
 aT_m = t_m/ k_M/ TC;                           % d, mean life span at T
 
 %% Loop through each diet and make predictions
-diet_list = auxData.tiers.tier_subtree.male.diet;
+diet_list = auxData.tiers.entity_descendants.male.diet;
 for i=1:length(diet_list)
     diet_id = diet_list{i};
     % Digestibility
@@ -114,7 +114,7 @@ L_inf = f * L_m - L_T;
 a_JX = f * w_X .* p_Am * TC / mu_X / kap_X;
 
 %% Loop through each individual and compute predictions
-ind_list = auxData.tiers.tier_subtree.male.individual;
+ind_list = auxData.tiers.entity_descendants.male.individual;
 for i=1:length(ind_list)
     ind_id = ind_list{i};
     
@@ -158,7 +158,8 @@ end
 prdData.entity_list = 10;
 prdData.tier_entities = 10;
 prdData.tier_groups = 10;
-prdData.tier_subtree = 10;
+prdData.entity_descendants = 10;
+prdData.entity_path = 10;
 prdData.groups_of_entity = 10;
 prdData.tier_pars = 10;
 

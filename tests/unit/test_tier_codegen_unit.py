@@ -75,7 +75,8 @@ def _write_required_templates(template_folder: Path, species_name: str):
                 "$tier_entities",
                 "$tier_groups",
                 "$groups_of_entity",
-                "$tier_subtree",
+                "$entity_descendants",
+                "$entity_path",
                 "$tier_pars",
                 "$tier_par_init_values",
                 "$weights_block",
@@ -126,5 +127,8 @@ def test_generate_mydata_file_sorts_and_deduplicates_metadata_types(tmp_path):
 
     assert "metaData.entity_data_types = {'alpha', 'beta', 'zeta'}; " in contents
     assert "metaData.group_data_types = {'group_a', 'group_m', 'group_z'}; " in contents
+    assert "tiers.entity_descendants = struct(" in contents
+    assert "tiers.entity_path = struct(" in contents
+    assert "tier_subtree" not in contents
     assert contents.count("'alpha'") == 1
     assert contents.count("'group_a'") == 1

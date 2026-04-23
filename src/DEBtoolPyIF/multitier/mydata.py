@@ -35,6 +35,8 @@ from ..estimation_files.mydata_temperature_sections import (
 )
 from ..estimation_files.templates import ProgrammaticTemplate
 from .mydata_sections import (
+    EntityDescendantsSection,
+    EntityPathSection,
     MultitierEntityListSection,
     MultitierGroupsOfEntitySection,
     MultitierPackingSection,
@@ -43,7 +45,6 @@ from .mydata_sections import (
     TierGroupsSection,
     TierParInitValuesSection,
     TierParsSection,
-    TierSubtreeSection,
     build_multitier_mydata_state,
 )
 
@@ -59,7 +60,8 @@ class MultitierMyDataTemplate(MyDataTemplate):
             TierEntitiesSection(),
             TierGroupsSection(),
             MultitierGroupsOfEntitySection(),
-            TierSubtreeSection(),
+            EntityDescendantsSection(),
+            EntityPathSection(),
             TierParsSection(),
             TierParInitValuesSection(),
         )

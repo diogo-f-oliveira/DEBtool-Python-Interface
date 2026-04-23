@@ -82,13 +82,15 @@ from DEBtoolPyIF.multitier import (
 from DEBtoolPyIF.multitier.estimation_files import MultitierGenerationContext
 from DEBtoolPyIF.multitier.mydata import MultitierMyDataTemplate
 from DEBtoolPyIF.multitier.mydata_sections import (
+    EntityDescendantsSection,
+    EntityPathSection,
     MultitierEntityListSection,
     MultitierGroupsOfEntitySection,
     TierEntitiesSection,
     TierGroupsSection,
     TierParInitValuesSection,
     TierParsSection,
-    TierSubtreeSection,
+    build_multitier_mydata_state,
 )
 from DEBtoolPyIF.parameters import (
     ALL_PARAMETER_DEFINITIONS,
@@ -830,7 +832,8 @@ def test_multitier_mydata_template_required_sections_returns_complete_valid_tupl
         "tier_entities",
         "tier_groups",
         "groups_of_entity",
-        "tier_subtree",
+        "entity_descendants",
+        "entity_path",
         "tier_pars",
         "tier_par_init_values",
         "weights_block",
@@ -848,7 +851,8 @@ def test_multitier_mydata_template_tier_variable_sections_helper_returns_tier_se
         "tier_entities",
         "tier_groups",
         "groups_of_entity",
-        "tier_subtree",
+        "entity_descendants",
+        "entity_path",
         "tier_pars",
         "tier_par_init_values",
     )
@@ -857,7 +861,8 @@ def test_multitier_mydata_template_tier_variable_sections_helper_returns_tier_se
         TierEntitiesSection,
         TierGroupsSection,
         MultitierGroupsOfEntitySection,
-        TierSubtreeSection,
+        EntityDescendantsSection,
+        EntityPathSection,
         TierParsSection,
         TierParInitValuesSection,
     )
@@ -927,7 +932,8 @@ def test_multitier_pseudodata_block_is_empty_for_root_tier(tmp_path):
             "$tier_entities",
             "$tier_groups",
             "$groups_of_entity",
-            "$tier_subtree",
+            "$entity_descendants",
+            "$entity_path",
             "$tier_pars",
             "$tier_par_init_values",
             "$weights_block",
@@ -943,6 +949,10 @@ def test_multitier_pseudodata_block_is_empty_for_root_tier(tmp_path):
 
     assert "[data, units, label, weights] = addpseudodata(data, units, label, weights);" in contents
     assert "weights.psd.(varname)" not in contents
+    assert "tiers.entity_descendants = struct(" in contents
+    assert "tiers.entity_path = struct(" in contents
+    assert "struct('top', 'root_entity', 'bottom', 'child_a')" in contents
+    assert "tier_subtree" not in contents
 
 
 def test_multitier_packing_adds_tiers_to_auxdata(tmp_path):
@@ -957,7 +967,8 @@ def test_multitier_packing_adds_tiers_to_auxdata(tmp_path):
             "$tier_entities",
             "$tier_groups",
             "$groups_of_entity",
-            "$tier_subtree",
+            "$entity_descendants",
+            "$entity_path",
             "$tier_pars",
             "$tier_par_init_values",
             "$weights_block",
@@ -985,6 +996,28 @@ def test_multitier_entity_iteration_sections_still_render_to_tiers(tmp_path):
     assert "tiers.groups_of_entity = struct('child_a', {{}});" in contents
     assert "info.entity_list" not in contents
     assert "info.groups_of_entity" not in contents
+
+
+def test_build_multitier_mydata_state_builds_entity_path_for_all_included_entities(tmp_path):
+    context = _build_multitier_context(tmp_path, tier_name="top", entity_list=["root_entity"])
+
+    state = build_multitier_mydata_state(context)
+
+    assert state.entity_descendants == {"root_entity": {"bottom": ["child_b", "child_a"]}}
+    assert state.entity_path == {
+        "root_entity": {"top": "root_entity"},
+        "child_b": {"top": "root_entity", "bottom": "child_b"},
+        "child_a": {"top": "root_entity", "bottom": "child_a"},
+    }
+
+
+def test_build_multitier_mydata_state_limits_entity_path_to_valid_ancestor_chain(tmp_path):
+    context = _build_multitier_context(tmp_path, tier_name="bottom", entity_list=["child_a"])
+
+    state = build_multitier_mydata_state(context)
+
+    assert state.entity_descendants == {"child_a": {}}
+    assert state.entity_path == {"child_a": {"top": "root_entity", "bottom": "child_a"}}
 
 
 def test_pars_init_template_renders_builtins_and_expansion():

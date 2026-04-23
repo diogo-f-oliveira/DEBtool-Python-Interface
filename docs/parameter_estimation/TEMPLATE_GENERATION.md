@@ -555,7 +555,8 @@ The multitier subclass extends the generic `mydata` family with hierarchy-aware 
 - `TierEntitiesSection`
 - `TierGroupsSection`
 - `MultitierGroupsOfEntitySection`
-- `TierSubtreeSection`
+- `EntityDescendantsSection`
+- `EntityPathSection`
 - `TierParsSection`
 - `TierParInitValuesSection`
 - `SetTypicalTemperatureForAllDatasetsSection`
@@ -788,7 +789,8 @@ It collects shared render-ready values such as:
 
 - `tier_entities`
 - `tier_groups`
-- `tier_subtree`
+- `entity_descendants`
+- `entity_path`
 - `tier_pars`
 - `tier_par_init_values`
 

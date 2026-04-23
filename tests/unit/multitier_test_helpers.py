@@ -1,8 +1,16 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from DEBtoolPyIF.multitier import TierEstimator, TierHierarchy
+
+
+FAKE_FULL_PARS = {
+    "kap_X": 0.8,
+    "kap_P": 0.2,
+    "p_M": 80.0,
+}
 
 
 class FakeTierData:
@@ -130,6 +138,14 @@ class FakeTierStructure:
             entities={"tier_1": ["entity_1"]},
         )
 
+    def get_init_par_values(self, tier_name, entity_list):
+        del tier_name
+        return pd.DataFrame({"par_a": [1.0 for _ in entity_list]}, index=list(entity_list))
+
+    def get_full_pars_dict(self, tier_name, entity_id):
+        del tier_name, entity_id
+        return dict(FAKE_FULL_PARS)
+
 
 class FakeGroupedTierStructure:
     def __init__(self):
@@ -141,6 +157,14 @@ class FakeGroupedTierStructure:
             tier_names=["tier_1"],
             entities={"tier_1": ["entity_1", "entity_2"]},
         )
+
+    def get_init_par_values(self, tier_name, entity_list):
+        del tier_name
+        return pd.DataFrame({"par_a": [1.0 for _ in entity_list]}, index=list(entity_list))
+
+    def get_full_pars_dict(self, tier_name, entity_id):
+        del tier_name, entity_id
+        return dict(FAKE_FULL_PARS)
 
 
 class FakeMixedTierStructure:
@@ -155,6 +179,14 @@ class FakeMixedTierStructure:
                 "tier_1": ["PT20", "PT21", "PT30", "PT31", "PT40", "PT41", "PT50", "PT51", "PT42"]
             },
         )
+
+    def get_init_par_values(self, tier_name, entity_list):
+        del tier_name
+        return pd.DataFrame({"par_a": [1.0 for _ in entity_list]}, index=list(entity_list))
+
+    def get_full_pars_dict(self, tier_name, entity_id):
+        del tier_name, entity_id
+        return dict(FAKE_FULL_PARS)
 
 
 class FakeSummaryTierStructure:
@@ -180,14 +212,69 @@ class FakeSummaryTierStructure:
             },
         )
 
+    def get_init_par_values(self, tier_name, entity_list):
+        del tier_name
+        return pd.DataFrame({"par_a": [1.0 for _ in entity_list]}, index=list(entity_list))
+
+    def get_full_pars_dict(self, tier_name, entity_id):
+        del tier_name, entity_id
+        return dict(FAKE_FULL_PARS)
+
 
 @pytest.fixture
 def template_folder(tmp_path):
-    folder = tmp_path / "templates"
+    folder = tmp_path / "old_templates"
     folder.mkdir()
     species_name = "Test_species"
-    for prefix in ("mydata", "pars_init", "predict", "run"):
-        (folder / f"{prefix}_{species_name}.m").write_text("% template\n", encoding="utf-8")
+    (folder / f"mydata_{species_name}.m").write_text(
+        "\n".join(
+            [
+                "$function_header",
+                "$metadata_block",
+                "$entity_data_block",
+                "$group_data_block",
+                "$entity_list",
+                "$tier_entities",
+                "$tier_groups",
+                "$groups_of_entity",
+                "$entity_descendants",
+                "$entity_path",
+                "$tier_pars",
+                "$tier_par_init_values",
+                "$weights_block",
+                "$save_fields_block",
+                "$remove_dummy_weights_block",
+                "$add_pseudodata_block",
+                "$multitier_pseudodata_block",
+                "$packing_block",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (folder / f"pars_init_{species_name}.m").write_text(
+        "\n".join(
+            [
+                "$function_header",
+                "$model_metadata",
+                "$base_parameters",
+                "$addchem",
+                "$tier_parameter_loops",
+                "$packing",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (folder / f"predict_{species_name}.m").write_text("% template\n", encoding="utf-8")
+    (folder / f"run_{species_name}.m").write_text(
+        "\n".join(
+            [
+                "$setup",
+                "$set_options",
+                "$algorithm",
+            ]
+        ),
+        encoding="utf-8",
+    )
     return folder
 
 
@@ -201,7 +288,6 @@ def build_tier_estimator(template_folder: Path):
         output_folder=str(template_folder / "output"),
     )
     tier_structure.tiers["tier_1"] = tier
-    tier.code_generator.generate_code = lambda entity_list, pseudo_data_weight=0.1: None
     return tier
 
 
@@ -215,7 +301,6 @@ def build_grouped_tier_estimator(template_folder: Path):
         output_folder=str(template_folder / "grouped_output"),
     )
     tier_structure.tiers["tier_1"] = tier
-    tier.code_generator.generate_code = lambda entity_list, pseudo_data_weight=0.1: None
     return tier
 
 
@@ -229,7 +314,6 @@ def build_mixed_tier_estimator(template_folder: Path):
         output_folder=str(template_folder / "mixed_output"),
     )
     tier_structure.tiers["tier_1"] = tier
-    tier.code_generator.generate_code = lambda entity_list, pseudo_data_weight=0.1: None
     return tier
 
 
@@ -243,5 +327,4 @@ def build_summary_tier_estimator(template_folder: Path):
         output_folder=str(template_folder / "summary_output"),
     )
     tier_structure.tiers["breed"] = tier
-    tier.code_generator.generate_code = lambda entity_list, pseudo_data_weight=0.1: None
     return tier

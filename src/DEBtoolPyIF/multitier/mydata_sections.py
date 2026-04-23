@@ -21,13 +21,22 @@ class MultitierMyDataState(BaseMyDataState):
 
     tier_entities: dict[str, list[str]] = field(default_factory=dict)
     tier_groups: dict[str, list[str]] = field(default_factory=dict)
-    tier_subtree: dict[str, dict[str, list[str]]] = field(default_factory=dict)
+    entity_descendants: dict[str, dict[str, list[str]]] = field(default_factory=dict)
+    entity_path: dict[str, dict[str, str]] = field(default_factory=dict)
     tier_pars: tuple[str, ...] = ()
     tier_par_init_values: dict[str, dict] = field(default_factory=dict)
 
 
 def _sorted_unique_strings(values):
     return sorted(set(values))
+
+
+def _append_unique(target_list, seen_values, new_values):
+    for value in new_values:
+        if value in seen_values:
+            continue
+        target_list.append(value)
+        seen_values.add(value)
 
 
 def build_multitier_mydata_state(context) -> MultitierMyDataState:
@@ -39,26 +48,34 @@ def build_multitier_mydata_state(context) -> MultitierMyDataState:
     groups_of_entity = {}
     tier_entities = {}
     tier_groups = {}
-    tier_subtree = {entity_id: {} for entity_id in context.entity_list}
+    entity_descendants = {entity_id: {} for entity_id in context.entity_list}
+    entity_path = {}
+    entity_hierarchy = context.tier_structure.entity_hierarchy
 
-    for tier_name in context.tier_structure.entity_hierarchy.get_all_tiers_below(context.tier_name):
+    for tier_name in entity_hierarchy.get_all_tiers_below(context.tier_name):
         tier = context.tier_structure.tiers[tier_name]
 
-        tier_entities_to_include = set()
-        tier_groups_to_include = set()
+        tier_entities_to_include = []
+        tier_entity_ids_seen = set()
+        tier_groups_to_include = []
+        tier_group_ids_seen = set()
         for entity_id in context.entity_list:
-            mapped_entities = context.tier_structure.entity_hierarchy.map_entities(
+            mapped_entities = list(entity_hierarchy.map_entities(
                 source_tier=context.tier_name,
                 target_tier=tier_name,
                 entity_list=[entity_id],
-            )
-            tier_entities_to_include.update(mapped_entities)
+            ))
+            _append_unique(tier_entities_to_include, tier_entity_ids_seen, mapped_entities)
             get_group_list = getattr(tier.data, "get_group_list_from_entity_list", None)
             if callable(get_group_list):
-                tier_groups_to_include.update(get_group_list(mapped_entities))
+                _append_unique(
+                    tier_groups_to_include,
+                    tier_group_ids_seen,
+                    get_group_list(mapped_entities),
+                )
 
             if tier_name != context.tier_name:
-                tier_subtree[entity_id][tier_name] = list(mapped_entities)
+                entity_descendants[entity_id][tier_name] = list(mapped_entities)
 
         get_entity_code = getattr(tier.data, "get_entity_mydata_code", None)
         if callable(get_entity_code):
@@ -84,6 +101,9 @@ def build_multitier_mydata_state(context) -> MultitierMyDataState:
         else:
             groups_of_entity.update({entity_id: [] for entity_id in tier_entities_to_include})
 
+        for entity_id in tier_entities_to_include:
+            entity_path[entity_id] = dict(entity_hierarchy.get_path(tier_name, entity_id))
+
     return MultitierMyDataState(
         entity_data_blocks=tuple(entity_data_blocks),
         group_data_blocks=tuple(group_data_blocks),
@@ -94,7 +114,8 @@ def build_multitier_mydata_state(context) -> MultitierMyDataState:
         extra_info=context.extra_info,
         tier_entities=tier_entities,
         tier_groups=tier_groups,
-        tier_subtree=tier_subtree,
+        entity_descendants=entity_descendants,
+        entity_path=entity_path,
         tier_pars=tuple(context.tier_pars),
         tier_par_init_values=context.tier_par_init_values,
     )
@@ -149,26 +170,44 @@ class MultitierGroupsOfEntitySection(GenericGroupsOfEntitySection):
     struct_name = "tiers"
 
 
-class TierSubtreeSection(MyDataSection):
-    key = "tier_subtree"
+class EntityDescendantsSection(MyDataSection):
+    key = "entity_descendants"
     template_families = ("multitier_mydata",)
     section_tags = ("tier_variables",)
 
     def render(self, _context, state: MultitierMyDataState) -> str:
         return generate_tier_variable_code(
-            var_name="tier_subtree",
+            var_name="entity_descendants",
             converted_data=convert_dict_to_matlab(
                 {
                     entity_id: convert_dict_to_matlab(
                         {
                             tier_name: convert_list_of_strings_to_matlab(entity_ids, double_brackets=True)
-                            for tier_name, entity_ids in subtree.items()
+                            for tier_name, entity_ids in descendants.items()
                         }
                     )
-                    for entity_id, subtree in state.tier_subtree.items()
+                    for entity_id, descendants in state.entity_descendants.items()
                 }
             ),
-            label="Tier subtree",
+            label="Entity descendants",
+        )
+
+
+class EntityPathSection(MyDataSection):
+    key = "entity_path"
+    template_families = ("multitier_mydata",)
+    section_tags = ("tier_variables",)
+
+    def render(self, _context, state: MultitierMyDataState) -> str:
+        return generate_tier_variable_code(
+            var_name="entity_path",
+            converted_data=convert_dict_to_matlab(
+                {
+                    entity_id: convert_dict_to_matlab(path_by_tier, is_string_data=True)
+                    for entity_id, path_by_tier in state.entity_path.items()
+                }
+            ),
+            label="Entity path",
         )
 
 

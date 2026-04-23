@@ -247,7 +247,8 @@ At a high level, the multitier `mydata` path:
 - walks the tiers below the current tier
 - gathers relevant entities and groups per tier
 - maps estimation entities to descendant entities through the hierarchy
-- records subtree membership in `tier_subtree`
+- records descendant membership in `entity_descendants`
+- records ancestor paths in `entity_path`
 - emits both observation variables and multitier helper structures
 
 ## Generated MATLAB Structure

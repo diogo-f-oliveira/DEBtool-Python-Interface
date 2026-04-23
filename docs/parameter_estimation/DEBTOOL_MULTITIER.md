@@ -35,7 +35,8 @@ In `DEBtoolPyIF`, multitier `mydata` generation is the most mature estimation-te
   - `tiers.entity_list`
   - `tiers.tier_entities`
   - `tiers.tier_groups`
-  - `tiers.tier_subtree`
+  - `tiers.entity_descendants`
+  - `tiers.entity_path`
   - `tiers.groups_of_entity`
   - `tiers.tier_pars`
 
@@ -108,8 +109,10 @@ Current multitier `predict` sources typically read:
   - the group ids for the current tier or a lower tier
 - `auxData.tiers.tier_pars`
   - the parameter names that vary in the current tier
-- `auxData.tiers.tier_subtree.(entity_id).<lower_tier_name>`
+- `auxData.tiers.entity_descendants.(entity_id).<lower_tier_name>`
   - the descendant entities governed by the current estimation entity
+- `auxData.tiers.entity_path.(entity_id).<tier_name>`
+  - the ancestor path for each included entity
 - `auxData.tiers.groups_of_entity.(entity_id)`
   - the groups each entity contributes to
 - `auxData.init.<data_varname>`
@@ -151,8 +154,8 @@ The Python-side generation path is documented in [TEMPLATE_GENERATION.md](TEMPLA
 
 When editing multitier estimation templates, preserve these invariants:
 
-- `tier_entities`, `tier_groups`, `tier_subtree`, `groups_of_entity`, and `tier_par_init_values` must remain aligned with the prediction logic.
-- Lower-tier `predict` logic must traverse the descendant hierarchy implied by `tier_subtree`.
+- `tier_entities`, `tier_groups`, `entity_descendants`, `entity_path`, `groups_of_entity`, and `tier_par_init_values` must remain aligned with the prediction logic.
+- Lower-tier `predict` logic must traverse the descendant hierarchy implied by `entity_descendants`.
 - Group predictions must accumulate over the entities that contribute to each group.
 - Expanded parameter fields such as `par.<base>_<entity_id>` must match the names emitted by `pars_init`.
 - Lower-tier pseudo-data must stay aligned with the inherited values used to initialize the current tier.

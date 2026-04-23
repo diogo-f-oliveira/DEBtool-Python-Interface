@@ -2,6 +2,7 @@
 
 from .chemical import (
     ChemicalParameters,
+    ChemicalParameterValues,
     get_chemical_parameter_values_of,
     get_chemical_parameters_of,
 )
@@ -33,6 +34,7 @@ from .definitions import (
     s_G,
     t_0,
     v,
+    V_0,
     z,
 )
 from .registry import (

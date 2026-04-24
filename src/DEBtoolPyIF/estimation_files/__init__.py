@@ -9,6 +9,7 @@ from .mydata import (
     build_mydata_substitutions,
 )
 from .mydata_base import BaseMyDataState
+from .mydata_pseudodata_sections import AddPseudoDataValue
 from .pars_init import (
     ParsInitProgrammaticTemplate,
     ParsInitSubstitutionTemplate,
@@ -57,6 +58,7 @@ __all__ = [
     "ProgrammaticTemplate",
     "SubstitutionTemplate",
     "BaseMyDataState",
+    "AddPseudoDataValue",
     "MyDataSection",
     "MyDataProgrammaticTemplate",
     "MyDataSubstitutionTemplate",

@@ -538,6 +538,7 @@ Representative generic sections include:
 - `InitializeWeightsSection`
 - `RemoveDummyWeightsSection`
 - `AddPseudoDataSection`
+- `AddPseudoDataValue`
 - `SaveDataFieldsByVariateTypeSection`
 - `AuthorInfoMetadataSection`
 - `PackingSection`
@@ -603,6 +604,17 @@ Use `template_families = ("mydata",)` when the section should be available to ge
 Use `template_families = ("multitier_mydata",)` when the section should only be available to multitier `mydata` templates.
 
 Use both families only when the same class should be registered independently for both families.
+
+`AddPseudoDataValue` is the built-in opt-in helper for extra pseudo-data assignments. It renders
+`data.psd.<name>`, `units.psd.<name>`, and `label.psd.<name>` from ordered
+`(ParameterDefinition, value)` pairs supplied at construction time. It is registered in the shared
+`"mydata"` family, so it is allowed in both generic and multitier `mydata` templates, but it is
+not part of the default section sets.
+
+For source-backed templates, include `$additional_pseudodata_block` in the MATLAB source and pass
+`AddPseudoDataValue(...)` explicitly in `sections=...` when a workflow wants these assignments.
+Because the packaged template sources do not include that placeholder by default, existing workflows
+remain unchanged unless they opt in explicitly.
 
 Duplicate keys are rejected within the same registered family at class-definition time. If a class omits `template_families`, it is not registered and does not add a new allowed key automatically.
 

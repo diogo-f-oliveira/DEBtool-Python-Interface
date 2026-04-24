@@ -8,6 +8,7 @@ import pytest
 
 from DEBtoolPyIF.estimation_files import (
     AddPathSection,
+    AddPseudoDataValue,
     AlgorithmRunTemplate,
     BaseMyDataState,
     CopyFileTemplate,
@@ -642,6 +643,21 @@ def test_mydata_source_template_allows_partial_placeholder_sets(tmp_path):
     )
 
 
+def test_mydata_source_template_renders_additional_pseudodata_placeholder_when_section_is_supplied():
+    context = SimpleNamespace(species_name="Test_species")
+    template = MyDataSubstitutionTemplate(
+        source="$additional_pseudodata_block",
+        sections=(AddPseudoDataValue(pseudo_data_values=((t_0, 80),)),),
+    )
+
+    contents = template.render(context)
+
+    assert (
+        contents
+        == "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'time at start development';"
+    )
+
+
 def test_mydata_source_template_renders_entity_iteration_sections_to_info():
     context = SimpleNamespace(
         species_name="Test_species",
@@ -737,6 +753,76 @@ def test_mydata_template_data_sections_helper_returns_data_sections():
         EntityListSection,
         GroupsOfEntitySection,
     )
+
+
+def test_add_pseudo_data_value_renders_single_entry():
+    section = AddPseudoDataValue(pseudo_data_values=((t_0, 80),))
+
+    rendered = section.render(SimpleNamespace(species_name="ignored"), BaseMyDataState())
+
+    assert (
+        rendered
+        == "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'time at start development';"
+    )
+
+
+def test_add_pseudo_data_value_renders_multiple_entries_in_input_order():
+    custom_definition = ParameterDefinition(
+        name="custom_par",
+        units="J",
+        label="custom pseudo-data target",
+        float_format=".2f",
+    )
+    section = AddPseudoDataValue(
+        pseudo_data_values=((custom_definition, 1.234), (t_0, 80)),
+    )
+
+    rendered = section.render(SimpleNamespace(species_name="ignored"), BaseMyDataState())
+
+    assert rendered.splitlines() == [
+        "data.psd.custom_par = 1.23; units.psd.custom_par = 'J'; "
+        "label.psd.custom_par = 'custom pseudo-data target';",
+        "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'time at start development';",
+    ]
+
+
+def test_add_pseudo_data_value_is_empty_by_default():
+    rendered = AddPseudoDataValue().render(SimpleNamespace(species_name="ignored"), BaseMyDataState())
+
+    assert rendered == ""
+
+
+def test_add_pseudo_data_value_rejects_non_parameter_definition_entries():
+    with pytest.raises(TypeError, match="ParameterDefinition instances"):
+        AddPseudoDataValue(pseudo_data_values=(("t_0", 80),))
+
+
+def test_add_pseudo_data_value_rejects_unsupported_numeric_values():
+    section = AddPseudoDataValue(pseudo_data_values=((t_0, True),))
+
+    with pytest.raises(TypeError, match="convert_numeric_array_to_matlab expected array"):
+        section.render(SimpleNamespace(species_name="ignored"), BaseMyDataState())
+
+
+def test_add_pseudo_data_value_preserves_special_numeric_values():
+    definition = ParameterDefinition(
+        name="special",
+        units="-",
+        label="special values",
+    )
+    section = AddPseudoDataValue(
+        pseudo_data_values=(
+            (definition.replace(name="special_nan"), np.nan),
+            (definition.replace(name="special_inf"), np.inf),
+            (definition.replace(name="special_ninf"), -np.inf),
+        )
+    )
+
+    rendered = section.render(SimpleNamespace(species_name="ignored"), BaseMyDataState())
+
+    assert "data.psd.special_nan = NaN;" in rendered
+    assert "data.psd.special_inf = Inf;" in rendered
+    assert "data.psd.special_ninf = -Inf;" in rendered
 
 
 def test_mydata_section_opt_in_registration_updates_allowed_keys_automatically():
@@ -874,6 +960,7 @@ def test_mydata_template_allowed_section_keys_include_registered_metadata_sectio
     assert "author_info_block" in allowed_keys
     assert "typical_temperature_block" in allowed_keys
     assert "completeness_level_block" in allowed_keys
+    assert "additional_pseudodata_block" in allowed_keys
 
 
 def test_multitier_mydata_template_allowed_section_keys_include_multitier_sections():
@@ -881,6 +968,15 @@ def test_multitier_mydata_template_allowed_section_keys_include_multitier_sectio
 
     assert "set_temperature_equal_to_typical_block" in allowed_keys
     assert "multitier_pseudodata_block" in allowed_keys
+    assert "additional_pseudodata_block" in allowed_keys
+
+
+def test_add_pseudo_data_value_is_exported_from_public_apis():
+    import DEBtoolPyIF
+    import DEBtoolPyIF.estimation_files as estimation_files_package
+
+    assert DEBtoolPyIF.AddPseudoDataValue is AddPseudoDataValue
+    assert estimation_files_package.AddPseudoDataValue is AddPseudoDataValue
 
 
 def test_multitier_mydata_template_uses_specialized_classes_for_duplicate_generic_keys():

@@ -123,9 +123,9 @@ metaData.data_1     = {};
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};
     if length(data.(field)) > 1
-        metaData.data_1{end+1} = field; %#ok<AGROW>
+        metaData.data_1{end+1} = field; 
     else
-        metaData.data_0{end+1} = field; %#ok<AGROW>
+        metaData.data_0{end+1} = field; 
     end
 end"""
 

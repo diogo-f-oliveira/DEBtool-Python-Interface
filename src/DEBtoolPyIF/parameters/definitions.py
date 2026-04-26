@@ -26,15 +26,15 @@ class ParameterDefinition:
     latex_label: str | None = None
 
     def replace(
-        self,
-        *,
-        name: str | _UnsetType = _UNSET,
-        units: str | _UnsetType = _UNSET,
-        label: str | _UnsetType = _UNSET,
-        default_value: float | int | None | _UnsetType = _UNSET,
-        default_free: int | _UnsetType = _UNSET,
-        float_format: str | None | _UnsetType = _UNSET,
-        latex_label: str | None | _UnsetType = _UNSET,
+            self,
+            *,
+            name: str | _UnsetType = _UNSET,
+            units: str | _UnsetType = _UNSET,
+            label: str | _UnsetType = _UNSET,
+            default_value: float | int | None | _UnsetType = _UNSET,
+            default_free: int | _UnsetType = _UNSET,
+            float_format: str | None | _UnsetType = _UNSET,
+            latex_label: str | None | _UnsetType = _UNSET,
     ) -> "ParameterDefinition":
         changes = {}
         if name is not _UNSET:
@@ -55,15 +55,15 @@ class ParameterDefinition:
 
 
 def _register_builtin(
-    name: str,
-    units: str,
-    label: str,
-    *,
-    default_value: float | int | None = None,
-    default_free: int = 0,
-    float_format: str | None = None,
-    latex_label: str | None = None,
-    include_in_default: bool = False,
+        name: str,
+        units: str,
+        label: str,
+        *,
+        default_value: float | int | None = None,
+        default_free: int = 0,
+        float_format: str | None = None,
+        latex_label: str | None = None,
+        include_in_default: bool = False,
 ) -> ParameterDefinition:
     definition = ParameterDefinition(
         name=name,
@@ -138,9 +138,9 @@ f = _register_builtin(
 p_Am = _register_builtin("p_Am", "J/d.cm^2", "Surface-specific maximum assimilation rate")
 t_0 = _register_builtin("t_0", "d", "time at start development")
 del_M = _register_builtin("del_M", "-", "shape coefficent")
-V_0 = _register_builtin("V_0", "cm^3", "initial structure at fertilization")
+V_0 = _register_builtin("V_0", "cm^3", "initial structure at fertilization", default_free=0, default_value=0)
 
-# TODO: Add classes for parameters that often have variants, e.g., maturity levels, food levels, chemical parameters
+# TODO: Add classes for parameters that often have variants, e.g., maturity levels, food levels,
 
 ALL_PARAMETER_DEFINITIONS = tuple(_BUILTIN_DEFINITIONS_BY_NAME.values())
 DEFAULT_PARAMETER_DEFINITIONS = tuple(
@@ -159,11 +159,12 @@ def require_parameter_definition(name: str) -> ParameterDefinition:
         raise KeyError(name)
     return definition
 
+
 __all__ = [
-    "ALL_PARAMETER_DEFINITIONS",
-    "DEFAULT_PARAMETER_DEFINITIONS",
-    "PARAMETER_DEFINITIONS_BY_NAME",
-    "ParameterDefinition",
-    "get_parameter_definition",
-    "require_parameter_definition",
-] + list(_BUILTIN_DEFINITIONS_BY_NAME)
+              "ALL_PARAMETER_DEFINITIONS",
+              "DEFAULT_PARAMETER_DEFINITIONS",
+              "PARAMETER_DEFINITIONS_BY_NAME",
+              "ParameterDefinition",
+              "get_parameter_definition",
+              "require_parameter_definition",
+          ] + list(_BUILTIN_DEFINITIONS_BY_NAME)

@@ -193,6 +193,24 @@ class FakeCodegenTierStructure:
         return {"p_Am": 12.5, "kap_X": 0.25, "del_M": 0.15}
 
 
+class FakeMultiRootCodegenTierStructure(FakeCodegenTierStructure):
+    def __init__(self):
+        super().__init__()
+        self.entity_hierarchy = TierHierarchy(
+            tier_names=["top", "bottom"],
+            entities={
+                "top": ["root_entity_a", "root_entity_b"],
+                "bottom": ["child_b", "child_a"],
+            },
+            parents={
+                "bottom": {
+                    "child_b": "root_entity_a",
+                    "child_a": "root_entity_b",
+                },
+            },
+        )
+
+
 def _write_tier_template_folder(base_folder: Path, tier_name: str, species_name: str):
     tier_folder = base_folder / tier_name
     tier_folder.mkdir(parents=True)
@@ -1147,6 +1165,59 @@ def test_pars_init_template_renders_builtins_and_expansion():
     assert "loop block" in contents
 
 
+def test_multitier_generation_context_does_not_expand_parameters_for_root_singleton(tmp_path):
+    context = _build_multitier_context(tmp_path, tier_name="top", entity_list=["root_entity"])
+
+    assert context.expand_current_tier_parameters is False
+
+
+def test_multitier_pars_init_template_skips_loops_for_root_singleton(tmp_path):
+    context = _build_multitier_context(tmp_path, tier_name="top", entity_list=["root_entity"])
+
+    contents = RegistryMultitierParsInitProgrammaticTemplate(
+        parameter_registry=_pars_init_registry_with(p_Am, del_M),
+    ).render(context)
+
+    assert "par.p_Am = 12.5;" in contents
+    assert "varname = [par_name '_' entity_id];" not in contents
+
+
+def test_multitier_pars_init_template_keeps_loops_for_single_lower_tier_entity(tmp_path):
+    context = _build_multitier_context(tmp_path, tier_name="bottom", entity_list=["child_a"])
+
+    contents = RegistryMultitierParsInitProgrammaticTemplate(
+        parameter_registry=_pars_init_registry_with(p_Am, del_M),
+    ).render(context)
+
+    assert context.expand_current_tier_parameters is True
+    assert "varname = [par_name '_' entity_id];" in contents
+
+
+def test_multitier_pars_init_template_keeps_loops_for_single_target_of_multi_entity_root(tmp_path):
+    tier_structure = FakeMultiRootCodegenTierStructure()
+    tier_estimator = SimpleNamespace(
+        name="top",
+        tier_structure=tier_structure,
+        tier_pars=["par_a"],
+        extra_info="metaData.extra_info = NaN;",
+        output_folder=tmp_path,
+        estimation_settings={},
+    )
+    context = MultitierGenerationContext.from_tier_estimator(
+        tier_estimator=tier_estimator,
+        entity_list=["root_entity_a"],
+        pseudo_data_weight=0.25,
+        output_folder=tmp_path,
+    )
+
+    contents = RegistryMultitierParsInitProgrammaticTemplate(
+        parameter_registry=_pars_init_registry_with(p_Am, del_M),
+    ).render(context)
+
+    assert context.expand_current_tier_parameters is True
+    assert "varname = [par_name '_' entity_id];" in contents
+
+
 def test_pars_init_template_required_sections_returns_complete_valid_tuple():
     template = ParsInitProgrammaticTemplate(sections=ParsInitProgrammaticTemplate.required_sections())
 
@@ -2063,6 +2134,7 @@ def test_run_template_required_sections_returns_complete_valid_tuple():
 
     assert tuple(section.key for section in template.get_sections()) == (
         "setup",
+        "check_my_pet_setup",
         "set_options",
         "estimation_call",
     )
@@ -2106,6 +2178,7 @@ def test_run_source_template_uses_source_path_independently():
     source = "\n".join(
         [
             "$setup",
+            "$check_my_pet_setup",
             "$set_options",
             "$estimation_call",
         ]
@@ -2146,7 +2219,9 @@ def test_run_source_template_renders_only_referenced_sections():
 
     contents = RunSubstitutionTemplate(source="$setup").render(context)
 
-    assert contents.startswith("clear;\nclose all;\n")
+    assert contents == "clear;\nclose all;"
+    assert "check_my_pet(pets);" not in contents
+    assert "pets = {'Test_species'};" not in contents
     assert "estim_options('max_step_number'" not in contents
 
 
@@ -2336,8 +2411,9 @@ def test_algorithm_run_template_inserts_add_paths_after_setup_and_before_options
     contents = template.render(context)
 
     assert template.add_path_dirs == ("data_pipeline", "ode")
-    assert contents.index("check_my_pet(pets);") < contents.index("addpath('data_pipeline');")
+    assert contents.index("close all;") < contents.index("addpath('data_pipeline');")
     assert contents.index("addpath('data_pipeline');") < contents.index("addpath('ode');")
+    assert contents.index("addpath('ode');") < contents.index("check_my_pet(pets);")
     assert contents.index("addpath('ode');") < contents.index("estim_options('default');")
 
 
@@ -2454,8 +2530,9 @@ def test_nelder_mead_accepts_add_path_dirs():
     contents = template.render(context)
 
     assert template.add_path_dirs == (str(Path("data_pipeline")), "ode")
-    assert contents.index("check_my_pet(pets);") < contents.index(f"addpath('{Path('data_pipeline')}');")
+    assert contents.index("close all;") < contents.index(f"addpath('{Path('data_pipeline')}');")
     assert contents.index(f"addpath('{Path('data_pipeline')}');") < contents.index("addpath('ode');")
+    assert contents.index("addpath('ode');") < contents.index("check_my_pet(pets);")
     assert contents.index("addpath('ode');") < contents.index("estim_options('default');")
 
 
@@ -2510,6 +2587,7 @@ def test_restarting_nelder_mead_accepts_add_path_dirs_before_restart_behavior():
     contents = template.render(context)
 
     assert contents.index("addpath('data_pipeline');") < contents.index("estim_options('default');")
+    assert contents.index("addpath('data_pipeline');") < contents.index("check_my_pet(pets);")
     assert contents.index("addpath('data_pipeline');") < contents.index("[nsteps, converged, fval] = estim_pars;")
     assert contents.index("[nsteps, converged, fval] = estim_pars;") < contents.index("n_runs = 3;")
 
@@ -2906,6 +2984,4 @@ def test_run_source_template_does_not_depend_on_programmatic_template(monkeypatc
 
     monkeypatch.setattr(RunProgrammaticTemplate, "render", fail)
 
-    assert RunSubstitutionTemplate(source="$setup").render(context).startswith(
-        "clear;\nclose all;\n"
-    )
+    assert RunSubstitutionTemplate(source="$setup").render(context) == "clear;\nclose all;"

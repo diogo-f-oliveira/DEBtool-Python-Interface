@@ -22,8 +22,6 @@ class GroupDataTypesSection(MyDataSection):
     section_tags = ("data",)
 
     def render(self, _context, state: BaseMyDataState) -> str:
-        if not state.group_data_types:
-            return ""
         return generate_meta_data_code(
             var_name="group_data_types",
             converted_data=convert_list_of_strings_to_matlab(list(state.group_data_types)),
@@ -45,8 +43,6 @@ class EntityDataTypesSection(MyDataSection):
     section_tags = ("data",)
 
     def render(self, _context, state: BaseMyDataState) -> str:
-        if not state.entity_data_types:
-            return ""
         return generate_meta_data_code(
             var_name="entity_data_types",
             converted_data=convert_list_of_strings_to_matlab(list(state.entity_data_types)),
@@ -61,8 +57,6 @@ class EntityListSection(MyDataSection):
     pars_init_access = False
 
     def render(self, _context, state: BaseMyDataState) -> str:
-        if not state.entity_list:
-            return ""
         return generate_struct_variable_code(
             var_name="entity_list",
             converted_data=convert_list_of_strings_to_matlab(list(state.entity_list)),
@@ -79,8 +73,6 @@ class GroupsOfEntitySection(MyDataSection):
     struct_name = "info"
 
     def render(self, _context, state: BaseMyDataState) -> str:
-        if not state.groups_of_entity:
-            return ""
         return generate_struct_variable_code(
             var_name="groups_of_entity",
             converted_data=convert_dict_to_matlab(

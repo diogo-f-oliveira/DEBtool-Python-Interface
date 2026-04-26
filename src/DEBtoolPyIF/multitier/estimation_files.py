@@ -123,3 +123,11 @@ class MultitierGenerationContext(GenerationContext):
             tier_name=self.tier_name,
             entity_list=self.entity_list,
         ).to_dict()
+
+    @property
+    def expand_current_tier_parameters(self) -> bool:
+        entity_hierarchy = self.tier_structure.entity_hierarchy
+        is_root_tier = entity_hierarchy.get_parent_tier(self.tier_name) is None
+        if not is_root_tier:
+            return True
+        return len(entity_hierarchy.get_entities(self.tier_name)) != 1

@@ -37,6 +37,11 @@ end"""
         self.tier_label_template = tier_label_template
         super().__init__()
 
+    def render(self, context) -> str:
+        if not getattr(context, "expand_current_tier_parameters", True):
+            return ""
+        return super().render(context)
+
     def get_init_substitutions(self) -> dict[str, str]:
         return {"tier_label_template": self.tier_label_template}
 

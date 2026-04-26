@@ -75,6 +75,7 @@ class AddModelMedatadaSection(ParsInitSection):
 
 
 class ParsInitReferenceTemperatureSection(ParsInitSection):
+    # TODO: Add comment to align with DEBtool template
     key = "reference_temperature"
     template_families = ("pars_init",)
     section_tags = ("temperature", "parameters")
@@ -93,6 +94,7 @@ class ParsInitReferenceTemperatureSection(ParsInitSection):
 
 
 class InitializeParametersSection(ParsInitSection):
+    # TODO: Add comment to align with DEBtool template
     key = "base_parameters"
     template_families = ("pars_init",)
     section_tags = ("parameters",)

@@ -21,6 +21,7 @@ from .run_sections import (
     EstimationCallSection,
     GetResultsSection,
     RestartLoopSection,
+    RunCheckMyPetSection,
     RunSection,
     RunSetupSection,
     SavePredictionsSection,
@@ -58,6 +59,7 @@ class AlgorithmRunTemplate(RunProgrammaticTemplate):
         sections = (
             RunSetupSection(),
             *add_path_sections,
+            RunCheckMyPetSection(),
             SetEstimOptionsSection(options=self.build_algorithm_options()),
             *self.build_estimation_sections(),
             *self.post_estimation_sections,

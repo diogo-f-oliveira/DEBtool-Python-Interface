@@ -7,7 +7,7 @@ from pathlib import Path
 from .run_options import (
     SetEstimOptionsSection,
 )
-from .run_sections import RunSection, RunSetupSection, EstimationCallSection
+from .run_sections import EstimationCallSection, RunCheckMyPetSection, RunSection, RunSetupSection
 from .templates import ProgrammaticTemplate, SubstitutionTemplate
 
 
@@ -48,6 +48,7 @@ class RunTemplate:
     def required_sections(cls) -> tuple[RunSection, ...]:
         return (
             RunSetupSection(),
+            RunCheckMyPetSection(),
             SetEstimOptionsSection(),
             EstimationCallSection(),
         )

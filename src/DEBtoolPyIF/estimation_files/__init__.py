@@ -39,7 +39,7 @@ from .run_options import (
     SetTolSimplexOption,
     StringEstimOption,
 )
-from .run_sections import AddPathSection, RunSection
+from .run_sections import AddPathSection, RunCheckMyPetSection, RunSection
 from .algorithms import AlgorithmRunTemplate, AlternatingRestartNelderMead, NelderMead, RestartingNelderMead
 from .templates import (
     CopyFileTemplate,
@@ -70,6 +70,7 @@ __all__ = [
     "ParsInitChemicalParametersSection",
     "ParsInitReferenceTemperatureSection",
     "AddPathSection",
+    "RunCheckMyPetSection",
     "RunSection",
     "RunSetting",
     "EstimOption",

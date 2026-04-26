@@ -26,8 +26,14 @@ class RunSetupSection(RunSection):
     template_families = ("run",)
     section_tags = ("pre_estimation",)
     matlab_code = """clear;
-close all;
-global pets
+close all;"""
+
+
+class RunCheckMyPetSection(RunSection):
+    key = "check_my_pet_setup"
+    template_families = ("run",)
+    section_tags = ("pre_estimation",)
+    matlab_code = """global pets
 
 pets = {'${species_name}'};
 check_my_pet(pets);"""

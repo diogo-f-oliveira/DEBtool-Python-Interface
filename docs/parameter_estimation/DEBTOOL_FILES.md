@@ -231,13 +231,15 @@ Typical role:
 
 At a general level, `run` usually:
 
-1. Defines the species name through `pets`.
-2. Calls `check_my_pet(pets)`.
-3. Configures DEBtool estimation options.
-4. Calls the DEBtool estimation entry point, `estim_pars`.
-5. Optionally repeats `estim_pars` according to the chosen optimization algorithm.
-6. Optionally switches DEBtool into final reporting or output mode.
-7. Optionally loads the saved result file.
+1. Clears the MATLAB workspace state and closes figures.
+2. Optionally adds extra folders to the MATLAB path.
+3. Defines the species name through `pets`.
+4. Calls `check_my_pet(pets)`.
+5. Configures DEBtool estimation options.
+6. Calls the DEBtool estimation entry point, `estim_pars`.
+7. Optionally repeats `estim_pars` according to the chosen optimization algorithm.
+8. Optionally switches DEBtool into final reporting or output mode.
+9. Optionally loads the saved result file.
 8. Optionally calls `mydata_<species>` and `predict_<species>` explicitly to compute final predictions.
 9. Optionally saves the enriched result file.
 

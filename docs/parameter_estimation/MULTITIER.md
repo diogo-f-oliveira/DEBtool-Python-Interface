@@ -347,7 +347,7 @@ When changing multitier code or examples, preserve these invariants:
 - `tier_pars` must remain a subset of parameters known in higher tiers or base `pars`.
 - Data for a tier includes that tier and all tiers below it unless the methodology is being changed intentionally.
 - Multitier helper structures in `mydata` must stay aligned with the hierarchy-aware logic in `predict`.
-- Expanded parameter fields such as `par.<name>_<entity_id>` must stay aligned between `pars_init` and `predict`.
+- Expanded parameter fields such as `par.<name>_<entity_id>` must stay aligned between `pars_init` and `predict` whenever the current tier uses entity-specific expansion.
 
 ## Relationship To The Other Docs
 

@@ -85,7 +85,7 @@ In practice, this means:
 - `run` should use an algorithm template such as `NelderMead()` when the built-in optimizer behavior fits
 - `RunSubstitutionTemplate` remains supported when a project needs to maintain a source-backed MATLAB run script
 
-Algorithm templates own their option set and read render-time values from `estimation_settings`. Source-backed run templates still combine readable MATLAB source with Python-side section rendering, but their placeholders must match registered run section keys such as `$setup`, `$set_options`, and `$estimation_call`.
+Algorithm templates own their option set and read render-time values from `estimation_settings`. Source-backed run templates still combine readable MATLAB source with Python-side section rendering, but their placeholders must match registered run section keys such as `$setup`, `$check_my_pet_setup`, `$set_options`, and `$estimation_call`.
 
 ## Minimal Skeleton
 

@@ -70,8 +70,13 @@ The multitier `pars_init` layer keeps the normal DEBtool parameter structs, but 
 Typical pattern:
 
 - base parameters remain in `par.<name>`
-- current-tier free parameters are created as `par.<name>_<entity_id>`
+- current-tier free parameters are usually created as `par.<name>_<entity_id>`
 - inherited values from `metaData.tier_par_init_values` become the starting values for those expanded fields
+
+Exception:
+
+- if the current tier is the root tier and that root tier contains exactly one entity in the hierarchy, `pars_init` can reuse the base `par.<name>` fields directly and skip the entity-suffixed expansion block
+- the bundled generic multitier `predict` template is intentionally unchanged and still assumes expanded entity-specific fields when it needs tier-varying parameters
 
 This is how one tier can re-estimate only a subset of parameters while keeping all others fixed from higher-tier estimates or base initialization.
 
@@ -157,7 +162,7 @@ When editing multitier estimation templates, preserve these invariants:
 - `tier_entities`, `tier_groups`, `entity_descendants`, `entity_path`, `groups_of_entity`, and `tier_par_init_values` must remain aligned with the prediction logic.
 - Lower-tier `predict` logic must traverse the descendant hierarchy implied by `entity_descendants`.
 - Group predictions must accumulate over the entities that contribute to each group.
-- Expanded parameter fields such as `par.<base>_<entity_id>` must match the names emitted by `pars_init`.
+- Expanded parameter fields such as `par.<base>_<entity_id>` must match the names emitted by `pars_init` whenever the current tier uses entity-specific expansion.
 - Lower-tier pseudo-data must stay aligned with the inherited values used to initialize the current tier.
 
 ## Relationship To The Other Docs

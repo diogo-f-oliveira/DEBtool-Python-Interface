@@ -298,7 +298,9 @@ Chemical override helpers live in `DEBtoolPyIF.parameters.chemical`.
 Built-in run sections include:
 
 - `RunSetupSection`
-  - renders the standard `clear`, `close all`, `global pets`, species list, and `check_my_pet(pets)` setup
+  - renders the initial workspace reset with `clear` and `close all`
+- `RunCheckMyPetSection`
+  - renders `global pets`, the species list, and `check_my_pet(pets)`
 - `SetEstimOptionsSection`
   - renders DEBtool estimation option initialization and an ordered set of typed option objects
 - `EstimationCallSection`
@@ -376,7 +378,7 @@ section = SetEstimOptionsSection(
 - Subclasses define `method`, `option_classes`, and `get_algorithm_settings()`.
 - Constructor values are rendered directly into `estim_options(...)`.
 - Omitted constructor values become render-time keys resolved from `context.estimation_settings`.
-- Accepts `add_path_dirs=...` for fixed MATLAB folders rendered as `addpath(...)` after setup.
+- Accepts `add_path_dirs=...` for fixed MATLAB folders rendered as `addpath(...)` after `clear` / `close all` and before `check_my_pet(pets)`.
 - `get_algorithm_settings()` may include non-`estim_options` settings used by algorithm sections.
 - `build_algorithm_options()` renders only settings declared in `option_classes`.
 - `get_fixed_settings()` returns constructor-provided settings.
@@ -453,7 +455,7 @@ run_template = AlternatingRestartNelderMead(
 
 High-level algorithm templates intentionally expose path additions, option customization, and post-estimation sections. If a workflow needs arbitrary section insertion between setup, option initialization, and the estimation call, compose `RunSection` objects directly with `RunProgrammaticTemplate`.
 
-Source-backed run templates still work, but their placeholders must match registered section keys. For the base run contract, use `$setup`, `$set_options`, and `$estimation_call`. Do not use `$algorithm` as a required base placeholder.
+Source-backed run templates still work, but their placeholders must match registered section keys. For the base run contract, use `$setup`, `$check_my_pet_setup`, `$set_options`, and `$estimation_call`. Do not use `$algorithm` as a required base placeholder.
 
 ### Automatic section registries
 

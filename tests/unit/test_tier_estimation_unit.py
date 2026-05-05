@@ -33,6 +33,44 @@ def test_estimate_accepts_settings_and_persists_them(template_folder):
     assert tier.pars_df.loc["entity_1", "par_a"] == 1.23
 
 
+def test_estimate_can_print_traces_and_final_parameters(template_folder, capsys):
+    tier = build_tier_estimator(template_folder)
+
+    tier.estimate(
+        save_results=False,
+        print_results=False,
+        hide_output=True,
+        estimation_settings=_run_settings(n_runs=5, n_steps=10),
+        trace_output=True,
+        print_pars_after_estimation=True,
+    )
+
+    out = capsys.readouterr().out
+    assert "Tier tier_1 | start" in out
+    assert "[1/1]" in out
+    assert "| entity_1" in out
+    assert "Tier tier_1 | done" in out
+    assert "Trace:" not in out
+    assert "entity" in out
+    assert "par_a" in out
+    assert "1.23" in out
+
+
+def test_estimate_keeps_traces_disabled_by_default(template_folder, capsys):
+    tier = build_tier_estimator(template_folder)
+
+    tier.estimate(
+        save_results=False,
+        print_results=False,
+        hide_output=True,
+        estimation_settings=_run_settings(n_runs=5, n_steps=10),
+    )
+
+    out = capsys.readouterr().out
+    assert "Tier tier_1 | start" not in out
+    assert "[1/1]" not in out
+
+
 def test_tier_estimator_converts_string_paths_to_path_objects(template_folder):
     tier = build_tier_estimator(template_folder)
 

@@ -1,6 +1,7 @@
 import warnings
 from copy import deepcopy
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 from tabulate import tabulate
@@ -94,6 +95,7 @@ class TierEstimator:
 
         self.set_tier_parameters(tier_pars)
 
+        # TODO: This should likely be part of a TieredDataCollection object to simplify these accesses
         entity_list = []
         entity_data_types = set()
         group_list = []
@@ -106,6 +108,7 @@ class TierEstimator:
             tier_groups = tier.groups
             group_list.extend([(child_tier_name, group_id) for group_id in tier_groups])
             group_data_types.update(tier.group_data_types)
+        # TODO: Need to make this generation deterministic, sort after generation
 
         self.entity_data_errors = pd.DataFrame(
             columns=list(entity_data_types),
@@ -155,22 +158,46 @@ class TierEstimator:
         self.estimation_settings = deepcopy(estimation_settings)
 
     def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True,
-                 estimation_settings=None, entity_list="all"):
+                 estimation_settings=None, entity_list="all", trace_output=False,
+                 print_pars_after_estimation=False):
+        """
+
+        :param pseudo_data_weight:
+        :param save_results:
+        :param print_results:
+        :param hide_output:
+        :param estimation_settings:
+        :param entity_list:
+        :param trace_output:
+        :param print_pars_after_estimation:
+        :return:
+        """
         if estimation_settings is not None:
             self.set_estimation_settings(estimation_settings)
         if self.estimation_settings is None:
             raise ValueError(f"Estimation settings must be provided for tier '{self.name}' before estimation.")
+        if self.estimation_templates is None:
+            raise ValueError(f"Estimation templates must be provided for tier '{self.name}' before estimation.")
 
-        print(f"Running estimation for {self.name} tier with parameters {' '.join(self.tier_pars)}.")
         self.estim_start_time = pd.Timestamp.now()
         self.estimation_iterations = []
 
+        estimation_templates = self.estimation_templates
         estimation_targets = self.get_estimation_targets(entity_list=entity_list)
+        total_iterations = len(estimation_targets)
 
-        for estimation_target in estimation_targets:
-            group_name = estimation_target["folder_name"]
-            target_entity_list = estimation_target["entity_list"]
+        if trace_output:
+            print(f"Tier {self.name} | start {self.estim_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        for iteration_index, estimation_target in enumerate(estimation_targets, start=1):
+            group_name = cast(str, estimation_target["folder_name"])
+            target_entity_list = list(cast(list[str], estimation_target["entity_list"]))
+            target_type = cast(str, estimation_target["target_type"])
+            target_name = cast(str, estimation_target["target_name"])
+            target_entities_text = ", ".join(map(str, target_entity_list))
             iteration_start_time = pd.Timestamp.now()
+            if trace_output:
+                print(f"[{iteration_index}/{total_iterations}] {iteration_start_time.strftime('%H:%M:%S')} | {target_entities_text}")
             output_folder = self.output_folder / group_name
             output_folder.mkdir(parents=True, exist_ok=True)
             self.tier_structure.estimation_runner.estim_files_dir = output_folder
@@ -180,13 +207,16 @@ class TierEstimator:
                 pseudo_data_weight=pseudo_data_weight,
                 output_folder=output_folder,
             )
-            write_tier_estimation_files(self.estimation_templates, generation_context)
+            write_tier_estimation_files(estimation_templates, generation_context)
 
             success = self.tier_structure.estimation_runner.run_estimation(hide_output=hide_output)
             iteration_end_time = pd.Timestamp.now()
+            if trace_output:
+                if not success:
+                    print(f"[{iteration_index}/{total_iterations}] {iteration_end_time.strftime('%H:%M:%S')} | FAIL")
             self.estimation_iterations.append(results.build_estimation_iteration_metadata(
-                target_type=estimation_target["target_type"],
-                target_name=estimation_target["target_name"],
+                target_type=target_type,
+                target_name=target_name,
                 entity_list=target_entity_list,
                 output_folder=output_folder,
                 tier_output_folder=self.output_folder,
@@ -204,10 +234,17 @@ class TierEstimator:
 
         self.estim_end_time = pd.Timestamp.now()
 
+        if trace_output:
+            print(f"Tier {self.name} | done {self.estim_end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+
         if print_results:
             self.print_results()
         if save_results:
             self.save_results()
+        if print_pars_after_estimation:
+            self.print_pars()
+
+        return estimation_targets
 
     def get_estimation_targets(self, entity_list="all"):
         entity_list = normalize_entity_list(entity_list)

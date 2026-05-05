@@ -251,6 +251,7 @@ class MultitierPseudoDataSection(MyDataSection):
     template_families = ("multitier_mydata",)
     section_tags = ("pseudodata",)
     matlab_code = """%% Add multitier pseudo-data from previous-tier estimates
+psdWeight = ${pseudo_data_weight};
 for e = 1:length(tiers.entity_list)
     entity_id = tiers.entity_list{e};
     for p = 1:length(tiers.tier_pars)
@@ -260,7 +261,7 @@ for e = 1:length(tiers.entity_list)
         data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
         units.psd.(varname) = '';
         label.psd.(varname) = '';
-        weights.psd.(varname) = ${pseudo_data_weight};
+        weights.psd.(varname) = psdWeight;
     end
 end"""
 

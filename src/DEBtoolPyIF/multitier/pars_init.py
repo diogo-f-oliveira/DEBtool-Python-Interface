@@ -20,16 +20,17 @@ class MultitierParsInitLoopsSection(ParsInitSection):
     template_families = ("multitier_pars_init",)
     section_tags = ("tier_parameters",)
     matlab_code = """%% Set tier parameters
-for e = 1:length(metaData.entity_list)
-    entity_id = metaData.entity_list{e};
-    for p = 1:length(metaData.tier_pars)
-        par_name = metaData.tier_pars{p};
-        varname = [par_name '_' entity_id];
+for p = 1:length(metaData.tier_pars)
+    parName = metaData.tier_pars{p};
+    free.(parName) = 0;
+    for e = 1:length(metaData.entity_list)
+        entity_id = metaData.entity_list{e};
+        varName = [parName '_' entity_id];
 
-        par.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
-        free.(varname) = 1;
-        units.(varname) = units.(par_name);
-        label.(varname) = [label.(par_name) '${tier_label_template}' entity_id];
+        par.(varName) = metaData.tier_par_init_values.(parName).(entity_id);
+        free.(varName) = 1;
+        units.(varName) = units.(parName);
+        label.(varName) = [label.(parName) ' for tier entity ' entity_id];
     end
 end"""
 

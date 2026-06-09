@@ -243,10 +243,11 @@ class SetEstimOptionsSection(RunSection):
                 )
 
     def render(self, context) -> str:
+        matlab_code = "%% Set estimation options\n"
         lines = [SetDefaultEstimOptions().render(context)] if self.initialize else []
         for option in self.options:
             lines.append(option.render(context))
-        return "\n".join(lines)
+        return matlab_code + "\n".join(lines)
 
 
 __all__ = [

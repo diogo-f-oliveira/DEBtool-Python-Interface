@@ -159,3 +159,6 @@ MATLAB/
 
 # Agentic stuff
 AGENTS.md
+
+# Example results
+examples/*/multitier/*

@@ -99,13 +99,15 @@ For each tier, from top to bottom:
 7. Save estimated tier parameter values.
 8. Use those estimates when building the next tier down.
 
-The top tier anchors the hierarchy with the initial parameter dictionary passed as `pars`.
+The top tier anchors the hierarchy with the initial parameter dictionary passed to
+`TierEstimator.estimate(initial_pars=...)`. `MultiTierStructure(base_pars=...)` remains available only as a
+compatibility fallback.
 
 ## Why The Top-Down Order Matters
 
 The package mirrors the paper's rationale directly:
 
-- `get_init_par_values()` initializes a tier from the tier above
+- `TierEstimator.estimate(initial_pars=...)` resolves initial values for the current tier
 - `get_full_pars_dict()` builds the fixed parameter context for generated MATLAB files
 - lower-tier pseudo-data uses those inherited values to anchor the fit
 
@@ -171,7 +173,7 @@ Important `MultiTierStructure` responsibilities:
 - preserve tier order
 - create one `TierEstimator` per tier
 - delegate hierarchy navigation to `entity_hierarchy`
-- compute initialization values and inherited parameter dictionaries
+- hold optional base-parameter fallback values and inherited parameter dictionaries
 - hold the tier `estimation_templates` mapping
 - keep a shared `EstimationRunner` for MATLAB execution
 
@@ -182,8 +184,8 @@ Key methods:
   - creates per-tier output folders
   - instantiates each `TierEstimator`
 - `get_init_par_values()`
-  - top tier: uses base `pars`
-  - lower tiers: inherits from the parent tier unless pseudo-data overrides exist
+  - compatibility wrapper around the estimator-owned initialization resolver
+  - new code should pass root-tier values to `TierEstimator.estimate(initial_pars=...)`
 - `get_full_pars_dict()`
   - assembles the fixed parameter context visible to the current tier
 
@@ -206,6 +208,7 @@ Each estimator holds:
 - `estimation_templates` for the tier
 - the tier output folder
 - optional pseudo-data overrides
+- resolved initial parameter values for the active estimation call
 - estimation settings
 - timestamps and iteration metadata
 
@@ -228,11 +231,12 @@ This keeps the optimization localized instead of forming one very large lower-ti
 For each estimation target:
 
 1. `TierEstimator.estimate(...)` resolves the target entity list.
-2. It creates the target output folder.
-3. It builds `MultitierGenerationContext.from_tier_estimator(...)`.
-4. It calls `write_tier_estimation_files(...)` on the tier's normalized template bundle.
-5. MATLAB runs on the generated files in that folder.
-6. The estimator fetches updated parameter values and errors back into Python.
+2. It resolves initial parameter values from explicit `initial_pars`, pseudo-data overrides, parent-tier estimates, or `base_pars`.
+3. It creates the target output folder.
+4. It builds `MultitierGenerationContext.from_tier_estimator(...)`.
+5. It calls `write_tier_estimation_files(...)` on the tier's normalized template bundle.
+6. MATLAB runs on the generated files in that folder.
+7. The estimator fetches updated parameter values and errors back into Python.
 
 The important architectural shift is that generation is no longer documented as a monolithic code generator. It is a composition of:
 
@@ -288,7 +292,7 @@ The package exposes tier pseudo-data anchoring through `pseudo_data_weight` in `
 
 Implementation details that matter:
 
-- lower-tier initial values come from `get_init_par_values()`
+- lower-tier initial values are resolved by `TierEstimator.estimate(...)`
 - lower-tier pseudo-data targets use those inherited values
 - `extra_pseudo_data` can override inherited values for specific tier entities
 - pseudo-data helps keep lower-tier fits from drifting too far just to match sparse local data

@@ -18,7 +18,7 @@ These are the main concepts agents should organize around:
 
 - `DataCollection` stores the data sources for one tier.
 - `TierHierarchy` defines the ordered hierarchy of entities.
-- `MultiTierStructure` ties together hierarchy, data, initial parameters, tier parameters, `estimation_templates`, and outputs.
+- `MultiTierStructure` ties together hierarchy, data, tier parameters, `estimation_templates`, optional fallback parameters, and outputs.
 - `TierEstimator` runs one tier and stores its results.
 
 ## Recommended Reading Order

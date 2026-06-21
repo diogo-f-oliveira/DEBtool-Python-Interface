@@ -34,7 +34,7 @@ An end-to-end workflow normally assembles five things:
 
 1. One `DataCollection` per tier
 2. One `TierHierarchy` covering the ordered entities across tiers
-3. A base parameter dictionary and a `tier_pars` mapping
+3. A `tier_pars` mapping, plus root-tier initial parameters supplied when estimation starts
 4. One `estimation_templates` mapping keyed by tier name
 5. One `MultiTierStructure` that ties the hierarchy, data, parameters, templates, and outputs together
 
@@ -57,11 +57,11 @@ For user projects, this layout remains the best default:
 - `tier_structure.py`
   - define tier names
   - build the `TierHierarchy`
-  - define initial DEB parameters
   - define `tier_pars`
   - instantiate `MultiTierStructure`
 - `estimation.py`
   - define estimation settings
+  - define the root-tier initial DEB parameters
   - run tiers in order
   - optionally load saved results with `MultiTierResults.from_folder(...)` for read-only inspection
 
@@ -143,12 +143,6 @@ def create_tier_structure(data, estimation_templates, matlab_session="auto"):
         ],
     )
 
-    initial_pars = {
-        "p_Am": 5000,
-        "kap_X": 0.2,
-        "kap_P": 0.1,
-    }
-
     tier_pars = {
         "group": ["p_Am", "kap_X", "kap_P"],
         "individual": ["p_Am", "kap_X"],
@@ -158,7 +152,6 @@ def create_tier_structure(data, estimation_templates, matlab_session="auto"):
         species_name="My_species",
         entity_hierarchy=hierarchy,
         data=data,
-        pars=initial_pars,
         tier_pars=tier_pars,
         estimation_templates=estimation_templates,
         output_folder="path/to/output",
@@ -167,12 +160,19 @@ def create_tier_structure(data, estimation_templates, matlab_session="auto"):
 
 
 def run_multitier_estimation(multitier, estimation_settings):
+    initial_pars = {
+        "p_Am": 5000,
+        "kap_X": 0.2,
+        "kap_P": 0.1,
+    }
+
     for tier_name in multitier.tier_names:
         multitier.tiers[tier_name].estimate(
             save_results=True,
             print_results=False,
             hide_output=True,
             estimation_settings=estimation_settings[tier_name],
+            initial_pars=initial_pars if tier_name == "group" else None,
         )
 
 

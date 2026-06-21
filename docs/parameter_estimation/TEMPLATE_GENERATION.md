@@ -781,7 +781,8 @@ Important exposed values include:
 - `full_pars_dict`
 - `tier_par_init_values`
 
-These properties are what connect template rendering to the current tier, the current estimation target, and the already-estimated tiers above it.
+These properties are what connect template rendering to the current tier, the current estimation target, the
+estimate-time initial parameters, and the already-estimated tiers above it.
 
 ### `BaseMyDataState`
 
@@ -823,12 +824,14 @@ It collects shared render-ready values such as:
 For one tier estimation target, the current flow is:
 
 1. `TierEstimator.estimate(...)` resolves the current target entity list or group entity list.
-2. It builds `MultitierGenerationContext.from_tier_estimator(...)`.
-3. `write_tier_estimation_files(...)` iterates over the tier's four template objects.
-4. `mydata` templates build derived state and render section content from both context and state.
-5. `pars_init` and `run` templates render their registered sections directly from the context.
-6. `predict` is copied or rendered according to its template strategy.
-7. The writer stores the final MATLAB files in the current output folder.
+2. It resolves current-tier initial parameter values from `initial_pars`, pseudo-data overrides, parent-tier estimates,
+   or optional structure-level fallback values.
+3. It builds `MultitierGenerationContext.from_tier_estimator(...)`.
+4. `write_tier_estimation_files(...)` iterates over the tier's four template objects.
+5. `mydata` templates build derived state and render section content from both context and state.
+6. `pars_init` and `run` templates render their registered sections directly from the context.
+7. `predict` is copied or rendered according to its template strategy.
+8. The writer stores the final MATLAB files in the current output folder.
 
 This means the tier estimator owns target selection, the generation context owns render inputs, and the template classes own how those inputs become concrete MATLAB code.
 

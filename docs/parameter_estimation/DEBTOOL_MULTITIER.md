@@ -137,7 +137,8 @@ At lower tiers:
 
 In the current package:
 
-- inherited values come from `get_init_par_values()`
+- inherited values are resolved by `TierEstimator.estimate(...)` from explicit `initial_pars`, pseudo-data overrides,
+  parent-tier estimates, or the optional `MultiTierStructure(base_pars=...)` fallback
 - fixed full parameter contexts come from `get_full_pars_dict()`
 - pseudo-data weight is passed into generated `mydata`
 

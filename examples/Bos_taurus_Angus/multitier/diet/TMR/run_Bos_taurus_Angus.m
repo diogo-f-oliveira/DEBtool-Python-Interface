@@ -1,10 +1,14 @@
+    
 clear;
 close all;
-global pets
 
+
+%% Initialize pets and run check_my_pet
+global pets
 pets = {'Bos_taurus_Angus'};
 check_my_pet(pets);
 
+%% Set estimation options
 estim_options('default');
 estim_options('method', 'nm');
 estim_options('max_step_number', 500);
@@ -33,15 +37,19 @@ while (abs(prev_fval - fval) > tol_restart) && (i <= n_runs) && ~converged
     i = i + 1;
 end
 
+
+%% Generate results     
 estim_options('pars_init_method', 1);
 estim_options('method', 'no');
 estim_options('results_output', 0);
 estim_pars;
 
 
+%% Load estimated parameters and compute predictions
 load(['results_' pets{1} '.mat']);
 [data, auxData, metaData, txtData, weights] = feval(['mydata_' pets{1}]);
 q = rmfield(par, 'free');
 [prdData, info] = feval(['predict_' pets{1}], q, data, auxData); 
 
+%% Save predictions alongside parameters and data
 save(['results_' pets{1} '.mat'], 'metaData', 'metaPar', 'par', 'txtPar', 'data', 'auxData', 'txtData', 'weights', 'prdData')

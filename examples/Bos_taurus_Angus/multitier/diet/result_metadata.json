@@ -1,26 +1,26 @@
 {
-  "elapsed_duration_seconds": 11.429886,
-  "estimation_end_time": "2026-04-22T16:46:47.178615",
+  "elapsed_duration_seconds": 7.370562,
+  "estimation_end_time": "2026-06-21T18:55:04.318297",
   "estimation_iterations": [
     {
-      "elapsed_duration_seconds": 7.856494,
+      "elapsed_duration_seconds": 4.771508,
       "entity_list": [
         "CTRL"
       ],
-      "estimation_end_time": "2026-04-22T16:46:43.606224",
-      "estimation_start_time": "2026-04-22T16:46:35.749730",
+      "estimation_end_time": "2026-06-21T18:55:01.725986",
+      "estimation_start_time": "2026-06-21T18:54:56.954478",
       "estimation_target_name": "CTRL",
       "estimation_target_type": "entity",
       "relative_output_folder": "CTRL",
       "success": 1.0
     },
     {
-      "elapsed_duration_seconds": 3.139698,
+      "elapsed_duration_seconds": 2.183815,
       "entity_list": [
         "TMR"
       ],
-      "estimation_end_time": "2026-04-22T16:46:47.038375",
-      "estimation_start_time": "2026-04-22T16:46:43.898677",
+      "estimation_end_time": "2026-06-21T18:55:04.156888",
+      "estimation_start_time": "2026-06-21T18:55:01.973073",
       "estimation_target_name": "TMR",
       "estimation_target_type": "entity",
       "relative_output_folder": "TMR",
@@ -36,7 +36,21 @@
     "tol_restart": 0.0001,
     "tol_simplex": 0.0001
   },
-  "estimation_start_time": "2026-04-22T16:46:35.748729",
+  "estimation_start_time": "2026-06-21T18:54:56.947735",
+  "initial_parameter_values": {
+    "kap_P": {
+      "CTRL": 0.23817610163987085,
+      "TMR": 0.23817610163987085
+    },
+    "kap_X": {
+      "CTRL": 0.21712962240000422,
+      "TMR": 0.21712962240000422
+    },
+    "p_Am": {
+      "CTRL": 2133.9524997467324,
+      "TMR": 2133.9524997467324
+    }
+  },
   "schema_version": 2,
   "species_name": "Bos_taurus_Angus",
   "stable_output_files": [

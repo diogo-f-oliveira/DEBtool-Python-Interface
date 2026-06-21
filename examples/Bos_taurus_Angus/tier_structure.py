@@ -10,6 +10,23 @@ BASE_TEMPLATE_FOLDER = HERE / 'templates'
 
 SPECIES_NAME = 'Bos_taurus_Angus'
 TIER_NAMES = ['breed', 'diet', 'individual']
+BREED_TIER_PARS = [
+    'p_Am',
+    'kap_X',
+    'kap_P',
+    'p_M',
+    'v',
+    'kap',
+    'E_G',
+    'E_Hb',
+    'E_Hx',
+    'E_Hp',
+    'h_a',
+    't_0',
+    'del_M',
+    'p_Am_f',
+    'E_Hp_f',
+]
 
 
 def generate_entity_hierarchy(data: DataCollection) -> TierHierarchy:
@@ -23,30 +40,12 @@ def generate_entity_hierarchy(data: DataCollection) -> TierHierarchy:
     return TierHierarchy.from_paths(tier_names=TIER_NAMES, paths=paths)
 
 
-def create_tier_structure(data, matlab_session='auto') -> MultiTierStructure:
+def create_tier_structure(data, matlab_session='auto', output_folder=ESTIMATION_FOLDER) -> MultiTierStructure:
     """Create and return a MultiTierStructure from example data."""
     entity_hierarchy = generate_entity_hierarchy(data['individual'])
 
-    initial_pars = {
-        'p_Am': 5000,
-        'kap_X': 0.2,
-        'kap_P': 0.1,
-        'p_M': 80,
-        'v': 0.05,
-        'kap': 0.97,
-        'E_G': 7800,
-        'E_Hb': 2e+6,
-        'E_Hx': 2e+7,
-        'E_Hp': 6e+7,
-        'h_a': 5e-10,
-        't_0': 80,
-        'del_M': 0.15,
-        'p_Am_f': 4500,
-        'E_Hp_f': 6e+7,
-    }
-
     tier_pars = {
-        'breed': list(initial_pars.keys()),
+        'breed': BREED_TIER_PARS,
         'diet': ['p_Am', 'kap_X', 'kap_P'],
         'individual': ['p_Am', 'kap_X']
     }
@@ -58,10 +57,9 @@ def create_tier_structure(data, matlab_session='auto') -> MultiTierStructure:
     )
 
     multitier = MultiTierStructure(species_name=SPECIES_NAME, entity_hierarchy=entity_hierarchy, data=data,
-                                   pars=initial_pars,
                                    tier_pars=tier_pars,
                                    estimation_templates=estimation_templates,
-                                   output_folder=ESTIMATION_FOLDER,
+                                   output_folder=output_folder,
                                    matlab_session=matlab_session)
 
     return multitier

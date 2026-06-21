@@ -43,16 +43,10 @@ units.tiers.tier_groups = '-'; label.tiers.tier_groups = 'List of groups ids for
 %% Entity data
 %% Time vs Weight data 
 
-data.tW_PT833653644 = [0 548; 14 544; 21 553; 35 579; 50 603; 63 623; 83 652];
-units.tW_PT833653644 = {'d', 'kg'}; label.tW_PT833653644 = {'Time since start', 'Wet weight'}; comment.tW_PT833653644 = 'Data from GreenBeef trial 1'; title.tW_PT833653644 = 'Wet weight growth curve, individual PT833653644'; bibkey.tW_PT833653644 = 'GreenBeefTrial1';
-init.tW_PT833653644 = 548;
-units.init.tW_PT833653644 = 'kg'; label.init.tW_PT833653644 = 'Initial weight'; 
-
-
-data.tW_PT624139868 = [0 464; 14 470; 21 480; 35 508; 50 542; 63 558; 83 582];
-units.tW_PT624139868 = {'d', 'kg'}; label.tW_PT624139868 = {'Time since start', 'Wet weight'}; comment.tW_PT624139868 = 'Data from GreenBeef trial 1'; title.tW_PT624139868 = 'Wet weight growth curve, individual PT624139868'; bibkey.tW_PT624139868 = 'GreenBeefTrial1';
-init.tW_PT624139868 = 464;
-units.init.tW_PT624139868 = 'kg'; label.init.tW_PT624139868 = 'Initial weight'; 
+data.tW_PT424401157 = [0 469; 14 482; 21 486; 35 512; 50 540; 63 549; 83 571];
+units.tW_PT424401157 = {'d', 'kg'}; label.tW_PT424401157 = {'Time since start', 'Wet weight'}; comment.tW_PT424401157 = 'Data from GreenBeef trial 1'; title.tW_PT424401157 = 'Wet weight growth curve, individual PT424401157'; bibkey.tW_PT424401157 = 'GreenBeefTrial1';
+init.tW_PT424401157 = 469;
+units.init.tW_PT424401157 = 'kg'; label.init.tW_PT424401157 = 'Initial weight'; 
 
 
 data.tW_PT433843806 = [0 507; 14 532; 21 532; 35 568; 50 600; 63 607; 83 628];
@@ -61,10 +55,16 @@ init.tW_PT433843806 = 507;
 units.init.tW_PT433843806 = 'kg'; label.init.tW_PT433843806 = 'Initial weight'; 
 
 
-data.tW_PT424401157 = [0 469; 14 482; 21 486; 35 512; 50 540; 63 549; 83 571];
-units.tW_PT424401157 = {'d', 'kg'}; label.tW_PT424401157 = {'Time since start', 'Wet weight'}; comment.tW_PT424401157 = 'Data from GreenBeef trial 1'; title.tW_PT424401157 = 'Wet weight growth curve, individual PT424401157'; bibkey.tW_PT424401157 = 'GreenBeefTrial1';
-init.tW_PT424401157 = 469;
-units.init.tW_PT424401157 = 'kg'; label.init.tW_PT424401157 = 'Initial weight'; 
+data.tW_PT624139868 = [0 464; 14 470; 21 480; 35 508; 50 542; 63 558; 83 582];
+units.tW_PT624139868 = {'d', 'kg'}; label.tW_PT624139868 = {'Time since start', 'Wet weight'}; comment.tW_PT624139868 = 'Data from GreenBeef trial 1'; title.tW_PT624139868 = 'Wet weight growth curve, individual PT624139868'; bibkey.tW_PT624139868 = 'GreenBeefTrial1';
+init.tW_PT624139868 = 464;
+units.init.tW_PT624139868 = 'kg'; label.init.tW_PT624139868 = 'Initial weight'; 
+
+
+data.tW_PT833653644 = [0 548; 14 544; 21 553; 35 579; 50 603; 63 623; 83 652];
+units.tW_PT833653644 = {'d', 'kg'}; label.tW_PT833653644 = {'Time since start', 'Wet weight'}; comment.tW_PT833653644 = 'Data from GreenBeef trial 1'; title.tW_PT833653644 = 'Wet weight growth curve, individual PT833653644'; bibkey.tW_PT833653644 = 'GreenBeefTrial1';
+init.tW_PT833653644 = 548;
+units.init.tW_PT833653644 = 'kg'; label.init.tW_PT833653644 = 'Initial weight'; 
 
 
 data.tW_PT933843912 = [0 545; 14 561; 21 565; 35 581; 50 616; 63 649; 83 668];
@@ -90,24 +90,31 @@ metaData.entity_list = tiers.entity_list;
 % Struct with form tier_entities.(tier_name) = list_of_entities_of_tier
 data.tier_entities = 10;
 units.tier_entities = '-'; label.tier_entities = 'Dummy variable'; 
-tiers.tier_entities = struct('individual', {{'PT833653644', 'PT624139868', 'PT433843806', 'PT424401157', 'PT933843912'}});
+tiers.tier_entities = struct('individual', {{'PT424401157', 'PT433843806', 'PT624139868', 'PT833653644', 'PT933843912'}});
 units.tiers.tier_entities = '-'; label.tiers.tier_entities = 'List of entity ids for each tier'; 
 
 
 % Struct with form groups_of_entity.(entity_id) = list_of_groups_ids_entity_belongs_to
 data.groups_of_entity = 10;
 units.groups_of_entity = '-'; label.groups_of_entity = 'Dummy variable'; 
-tiers.groups_of_entity = struct('PT833653644', {{'Pen_2'}}, 'PT624139868', {{'Pen_2'}}, 'PT433843806', {{'Pen_2'}}, 'PT424401157', {{'Pen_2'}}, 'PT933843912', {{'Pen_2'}});
+tiers.groups_of_entity = struct('PT424401157', {{'Pen_2'}}, 'PT433843806', {{'Pen_2'}}, 'PT624139868', {{'Pen_2'}}, 'PT833653644', {{'Pen_2'}}, 'PT933843912', {{'Pen_2'}});
 units.tiers.groups_of_entity = '-'; label.tiers.groups_of_entity = 'Groups each entity belongs to'; 
 
     
 % Tier subtree
 % Lists entities that are below entity_id for each tier below
-% Struct with form tier_subtree.(entity_id).(tier_name) = list_of_entities_below
-data.tier_subtree = 10;
-units.tier_subtree = '-'; label.tier_subtree = 'Dummy variable'; 
-tiers.tier_subtree = struct('PT424401157', struct(), 'PT433843806', struct(), 'PT624139868', struct(), 'PT833653644', struct(), 'PT933843912', struct());
-units.tiers.tier_subtree = '-'; label.tiers.tier_subtree = 'Tier subtree'; 
+% Struct with form entity_descendants.(entity_id).(tier_name) = list_of_entities_below
+data.entity_descendants = 10;
+units.entity_descendants = '-'; label.entity_descendants = 'Dummy variable'; 
+tiers.entity_descendants = struct('PT424401157', struct(), 'PT433843806', struct(), 'PT624139868', struct(), 'PT833653644', struct(), 'PT933843912', struct());
+units.tiers.entity_descendants = '-'; label.tiers.entity_descendants = 'Entity descendants'; 
+
+
+% Struct with form entity_path.(entity_id).(tier_name) = ancestor_or_self_id
+data.entity_path = 10;
+units.entity_path = '-'; label.entity_path = 'Dummy variable'; 
+tiers.entity_path = struct('PT424401157', struct('breed', 'male', 'diet', 'TMR', 'individual', 'PT424401157'), 'PT433843806', struct('breed', 'male', 'diet', 'TMR', 'individual', 'PT433843806'), 'PT624139868', struct('breed', 'male', 'diet', 'TMR', 'individual', 'PT624139868'), 'PT833653644', struct('breed', 'male', 'diet', 'TMR', 'individual', 'PT833653644'), 'PT933843912', struct('breed', 'male', 'diet', 'TMR', 'individual', 'PT933843912'));
+units.tiers.entity_path = '-'; label.tiers.entity_path = 'Entity path'; 
 
 
 %% Tier parameters
@@ -121,7 +128,7 @@ metaData.tier_pars = tiers.tier_pars;
 
 % Initial values for each tier parameter and entity
 % Struct with form tier_par_init_values.(par).(entity_id) = value;
-metaData.tier_par_init_values = struct('p_Am', struct('PT424401157', 5588.926425728412, 'PT433843806', 5588.926425728412, 'PT624139868', 5588.926425728412, 'PT833653644', 5588.926425728412, 'PT933843912', 5588.926425728412), 'kap_X', struct('PT424401157', 0.21959189993722267, 'PT433843806', 0.21959189993722267, 'PT624139868', 0.21959189993722267, 'PT833653644', 0.21959189993722267, 'PT933843912', 0.21959189993722267)); 
+metaData.tier_par_init_values = struct('p_Am', struct('PT424401157', 2226.029807275121, 'PT433843806', 2226.029807275121, 'PT624139868', 2226.029807275121, 'PT833653644', 2226.029807275121, 'PT933843912', 2226.029807275121), 'kap_X', struct('PT424401157', 0.2423996666348881, 'PT433843806', 0.2423996666348881, 'PT624139868', 0.2423996666348881, 'PT833653644', 0.2423996666348881, 'PT933843912', 0.2423996666348881)); 
 
 
 %% Set default weights
@@ -136,9 +143,9 @@ metaData.data_1     = {};
 for i = 1:length(metaData.data_fields)
     field = metaData.data_fields{i};
     if length(data.(field)) > 1
-        metaData.data_1{end+1} = field; %#ok<AGROW>
+        metaData.data_1{end+1} = field; 
     else
-        metaData.data_0{end+1} = field; %#ok<AGROW>
+        metaData.data_0{end+1} = field; 
     end
 end
 
@@ -206,16 +213,17 @@ end
 %% Add generic pseudo-data
 [data, units, label, weights] = addpseudodata(data, units, label, weights);
 %% Add multitier pseudo-data from previous-tier estimates
-for e = 1:length(tiers.entity_list)
-    entity_id = tiers.entity_list{e};
-    for p = 1:length(tiers.tier_pars)
-        par_name = tiers.tier_pars{p};
+psdWeight = 0.1;
+for p = 1:length(tiers.tier_pars)
+   par_name = tiers.tier_pars{p};
+   for e = 1:length(tiers.entity_list)
+    	entity_id = tiers.entity_list{e};
         varname = [par_name '_' entity_id];
 
         data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
         units.psd.(varname) = '';
         label.psd.(varname) = '';
-        weights.psd.(varname) = 0.1;
+        weights.psd.(varname) = psdWeight;
     end
 end
 

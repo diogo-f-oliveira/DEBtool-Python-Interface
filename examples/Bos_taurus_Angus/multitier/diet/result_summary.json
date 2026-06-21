@@ -1,17 +1,17 @@
 {
-  "elapsed_duration_seconds": 11.429886,
+  "elapsed_duration_seconds": 7.370562,
   "mean_entity_errors_by_tier": {
-    "diet": 0.028392184182882543,
-    "individual": 0.02724079585205061
+    "diet": 0.02837257521685649,
+    "individual": 0.026814817892312763
   },
   "mean_estimated_parameters": {
-    "kap_P": 0.23949946028623173,
-    "kap_X": 0.20829275798048033,
-    "p_Am": 5699.118255918085
+    "kap_P": 0.23968472820338377,
+    "kap_X": 0.23129181673503896,
+    "p_Am": 2272.3565254842756
   },
   "mean_group_errors_by_tier": {
     "diet": null,
-    "individual": 0.07990823788994295
+    "individual": 0.08002210953135269
   },
   "n_tier_entities": 2,
   "n_tier_groups": 0,

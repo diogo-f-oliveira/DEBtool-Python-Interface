@@ -5,6 +5,7 @@ metaPar.model = 'std';
 %% reference parameter and model parameters
 
 par.T_ref = 293.15; free.T_ref = 0; units.T_ref = 'K'; label.T_ref = 'Reference temperature';
+
 par.p_Am = 5000; free.p_Am = 1; units.p_Am = 'J/d.cm^2'; label.p_Am = 'Surface-specific maximum assimilation rate';
 par.kap_X = 0.2; free.kap_X = 1; units.kap_X = '-'; label.kap_X = 'digestion efficiency of food to reserve';
 par.kap_P = 0.1; free.kap_P = 1; units.kap_P = '-'; label.kap_P = 'faecation efficiency of food to faeces';
@@ -31,20 +32,6 @@ par.f = 1; free.f = 0; units.f = '-'; label.f = 'scaled functional response for 
 
 %% set chemical parameters from Kooy2010
 [par, units, label, free] = addchem(par, units, label, free, metaData.phylum, metaData.class);
-
-%% Set tier parameters
-for e = 1:length(metaData.entity_list)
-    entity_id = metaData.entity_list{e};
-    for p = 1:length(metaData.tier_pars)
-        par_name = metaData.tier_pars{p};
-        varname = [par_name '_' entity_id];
-
-        par.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);
-        free.(varname) = 1;
-        units.(varname) = units.(par_name);
-        label.(varname) = [label.(par_name) ' for tier entity ' entity_id];
-    end
-end
 
 %% Pack output
 txtPar.units = units;

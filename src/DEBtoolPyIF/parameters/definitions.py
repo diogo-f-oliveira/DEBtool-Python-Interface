@@ -87,18 +87,32 @@ F_m = _register_builtin(
     "F_m",
     "l/d.cm^2",
     "{F_m}, max spec searching rate",
+    latex_label=r"\{ F_m \}",
     default_value=6.5,
     include_in_default=True,
 )
-kap_X = _register_builtin("kap_X", "-", "digestion efficiency of food to reserve", include_in_default=True)
-kap_P = _register_builtin("kap_P", "-", "faecation efficiency of food to faeces", include_in_default=True)
-v = _register_builtin("v", "cm/d", "energy conductance", include_in_default=True)
-kap = _register_builtin("kap", "-", "allocation fraction to soma", include_in_default=True)
-p_M = _register_builtin("p_M", "J/d.cm^3", "[p_M], vol-spec somatic maint", include_in_default=True)
+kap_X = _register_builtin(
+    "kap_X",
+    "-",
+    "digestion efficiency of food to reserve",
+    latex_label=r"\kappa_X",
+    include_in_default=True
+)
+kap_P = _register_builtin(
+    "kap_P",
+    "-",
+    "faecation efficiency of food to faeces",
+    latex_label=r"\kappa_P",
+    include_in_default=True
+)
+v = _register_builtin("v", "cm/d", "energy conductance", latex_label=r'\dot{v}', include_in_default=True)
+kap = _register_builtin("kap", "-", "allocation fraction to soma", latex_label=r"\kappa", include_in_default=True)
+p_M = _register_builtin("p_M", "J/d.cm^3", "[p_M], vol-spec somatic maint", latex_label=r"[\dot{p}_M]", include_in_default=True)
 p_T = _register_builtin(
     "p_T",
     "J/d.cm^2",
     "{p_T}, surf-spec somatic maint",
+    latex_label=r"\{ \dot{p}_T \}",
     default_value=0,
     include_in_default=True,
 )
@@ -106,21 +120,23 @@ k_J = _register_builtin(
     "k_J",
     "1/d",
     "maturity maint rate coefficient",
+    latex_label=r"\dot{k}_J",
     default_value=0.002,
     include_in_default=True,
 )
-E_G = _register_builtin("E_G", "J/cm^3", "[E_G], spec cost for structure", include_in_default=True)
-E_Hb = _register_builtin("E_Hb", "J", "maturity at birth", include_in_default=True)
-E_Hx = _register_builtin("E_Hx", "J", "maturity at weaning")
-E_Hp = _register_builtin("E_Hp", "J", "maturity at puberty", include_in_default=True)
+E_G = _register_builtin("E_G", "J/cm^3", "[E_G], spec cost for structure", latex_label=r"[E_G]", include_in_default=True)
+E_Hb = _register_builtin("E_Hb", "J", "maturity at birth", latex_label=r"E_H^b", include_in_default=True)
+E_Hx = _register_builtin("E_Hx", "J", "maturity at weaning", latex_label=r"E_H^x")
+E_Hp = _register_builtin("E_Hp", "J", "maturity at puberty", latex_label=r"E_H^p", include_in_default=True)
 kap_R = _register_builtin(
     "kap_R",
     "-",
     "reproduction efficiency",
+    latex_label=r"\kappa_R",
     default_value=0.95,
     include_in_default=True,
 )
-h_a = _register_builtin("h_a", "1/d^2", "Weibull aging acceleration", include_in_default=True)
+h_a = _register_builtin("h_a", "1/d^2", "Weibull aging acceleration", latex_label=r"\ddot{h}_a", include_in_default=True)
 s_G = _register_builtin(
     "s_G",
     "-",
@@ -135,9 +151,9 @@ f = _register_builtin(
     default_value=1,
     include_in_default=True,
 )
-p_Am = _register_builtin("p_Am", "J/d.cm^2", "Surface-specific maximum assimilation rate")
-t_0 = _register_builtin("t_0", "d", "time at start development")
-del_M = _register_builtin("del_M", "-", "shape coefficent")
+p_Am = _register_builtin("p_Am", "J/d.cm^2", "Surface-specific maximum assimilation rate", latex_label=r"\{ \dot{p}_{Am} \}")
+t_0 = _register_builtin("t_0", "d", "time at start development", latex_label=r"t_0")
+del_M = _register_builtin("del_M", "-", "shape coefficent", latex_label=r"\delta_M")
 V_0 = _register_builtin("V_0", "cm^3", "initial structure at fertilization", default_free=0, default_value=0)
 
 # TODO: Add classes for parameters that often have variants, e.g., maturity levels, food levels,

@@ -119,10 +119,13 @@ class MultitierGenerationContext(GenerationContext):
 
     @property
     def tier_par_init_values(self) -> dict:
-        return self.tier_structure.get_init_par_values(
-            tier_name=self.tier_name,
-            entity_list=self.entity_list,
-        ).to_dict()
+        if hasattr(self.tier_estimator, "get_initial_parameter_values"):
+            initial_values = self.tier_estimator.get_initial_parameter_values(
+                entity_list=self.entity_list,
+            )
+        else:
+            initial_values = self.tier_estimator.initial_par_values.loc[self.entity_list]
+        return initial_values.to_dict()
 
     @property
     def expand_current_tier_parameters(self) -> bool:

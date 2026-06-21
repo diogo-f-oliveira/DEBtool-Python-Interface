@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Mapping
 from copy import deepcopy
 from pathlib import Path
 from typing import cast
@@ -118,6 +119,7 @@ class TierEstimator:
         self.estimation_iterations = []
         self.result_metadata = None
         self.result_summary = None
+        self.initial_par_values = None
 
     @property
     def data(self):
@@ -143,6 +145,7 @@ class TierEstimator:
         self.tier_pars = tier_pars
         self.pars_df = pd.DataFrame(columns=self.tier_pars, index=self.tier_entities)
         self.pars_df.index.name = "entity"
+        self.initial_par_values = None
 
     def set_estimation_settings(self, estimation_settings):
         if estimation_settings is None:
@@ -151,9 +154,180 @@ class TierEstimator:
 
         self.estimation_settings = deepcopy(estimation_settings)
 
+    def _normalize_initial_parameter_entities(self, entity_list):
+        normalized_entity_list = normalize_entity_list(entity_list)
+        if normalized_entity_list == "all":
+            return list(self.tier_entities)
+        return list(normalized_entity_list)
+
+    def _normalize_explicit_initial_pars(self, initial_pars, entity_list):
+        entity_list = self._normalize_initial_parameter_entities(entity_list)
+        initial_values = pd.DataFrame(index=entity_list, columns=self.tier_pars, dtype=object)
+        initial_values.index.name = "entity"
+        if initial_pars is None:
+            return initial_values
+
+        if isinstance(initial_pars, pd.DataFrame):
+            unknown_parameters = [parameter for parameter in initial_pars.columns if parameter not in self.tier_pars]
+            if unknown_parameters:
+                unknown_parameters_str = ", ".join(map(str, unknown_parameters))
+                raise ValueError(
+                    f"Initial parameters for tier '{self.name}' include unknown tier parameters: "
+                    f"{unknown_parameters_str}."
+                )
+            missing_entities = [entity_id for entity_id in entity_list if entity_id not in initial_pars.index]
+            if missing_entities:
+                missing_entities_str = ", ".join(map(str, missing_entities))
+                raise ValueError(
+                    f"Initial parameters for tier '{self.name}' are missing entities: {missing_entities_str}."
+                )
+            for parameter_name in self.tier_pars:
+                if parameter_name in initial_pars.columns:
+                    initial_values.loc[entity_list, parameter_name] = initial_pars.loc[entity_list, parameter_name]
+            return initial_values
+
+        if not isinstance(initial_pars, Mapping):
+            raise TypeError(
+                "initial_pars must be None, a mapping of parameter values, or a pandas DataFrame."
+            )
+
+        unknown_parameters = [parameter for parameter in initial_pars if parameter not in self.tier_pars]
+        if unknown_parameters:
+            unknown_parameters_str = ", ".join(map(str, unknown_parameters))
+            raise ValueError(
+                f"Initial parameters for tier '{self.name}' include unknown tier parameters: "
+                f"{unknown_parameters_str}."
+            )
+
+        for parameter_name, parameter_values in initial_pars.items():
+            if isinstance(parameter_values, Mapping):
+                missing_entities = [entity_id for entity_id in entity_list if entity_id not in parameter_values]
+                if missing_entities:
+                    missing_entities_str = ", ".join(map(str, missing_entities))
+                    raise ValueError(
+                        f"Initial parameter '{parameter_name}' for tier '{self.name}' is missing entities: "
+                        f"{missing_entities_str}."
+                    )
+                for entity_id in entity_list:
+                    initial_values.loc[entity_id, parameter_name] = parameter_values[entity_id]
+            else:
+                initial_values.loc[entity_list, parameter_name] = parameter_values
+        return initial_values
+
+    def _get_explicit_initial_value(self, explicit_initial_values, entity_id, parameter_name):
+        value = explicit_initial_values.loc[entity_id, parameter_name]
+        if pd.notna(value):
+            return value
+        return None
+
+    def _get_pseudo_data_initial_value(self, entity_id, parameter_name):
+        if isinstance(self.pseudo_data, pd.DataFrame):
+            if parameter_name in self.pseudo_data.columns and entity_id in self.pseudo_data.index:
+                value = self.pseudo_data.loc[entity_id, parameter_name]
+                if pd.notna(value):
+                    return value
+            return None
+
+        if isinstance(self.pseudo_data, Mapping) and parameter_name in self.pseudo_data:
+            parameter_values = self.pseudo_data[parameter_name]
+            if isinstance(parameter_values, Mapping):
+                if entity_id not in parameter_values:
+                    return None
+                value = parameter_values[entity_id]
+            else:
+                value = parameter_values
+            if pd.notna(value):
+                return value
+        return None
+
+    def _get_parent_initial_value(self, entity_id, parameter_name):
+        if self.tier_above is None:
+            return None
+        parent_tier = self.tier_structure.tiers[self.tier_above]
+        parent_pars = parent_tier.pars_df
+        parent_entity_id = self.tier_structure.entity_hierarchy.get_entity_at_tier(
+            self.name,
+            entity_id,
+            self.tier_above,
+        )
+        if parameter_name not in parent_pars.columns or parent_entity_id not in parent_pars.index:
+            return None
+        value = parent_pars.loc[parent_entity_id, parameter_name]
+        if pd.notna(value):
+            return value
+        return None
+
+    def _get_base_initial_value(self, parameter_name):
+        base_pars = getattr(self.tier_structure, "base_pars", None)
+        if base_pars is None:
+            base_pars = getattr(self.tier_structure, "pars", {})
+        if parameter_name not in base_pars:
+            return None
+        value = base_pars[parameter_name]
+        if pd.notna(value):
+            return value
+        return None
+
+    def resolve_initial_parameter_values(self, initial_pars=None, entity_list="all"):
+        entity_list = self._normalize_initial_parameter_entities(entity_list)
+        explicit_initial_values = self._normalize_explicit_initial_pars(initial_pars, entity_list=entity_list)
+        resolved_values = pd.DataFrame(index=entity_list, columns=self.tier_pars, dtype=object)
+        resolved_values.index.name = "entity"
+
+        for entity_id in entity_list:
+            for parameter_name in self.tier_pars:
+                value = self._get_explicit_initial_value(explicit_initial_values, entity_id, parameter_name)
+                if value is None:
+                    value = self._get_pseudo_data_initial_value(entity_id, parameter_name)
+                if value is None:
+                    value = self._get_parent_initial_value(entity_id, parameter_name)
+                if value is None and self.tier_above is None:
+                    value = self._get_base_initial_value(parameter_name)
+                resolved_values.loc[entity_id, parameter_name] = value
+
+        self._validate_initial_parameter_values(resolved_values)
+        return resolved_values
+
+    def _validate_initial_parameter_values(self, initial_values):
+        missing = []
+        for entity_id in initial_values.index:
+            for parameter_name in initial_values.columns:
+                if pd.isna(initial_values.loc[entity_id, parameter_name]):
+                    missing.append(f"{parameter_name}@{entity_id}")
+        if missing:
+            missing_values = ", ".join(missing)
+            raise ValueError(
+                f"Initial parameter values for tier '{self.name}' are missing: {missing_values}."
+            )
+
+    def set_initial_parameter_values(self, initial_pars=None, entity_list="all"):
+        self.initial_par_values = self.resolve_initial_parameter_values(
+            initial_pars=initial_pars,
+            entity_list=entity_list,
+        )
+        return self.initial_par_values
+
+    def get_initial_parameter_values(self, entity_list="all"):
+        entity_list = self._normalize_initial_parameter_entities(entity_list)
+        if self.initial_par_values is None:
+            return self.resolve_initial_parameter_values(entity_list=entity_list)
+        missing_entities = [entity_id for entity_id in entity_list if entity_id not in self.initial_par_values.index]
+        if missing_entities:
+            missing_entities_str = ", ".join(map(str, missing_entities))
+            raise ValueError(
+                f"Initial parameter values for tier '{self.name}' have not been resolved for entities: "
+                f"{missing_entities_str}."
+            )
+        return self.initial_par_values.loc[entity_list, self.tier_pars].copy()
+
+    def get_initial_parameter_values_dict(self):
+        if self.initial_par_values is None:
+            return None
+        return self.initial_par_values.to_dict()
+
     def estimate(self, pseudo_data_weight=0.1, save_results=True, print_results=True, hide_output=True,
                  estimation_settings=None, entity_list="all", trace_output=False,
-                 print_pars_after_estimation=False):
+                 print_pars_after_estimation=False, initial_pars=None):
         """
 
         :param pseudo_data_weight:
@@ -164,6 +338,7 @@ class TierEstimator:
         :param entity_list:
         :param trace_output:
         :param print_pars_after_estimation:
+        :param initial_pars:
         :return:
         """
         if estimation_settings is not None:
@@ -179,6 +354,12 @@ class TierEstimator:
         estimation_templates = self.estimation_templates
         estimation_targets = self.get_estimation_targets(entity_list=entity_list)
         total_iterations = len(estimation_targets)
+        target_entities = []
+        for estimation_target in estimation_targets:
+            for target_entity_id in cast(list[str], estimation_target["entity_list"]):
+                if target_entity_id not in target_entities:
+                    target_entities.append(target_entity_id)
+        self.set_initial_parameter_values(initial_pars=initial_pars, entity_list=target_entities)
 
         if trace_output:
             print(f"Tier {self.name} | start {self.estim_start_time.strftime('%Y-%m-%d %H:%M:%S')}")

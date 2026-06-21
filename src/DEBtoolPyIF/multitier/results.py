@@ -325,6 +325,7 @@ def build_result_metadata(tier_estimator):
         "tier_entities": list(tier_estimator.tier_entities),
         "tier_groups": list(tier_estimator.tier_groups),
         "tier_parameters": list(tier_estimator.tier_pars),
+        "initial_parameter_values": tier_estimator.get_initial_parameter_values_dict(),
         "estimation_settings": deepcopy(tier_estimator.estimation_settings),
         "estimation_start_time": tier_estimator.estim_start_time,
         "estimation_end_time": tier_estimator.estim_end_time,
@@ -425,6 +426,12 @@ def apply_result_metadata(tier_estimator, metadata):
     tier_estimator.tier_entities = list(metadata.get("tier_entities", tier_estimator.tier_entities))
     tier_estimator.tier_groups = list(metadata.get("tier_groups", tier_estimator.tier_groups))
     tier_estimator.tier_pars = list(metadata.get("tier_parameters", tier_estimator.tier_pars))
+    initial_parameter_values = metadata.get("initial_parameter_values")
+    if initial_parameter_values is None:
+        tier_estimator.initial_par_values = None
+    else:
+        tier_estimator.initial_par_values = pd.DataFrame(initial_parameter_values)
+        tier_estimator.initial_par_values.index.name = "entity"
     tier_estimator.estimation_settings = deepcopy(metadata.get("estimation_settings"))
     tier_estimator.estim_start_time = deserialize_timestamp(metadata.get("estimation_start_time"))
     tier_estimator.estim_end_time = deserialize_timestamp(metadata.get("estimation_end_time"))
@@ -469,12 +476,19 @@ def load_results(tier_estimator):
 
     if tier_result.metadata is None:
         tier_estimator.result_metadata = None
+        tier_estimator.initial_par_values = None
         tier_estimator.estimation_settings = None
         tier_estimator.estim_start_time = None
         tier_estimator.estim_end_time = None
         tier_estimator.estimation_iterations = []
     else:
         tier_estimator.result_metadata = tier_result.metadata
+        initial_parameter_values = tier_result.metadata.get("initial_parameter_values")
+        if initial_parameter_values is None:
+            tier_estimator.initial_par_values = None
+        else:
+            tier_estimator.initial_par_values = pd.DataFrame(initial_parameter_values)
+            tier_estimator.initial_par_values.index.name = "entity"
         tier_estimator.estimation_settings = tier_result.estimation_settings
         tier_estimator.estim_start_time = tier_result.estim_start_time
         tier_estimator.estim_end_time = tier_result.estim_end_time

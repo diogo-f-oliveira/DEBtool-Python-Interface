@@ -1,8 +1,6 @@
 from pathlib import Path
 import warnings
 
-import pandas as pd
-
 from ..data_sources.collection import DataCollection
 from ..estimation_files import normalize_estimation_templates
 from ..estimation.runner import EstimationRunner
@@ -13,16 +11,30 @@ from .tier_estimation import TierEstimator
 
 class MultiTierStructure:
     def __init__(self, species_name: str, entity_hierarchy: TierHierarchy,
-                 data: dict[str, DataCollection], pars: dict,
-                 tier_pars: dict, template_folder: str | Path | None = None,
+                 data: dict[str, DataCollection], pars: dict | None = None,
+                 tier_pars: dict | None = None, template_folder: str | Path | None = None,
                  estimation_templates: dict | None = None,
-                 output_folder: str | Path = ".", matlab_session="auto"):
+                 output_folder: str | Path = ".", matlab_session="auto",
+                 *, base_pars: dict | None = None):
         self.data = data
         self.species_name = species_name
         self.entity_hierarchy = entity_hierarchy
         self.template_folder = Path(template_folder) if template_folder is not None else None
         self.output_folder = Path(output_folder)
-        self.pars = pars
+        if pars is not None and base_pars is not None:
+            raise ValueError("Pass either base_pars or deprecated pars, not both.")
+        if pars is not None:
+            warnings.warn(
+                "MultiTierStructure(..., pars=...) is deprecated. "
+                "Pass root-tier initial values to TierEstimator.estimate(initial_pars=...) instead, "
+                "or use base_pars as a compatibility fallback.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if tier_pars is None:
+            raise ValueError("tier_pars must be provided.")
+        self.base_pars = dict(base_pars if base_pars is not None else (pars or {}))
+        self.pars = self.base_pars
         self.tier_pars = tier_pars
         if estimation_templates is None:
             if self.template_folder is None:
@@ -61,10 +73,6 @@ class MultiTierStructure:
 
         for tier_name in self.tier_names:
             tier_template_folder = self.template_folder / tier_name if self.template_folder is not None else None
-            tier_pars_str = " ".join(self.tier_pars[tier_name])
-            if not all([p in self.pars for p in self.tier_pars[tier_name]]):
-                raise Exception(f"Cannot estimate tier pars {tier_pars_str} for {tier_name} tier as they"
-                                f" are not all estimated in the previous tier.")
             tier_output_folder = self.output_folder / tier_name
 
             tier_output_folder.mkdir(parents=True, exist_ok=True)
@@ -83,37 +91,23 @@ class MultiTierStructure:
         return self.tiers[self.entity_hierarchy.get_parent_tier(tier_name)].pars_df
 
     def get_init_par_values(self, tier_name, entity_list="all"):
-        if entity_list == "all":
-            entity_list = list(self.entity_hierarchy.get_entities(tier_name))
-        init_par_values = pd.DataFrame(columns=self.tier_pars[tier_name], index=entity_list)
-
-        prev_tier = self.entity_hierarchy.get_parent_tier(tier_name)
-        if prev_tier is None:
-            for ts_id in entity_list:
-                for par in self.tier_pars[tier_name]:
-                    init_par_values.loc[ts_id, par] = self.pars[par]
-        else:
-            prev_tier_par_values = self.get_pars_from_tier_above(tier_name)
-            for ts_id in entity_list:
-                prev_ts_id = self.entity_hierarchy.get_entity_at_tier(tier_name, ts_id, prev_tier)
-                for par in self.tier_pars[tier_name]:
-                    if par in self.tiers[tier_name].pseudo_data:
-                        init_par_values.loc[ts_id, par] = self.tiers[tier_name].pseudo_data.loc[ts_id, par]
-                    else:
-                        init_par_values.loc[ts_id, par] = prev_tier_par_values.loc[prev_ts_id, par]
-
-        return init_par_values
+        return self.tiers[tier_name].get_initial_parameter_values(entity_list=entity_list)
 
     def get_full_pars_dict(self, tier_name, entity_id, include_tier=False):
-        pars_dict = self.pars.copy()
+        pars_dict = self.base_pars.copy()
         ts_tiers = self.entity_hierarchy.get_path(tier_name, entity_id)
         for current_tier_name in self.tier_names:
             if self.entity_hierarchy.get_parent_tier(current_tier_name) == tier_name:
                 break
-            if not include_tier and current_tier_name == tier_name:
+            current_tier = self.tiers[current_tier_name]
+            current_entity_id = ts_tiers[current_tier_name]
+            if current_tier_name == tier_name and not include_tier:
+                current_initial_values = current_tier.get_initial_parameter_values(entity_list=[current_entity_id])
+                for par in self.tier_pars[current_tier_name]:
+                    pars_dict[par] = current_initial_values.loc[current_entity_id, par]
                 continue
             for par in self.tier_pars[current_tier_name]:
-                pars_dict[par] = self.tiers[current_tier_name].pars_df.loc[ts_tiers[current_tier_name], par]
+                pars_dict[par] = current_tier.pars_df.loc[current_entity_id, par]
         return pars_dict
 
     def set_tier_parameters(self, tier_name, tier_pars):

@@ -25,7 +25,8 @@ class RunSetupSection(RunSection):
     key = "setup"
     template_families = ("run",)
     section_tags = ("pre_estimation",)
-    matlab_code = """clear;
+    matlab_code = """    
+clear;
 close all;"""
 
 
@@ -33,8 +34,9 @@ class RunCheckMyPetSection(RunSection):
     key = "check_my_pet_setup"
     template_families = ("run",)
     section_tags = ("pre_estimation",)
-    matlab_code = """global pets
-
+    matlab_code = """
+%% Initialize pets and run check_my_pet
+global pets
 pets = {'${species_name}'};
 check_my_pet(pets);"""
 
@@ -51,10 +53,7 @@ class AddPathSection(RunSection):
 
     def __init__(self, folders: list[str | Path] | tuple[str | Path, ...]) -> None:
         self.folders = self._normalize_folders(folders)
-        matlab_code = "\n".join(
-            f"addpath({convert_string_to_matlab(folder)});"
-            for folder in self.folders
-        )
+        matlab_code = "%% Add folders to MATLAB path\n" + self.generate_path_commands()
         super().__init__(matlab_code=matlab_code)
 
     @staticmethod
@@ -75,6 +74,12 @@ class AddPathSection(RunSection):
             normalized_folders.append(str(folder))
         return tuple(normalized_folders)
 
+    def generate_path_commands(self) -> str:
+        return "\n".join(
+            f"addpath({convert_string_to_matlab(folder)});"
+            for folder in self.folders
+        )
+
 
 class EstimationCallSection(RunSection):
     key = "estimation_call"
@@ -92,11 +97,13 @@ class SavePredictionsSection(RunSection):
     template_families = ("run",)
     section_tags = ("post_estimation",)
     matlab_code = """
+%% Load estimated parameters and compute predictions
 load(['results_' pets{1} '.mat']);
 [data, auxData, metaData, txtData, weights] = feval(['mydata_' pets{1}]);
 q = rmfield(par, 'free');
 [prdData, info] = feval(['predict_' pets{1}], q, data, auxData); 
 
+%% Save predictions alongside parameters and data
 save(['results_' pets{1} '.mat'], 'metaData', 'metaPar', 'par', 'txtPar', 'data', 'auxData', 'txtData', 'weights', 'prdData')
 """
 
@@ -197,7 +204,9 @@ class GetResultsSection(RunSection):
     key = "get_results"
     template_families = ("run",)
     section_tags = ("post_estimation",)
-    matlab_code = """estim_options('pars_init_method', 1);
+    matlab_code = """
+%% Generate results     
+estim_options('pars_init_method', 1);
 estim_options('method', 'no');
 estim_options('results_output', ${results_output_mode});
 estim_pars;"""

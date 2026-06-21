@@ -11,6 +11,7 @@ from .pars_init import (
 )
 from .structure import MultiTierStructure
 from .tier_estimation import TierEstimator
+from .results import MultiTierResults, TierResult
 
 __all__ = [
     "build_estimation_files_from_folder",
@@ -18,6 +19,8 @@ __all__ = [
     "TierHierarchy",
     "TierHierarchyError",
     "MultiTierStructure",
+    "MultiTierResults",
+    "TierResult",
     "TierEstimator",
     "MultitierMyDataProgrammaticTemplate",
     "MultitierMyDataSubstitutionTemplate",

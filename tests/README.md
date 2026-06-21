@@ -10,6 +10,7 @@ Current scope:
 - `test_data_collection_unit.py` covers `DataCollection` behavior with fake entity and group data sources.
 - `test_tier_estimation_unit.py` covers tier estimation workflow behavior with fake tier structures and fake estimation runners.
 - `test_multitier_results_unit.py` covers multitier result saving/loading, metadata persistence, per-iteration timing, and summary output behavior.
+- `test_multitier_structure_unit.py` covers read-only `TierResult` and `MultiTierResults` loading from persisted multitier folders.
 - `multitier_test_helpers.py` provides shared fake multitier structures and runners for the multitier unit tests.
 - These tests avoid depending on real example folders or MATLAB.
 
@@ -32,7 +33,7 @@ What the current multitier unit tests protect:
 - estimation target selection for single-entity, grouped, and mixed grouped-plus-entity tiers
 - persisted per-tier result files
 - persisted tier timing and per-iteration timing metadata
-- load-time restoration of saved metadata
+- load-time restoration of saved metadata through `TierResult` / `MultiTierResults`
 - rejection of unsupported `result_metadata.json` schema versions
 - compatibility when `result_metadata.json` is missing
 - generation and reconstruction of the higher-level tier result summary
@@ -55,7 +56,7 @@ Current example interface expected by the tests:
 - `examples/<example>/tier_structure.py` defines `create_tier_structure(data, matlab_session='auto')`
 - `create_tier_structure(...)` returns a `MultiTierStructure`
 - `examples/<example>/estimation.py` defines `run_multitier_estimation(multitier)`
-- examples may also define `load_estimation_results(multitier)` if they want result-loading behavior checked explicitly
+- examples may also define `load_estimation_results(output_folder)` if they want persisted result-loading behavior checked explicitly
 
 Current integration coverage:
 - `test_example_data_loading.py`
@@ -79,7 +80,7 @@ Current integration coverage:
   - checks that metadata and summary outputs contain the expected tier identity, settings, timing, and aggregated summary fields
 - `test_result_loading.py`
   - checks example-specific result loading behavior using already-generated estimation outputs
-  - currently verifies that the Bos_taurus_Angus example's `load_estimation_results(multitier)` helper restores saved metadata, timing, and per-iteration timing information
+  - currently verifies that the Bos_taurus_Angus example's `load_estimation_results(output_folder)` helper returns `MultiTierResults` with saved metadata, timing, and per-iteration timing information
 
 ## Estimation procedure tests
 

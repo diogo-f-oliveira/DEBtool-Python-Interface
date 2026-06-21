@@ -63,7 +63,7 @@ For user projects, this layout remains the best default:
 - `estimation.py`
   - define estimation settings
   - run tiers in order
-  - optionally load saved results back into the tier objects
+  - optionally load saved results with `MultiTierResults.from_folder(...)` for read-only inspection
 
 The Angus example now follows this pattern and should be treated as the canonical reference.
 
@@ -92,7 +92,7 @@ Algorithm templates own their option set and read render-time values from `estim
 ```python
 from pathlib import Path
 
-from DEBtoolPyIF import DataCollection, MultiTierStructure, TierHierarchy
+from DEBtoolPyIF import DataCollection, MultiTierResults, MultiTierStructure, TierHierarchy
 from DEBtoolPyIF.estimation_files import EstimationTemplates, CopyFileTemplate
 from DEBtoolPyIF.estimation_files.algorithms import NelderMead
 from DEBtoolPyIF.multitier import (
@@ -174,6 +174,10 @@ def run_multitier_estimation(multitier, estimation_settings):
             hide_output=True,
             estimation_settings=estimation_settings[tier_name],
         )
+
+
+def load_estimation_results(output_folder):
+    return MultiTierResults.from_folder(output_folder, species_name="My_species")
 ```
 
 ## Where Python Customization Belongs

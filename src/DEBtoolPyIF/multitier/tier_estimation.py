@@ -46,17 +46,11 @@ class TierEstimator:
     artifacts for the current workflow, not part of the stable result-file schema.
     """
 
-    RESULT_METADATA_FILE = "result_metadata.json"
-    RESULT_SUMMARY_FILE = "result_summary.json"
-    RESULT_SCHEMA_VERSION = 2
-    OUTPUT_FILE_DESCRIPTIONS = {
-        "pars.csv": "Estimated tier parameters indexed by entity.",
-        "entity_data_errors.csv": "Entity-level data errors indexed by tier and entity.",
-        "group_data_errors.csv": "Group-level data errors indexed by tier and group.",
-        RESULT_METADATA_FILE: "Tier result metadata and timing persisted as JSON.",
-        RESULT_SUMMARY_FILE: "Compact structured tier summary persisted as JSON.",
-    }
-    OUTPUT_FILES = list(OUTPUT_FILE_DESCRIPTIONS)
+    RESULT_METADATA_FILE = results.RESULT_METADATA_FILE
+    RESULT_SUMMARY_FILE = results.RESULT_SUMMARY_FILE
+    RESULT_SCHEMA_VERSION = results.RESULT_SCHEMA_VERSION
+    OUTPUT_FILE_DESCRIPTIONS = results.OUTPUT_FILE_DESCRIPTIONS
+    OUTPUT_FILES = results.OUTPUT_FILES
 
     def __init__(self, tier_structure, tier_name, tier_pars: list, template_folder: str | Path | None = None,
                  estimation_templates: EstimationTemplates | dict | None = None,

@@ -52,6 +52,7 @@ from .estimation import (
 )
 from .multitier import (
     MultiTierStructure,
+    MultiTierResults,
     MultitierMyDataProgrammaticTemplate,
     MultitierMyDataSubstitutionTemplate,
     MultitierParsInitProgrammaticTemplate,
@@ -61,6 +62,7 @@ from .multitier import (
     TierEstimator,
     TierHierarchy,
     TierHierarchyError,
+    TierResult,
     build_estimation_templates_from_folder,
 )
 from .parameters import (
@@ -80,7 +82,9 @@ __all__ = [
     "TierHierarchy",
     "TierHierarchyError",
     "MultiTierStructure",
+    "MultiTierResults",
     "TierEstimator",
+    "TierResult",
     "EstimationFileTemplate",
     "MATLABWrapper",
     "EstimationRunner",

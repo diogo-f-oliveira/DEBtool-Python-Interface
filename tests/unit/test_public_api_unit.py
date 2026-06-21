@@ -9,11 +9,13 @@ from DEBtoolPyIF import (
     get_parameter_registry_of_typified_model,
     MATLABWrapper,
     MultiTierStructure,
+    MultiTierResults,
     ParameterDefinition,
     ParameterRegistry,
     TierEstimator,
     TierHierarchy,
     TierHierarchyError,
+    TierResult,
 )
 from DEBtoolPyIF.parameters import StdParameterRegistry, StxParameterRegistry, p_Am
 from DEBtoolPyIF.data_sources import (
@@ -39,9 +41,11 @@ from DEBtoolPyIF.estimation import (
 )
 from DEBtoolPyIF.multitier import (
     MultiTierStructure as MultiTierStructureFromSubpackage,
+    MultiTierResults as MultiTierResultsFromSubpackage,
     TierEstimator as TierEstimatorFromSubpackage,
     TierHierarchy as TierHierarchyFromSubpackage,
     TierHierarchyError as TierHierarchyErrorFromSubpackage,
+    TierResult as TierResultFromSubpackage,
 )
 from DEBtoolPyIF.notebook import TierVisualizer
 
@@ -51,7 +55,9 @@ def test_root_public_api_exports_expected_symbols():
     assert TierHierarchy.__name__ == "TierHierarchy"
     assert TierHierarchyError.__name__ == "TierHierarchyError"
     assert MultiTierStructure.__name__ == "MultiTierStructure"
+    assert MultiTierResults.__name__ == "MultiTierResults"
     assert TierEstimator.__name__ == "TierEstimator"
+    assert TierResult.__name__ == "TierResult"
     assert MATLABWrapper.__name__ == "MATLABWrapper"
     assert EstimationRunner.__name__ == "EstimationRunner"
     assert DEBModelParametrizationProblem.__name__ == "DEBModelParametrizationProblem"
@@ -92,7 +98,9 @@ def test_subpackage_public_api_exports_expected_symbols():
     assert TierHierarchyFromSubpackage is TierHierarchy
     assert TierHierarchyErrorFromSubpackage is TierHierarchyError
     assert MultiTierStructureFromSubpackage is MultiTierStructure
+    assert MultiTierResultsFromSubpackage is MultiTierResults
     assert TierEstimatorFromSubpackage is TierEstimator
+    assert TierResultFromSubpackage is TierResult
     assert TierVisualizer.__name__ == "TierVisualizer"
     assert StdParameterRegistry.__name__ == "StdParameterRegistry"
     assert StxParameterRegistry.__name__ == "StxParameterRegistry"

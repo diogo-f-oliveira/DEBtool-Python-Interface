@@ -1,10 +1,246 @@
 import json
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
 
 from ..utils.entity_list import normalize_entity_list
+from .hierarchy import TierHierarchy
+
+
+RESULT_METADATA_FILE = "result_metadata.json"
+RESULT_SUMMARY_FILE = "result_summary.json"
+RESULT_SCHEMA_VERSION = 2
+OUTPUT_FILE_DESCRIPTIONS = {
+    "pars.csv": "Estimated tier parameters indexed by entity.",
+    "entity_data_errors.csv": "Entity-level errors indexed by tier and entity.",
+    "group_data_errors.csv": "Group-level errors indexed by tier and group.",
+    RESULT_METADATA_FILE: "Tier result metadata and timing persisted as JSON.",
+    RESULT_SUMMARY_FILE: "Compact structured tier summary persisted as JSON.",
+}
+OUTPUT_FILES = list(OUTPUT_FILE_DESCRIPTIONS)
+
+
+@dataclass
+class TierResult:
+    name: str
+    output_folder: Path
+    species_name: str | None
+    pars_df: pd.DataFrame
+    entity_data_errors: pd.DataFrame
+    group_data_errors: pd.DataFrame
+    metadata: dict | None = None
+    summary: dict | None = None
+
+    @classmethod
+    def from_folder(
+            cls,
+            output_folder: str | Path,
+            tier_name: str | None = None,
+            species_name: str | None = None,
+            entity_hierarchy: TierHierarchy | None = None,
+    ) -> "TierResult":
+        output_folder = Path(output_folder)
+        if not output_folder.is_dir():
+            raise FileNotFoundError(f"Cannot load tier results; missing tier folder '{output_folder}'.")
+
+        pars_df = _read_required_csv(output_folder / "pars.csv", index_col="entity")
+        entity_data_errors = _read_required_csv(
+            output_folder / "entity_data_errors.csv",
+            index_col=["tier", "entity"],
+        )
+        group_data_errors = _read_required_csv(
+            output_folder / "group_data_errors.csv",
+            index_col=["tier", "group"],
+        )
+
+        metadata = _load_json_if_exists(output_folder / RESULT_METADATA_FILE)
+        if metadata is not None:
+            _validate_metadata(metadata, tier_name=tier_name, species_name=species_name)
+            resolved_tier_name = metadata.get("tier_name") or tier_name or output_folder.name
+            resolved_species_name = metadata.get("species_name") or species_name
+        else:
+            resolved_tier_name = tier_name or output_folder.name
+            resolved_species_name = species_name
+
+        result = cls(
+            name=resolved_tier_name,
+            output_folder=output_folder,
+            species_name=resolved_species_name,
+            pars_df=pars_df,
+            entity_data_errors=entity_data_errors,
+            group_data_errors=group_data_errors,
+            metadata=metadata,
+        )
+        result.summary = _load_json_if_exists(output_folder / RESULT_SUMMARY_FILE)
+        if result.summary is None and entity_hierarchy is not None:
+            result.summary = build_tier_result_summary(result, entity_hierarchy)
+        return result
+
+    @property
+    def tier_pars(self):
+        if self.metadata is not None and self.metadata.get("tier_parameters"):
+            return list(self.metadata["tier_parameters"])
+        return list(self.pars_df.columns)
+
+    @property
+    def tier_entities(self):
+        if self.metadata is not None and self.metadata.get("tier_entities"):
+            return list(self.metadata["tier_entities"])
+        return list(self.pars_df.index)
+
+    @property
+    def tier_groups(self):
+        if self.metadata is not None and self.metadata.get("tier_groups") is not None:
+            return list(self.metadata["tier_groups"])
+        if isinstance(self.group_data_errors.index, pd.MultiIndex) and "group" in self.group_data_errors.index.names:
+            return list(dict.fromkeys(self.group_data_errors.index.get_level_values("group")))
+        return []
+
+    @property
+    def estimation_settings(self):
+        if self.metadata is None:
+            return None
+        return deepcopy(self.metadata.get("estimation_settings"))
+
+    @property
+    def estim_start_time(self):
+        if self.metadata is None:
+            return None
+        return deserialize_timestamp(self.metadata.get("estimation_start_time"))
+
+    @property
+    def estim_end_time(self):
+        if self.metadata is None:
+            return None
+        return deserialize_timestamp(self.metadata.get("estimation_end_time"))
+
+    @property
+    def estimation_iterations(self):
+        if self.metadata is None:
+            return []
+        loaded_iterations = []
+        for iteration in self.metadata.get("estimation_iterations", []):
+            loaded_iteration = deepcopy(iteration)
+            loaded_iteration["estimation_start_time"] = deserialize_timestamp(
+                loaded_iteration.get("estimation_start_time")
+            )
+            loaded_iteration["estimation_end_time"] = deserialize_timestamp(
+                loaded_iteration.get("estimation_end_time")
+            )
+            loaded_iterations.append(loaded_iteration)
+        return loaded_iterations
+
+
+@dataclass
+class MultiTierResults:
+    output_folder: Path
+    entity_hierarchy: TierHierarchy
+    tiers: dict[str, TierResult]
+    species_name: str | None = None
+
+    @classmethod
+    def from_folder(
+            cls,
+            output_folder: str | Path,
+            species_name: str | None = None,
+    ) -> "MultiTierResults":
+        output_folder = Path(output_folder)
+        hierarchy_path = output_folder / "entity_vs_tier.csv"
+        if not hierarchy_path.is_file():
+            raise FileNotFoundError(f"Cannot load multitier results; missing '{hierarchy_path}'.")
+
+        entity_hierarchy = TierHierarchy.from_csv(hierarchy_path)
+        tiers = {}
+        resolved_species_name = species_name
+        for tier_name in entity_hierarchy.tier_names:
+            tier_result = TierResult.from_folder(
+                output_folder=output_folder / tier_name,
+                tier_name=tier_name,
+                species_name=species_name,
+                entity_hierarchy=entity_hierarchy,
+            )
+            tiers[tier_name] = tier_result
+            if resolved_species_name is None and tier_result.species_name is not None:
+                resolved_species_name = tier_result.species_name
+            elif (
+                    resolved_species_name is not None
+                    and tier_result.species_name is not None
+                    and tier_result.species_name != resolved_species_name
+            ):
+                raise ValueError(
+                    "Cannot load multitier results because tier result species names are inconsistent "
+                    f"('{tier_result.species_name}' != '{resolved_species_name}')."
+                )
+
+        return cls(
+            output_folder=output_folder,
+            entity_hierarchy=entity_hierarchy,
+            tiers=tiers,
+            species_name=resolved_species_name,
+        )
+
+    @property
+    def tier_names(self):
+        return list(self.entity_hierarchy.tier_names)
+
+
+def _read_required_csv(path: Path, **read_csv_kwargs):
+    if not path.is_file():
+        raise FileNotFoundError(f"Cannot load tier results; missing required file '{path}'.")
+    return pd.read_csv(path, **read_csv_kwargs)
+
+
+def _load_json_if_exists(path: Path):
+    if not path.is_file():
+        return None
+    with path.open("r", encoding="utf-8") as json_file:
+        return json.load(json_file)
+
+
+def _validate_metadata(metadata, tier_name=None, species_name=None):
+    schema_version = metadata.get("schema_version")
+    if schema_version != RESULT_SCHEMA_VERSION:
+        raise ValueError(
+            f"Cannot load result metadata schema version {schema_version!r}; expected "
+            f"{RESULT_SCHEMA_VERSION}."
+        )
+    if tier_name is not None and metadata.get("tier_name") not in (None, tier_name):
+        raise ValueError(
+            f"Cannot load results for tier '{tier_name}' from metadata for tier "
+            f"'{metadata['tier_name']}'."
+        )
+    if species_name is not None and metadata.get("species_name") not in (None, species_name):
+        raise ValueError(
+            "Cannot load multitier results because the stored species name does not match the requested "
+            f"species name ('{metadata['species_name']}' != '{species_name}')."
+        )
+
+
+def build_tier_result_summary(tier_result: TierResult, entity_hierarchy: TierHierarchy):
+    summary_tier_names = list(entity_hierarchy.get_all_tiers_below(tier_result.name))
+    return serialize_metadata_value({
+        "tier_name": tier_result.name,
+        "species_name": tier_result.species_name,
+        "n_tier_entities": len(tier_result.tier_entities),
+        "n_tier_groups": len(tier_result.tier_groups),
+        "tier_parameters": list(tier_result.tier_pars),
+        "elapsed_duration_seconds": None if tier_result.metadata is None else tier_result.metadata.get(
+            "elapsed_duration_seconds"
+        ),
+        "mean_estimated_parameters": _build_parameter_summary_columns(tier_result),
+        "mean_entity_errors_by_tier": _build_mean_error_columns(
+            tier_result.entity_data_errors,
+            summary_tier_names=summary_tier_names,
+            prefix="mean_entity_error",
+        ),
+        "mean_group_errors_by_tier": _build_mean_error_columns(
+            tier_result.group_data_errors,
+            summary_tier_names=summary_tier_names,
+            prefix="mean_group_error",
+        ),
+    })
 
 
 def serialize_metadata_value(value):
@@ -218,26 +454,30 @@ def save_results(tier_estimator):
 
 
 def load_results(tier_estimator):
-    tier_estimator.pars_df = pd.read_csv(tier_estimator.output_folder / "pars.csv", index_col="entity")
-    tier_estimator.entity_data_errors = pd.read_csv(
-        tier_estimator.output_folder / "entity_data_errors.csv",
-        index_col=["tier", "entity"],
+    tier_result = TierResult.from_folder(
+        output_folder=tier_estimator.output_folder,
+        tier_name=tier_estimator.name,
+        species_name=tier_estimator.tier_structure.species_name,
+        entity_hierarchy=tier_estimator.tier_structure.entity_hierarchy,
     )
-    tier_estimator.group_data_errors = pd.read_csv(
-        tier_estimator.output_folder / "group_data_errors.csv",
-        index_col=["tier", "group"],
-    )
-    tier_estimator.tier_pars = list(tier_estimator.pars_df.columns)
-    tier_estimator.tier_entities = list(tier_estimator.pars_df.index)
+    tier_estimator.pars_df = tier_result.pars_df
+    tier_estimator.entity_data_errors = tier_result.entity_data_errors
+    tier_estimator.group_data_errors = tier_result.group_data_errors
+    tier_estimator.tier_pars = tier_result.tier_pars
+    tier_estimator.tier_entities = tier_result.tier_entities
+    tier_estimator.tier_groups = tier_result.tier_groups
 
-    metadata = load_result_metadata(tier_estimator)
-    if metadata is None:
+    if tier_result.metadata is None:
         tier_estimator.result_metadata = None
         tier_estimator.estimation_settings = None
         tier_estimator.estim_start_time = None
         tier_estimator.estim_end_time = None
         tier_estimator.estimation_iterations = []
     else:
-        apply_result_metadata(tier_estimator, metadata)
+        tier_estimator.result_metadata = tier_result.metadata
+        tier_estimator.estimation_settings = tier_result.estimation_settings
+        tier_estimator.estim_start_time = tier_result.estim_start_time
+        tier_estimator.estim_end_time = tier_result.estim_end_time
+        tier_estimator.estimation_iterations = tier_result.estimation_iterations
 
-    tier_estimator.result_summary = build_result_summary(tier_estimator)
+    tier_estimator.result_summary = tier_result.summary or build_result_summary(tier_estimator)

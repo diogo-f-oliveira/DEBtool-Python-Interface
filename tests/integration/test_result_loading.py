@@ -1,4 +1,5 @@
 import pytest
+from DEBtoolPyIF import MultiTierResults
 
 
 @pytest.mark.integration
@@ -15,25 +16,21 @@ def test_bos_taurus_angus_load_estimation_results_uses_saved_metadata(
     estimation_module = import_example_estimation_module("Bos_taurus_Angus")
 
     assert output_folder.is_dir()
-    for tier in multitier.tiers.values():
-        tier.result_metadata = None
-        tier.estimation_settings = None
-        tier.estim_start_time = None
-        tier.estim_end_time = None
-        tier.estimation_iterations = []
 
-    loaded_results = estimation_module.load_estimation_results(multitier)
+    loaded_results = estimation_module.load_estimation_results(output_folder)
 
-    assert set(loaded_results) == set(multitier.tier_names)
+    assert isinstance(loaded_results, MultiTierResults)
+    assert set(loaded_results.tiers) == set(multitier.tier_names)
     for tier_name in multitier.tier_names:
-        tier = multitier.tiers[tier_name]
-        tier_summary = loaded_results[tier_name]
-        assert tier_summary["result_metadata"] is not None
-        assert tier_summary["estimation_settings"] == tier.estimation_settings
-        assert tier_summary["estimation_start_time"] == tier.estim_start_time
-        assert tier_summary["estimation_end_time"] == tier.estim_end_time
-        assert tier_summary["elapsed_duration_seconds"] == tier.result_metadata["elapsed_duration_seconds"]
-        assert tier_summary["estimation_iterations"] == tier.estimation_iterations
-        assert tier.estim_start_time is not None
-        assert tier.estim_end_time is not None
-        assert tier.estimation_iterations
+        live_tier = multitier.tiers[tier_name]
+        tier_result = loaded_results.tiers[tier_name]
+        assert tier_result.metadata is not None
+        assert tier_result.summary is not None
+        assert tier_result.estimation_settings == live_tier.estimation_settings
+        assert tier_result.estim_start_time == live_tier.estim_start_time
+        assert tier_result.estim_end_time == live_tier.estim_end_time
+        assert tier_result.metadata["elapsed_duration_seconds"] == live_tier.result_metadata["elapsed_duration_seconds"]
+        assert tier_result.estimation_iterations == live_tier.estimation_iterations
+        assert tier_result.estim_start_time is not None
+        assert tier_result.estim_end_time is not None
+        assert tier_result.estimation_iterations

@@ -164,7 +164,7 @@ In the current package layout, the multitier implementation is split by responsi
 - `estimation_files/writer.py`
   - final render-and-write step
 - `multitier/results.py`
-  - result metadata serialization and save/load helpers
+  - result metadata serialization, save/load helpers, and read-only result objects
 
 Important `MultiTierStructure` responsibilities:
 
@@ -187,6 +187,10 @@ Key methods:
 - `get_full_pars_dict()`
   - assembles the fixed parameter context visible to the current tier
 
+Persisted result inspection is intentionally separated from `MultiTierStructure`.
+Use `MultiTierResults.from_folder(...)` to inspect saved multitier outputs without reconstructing the original
+`DataCollection` objects or creating a runnable workflow.
+
 ## How A Tier Is Estimated
 
 `TierEstimator` is the operational unit for one tier.
@@ -204,6 +208,10 @@ Each estimator holds:
 - optional pseudo-data overrides
 - estimation settings
 - timestamps and iteration metadata
+
+For read-only inspection of persisted tier outputs, use `TierResult` instead of `TierEstimator`. A `TierResult`
+contains the saved parameter table, saved error tables, metadata, and compact summary, but it has no data sources,
+templates, MATLAB runner, or estimation methods.
 
 ### Estimation Granularity
 

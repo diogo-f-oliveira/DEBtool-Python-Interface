@@ -55,6 +55,7 @@ def test_save_results_writes_backward_compatible_csvs_and_metadata(template_fold
     assert metadata["tier_entities"] == ["entity_1"]
     assert metadata["tier_groups"] == ["group_1"]
     assert metadata["tier_parameters"] == ["par_a"]
+    assert metadata["initial_parameter_values"] == {"par_a": {"entity_1": 1.0}}
     assert metadata["estimation_settings"] == estimation_settings
     assert metadata["estimation_start_time"] is not None
     assert metadata["estimation_end_time"] is not None

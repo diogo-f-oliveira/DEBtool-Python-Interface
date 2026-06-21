@@ -109,6 +109,7 @@ def test_generate_mydata_file_sorts_and_deduplicates_metadata_types(tmp_path):
         tier_pars=["par_a"],
         extra_info="",
         estimation_settings={},
+        initial_par_values=pd.DataFrame({"par_a": [1.0]}, index=pd.Index(["root_entity"], name="entity")),
     )
     context = MultitierGenerationContext.from_tier_estimator(
         tier_estimator=tier_estimator,

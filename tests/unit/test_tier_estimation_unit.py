@@ -2,10 +2,12 @@ import pandas as pd
 import pytest
 
 from tests.unit.multitier_test_helpers import (
+    FakeSummaryTierStructure,
     build_grouped_tier_estimator,
     build_mixed_tier_estimator,
     build_tier_estimator,
 )
+from DEBtoolPyIF.multitier import TierEstimator
 
 
 def _run_settings(*, n_runs: int, n_steps: int) -> dict:
@@ -99,6 +101,131 @@ def test_estimate_reuses_last_settings_when_not_overridden(template_folder):
     tier.estimate(save_results=False, print_results=False, hide_output=True)
 
     assert tier.estimation_settings == estimation_settings
+
+
+def test_initial_pars_flat_dict_broadcasts_to_target_entities(template_folder):
+    tier = build_grouped_tier_estimator(template_folder)
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars={"par_a": 9.5},
+        entity_list=["entity_1", "entity_2"],
+    )
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "entity_1": 9.5,
+            "entity_2": 9.5,
+        }
+    }
+
+
+def test_initial_pars_nested_dict_preserves_entity_values(template_folder):
+    tier = build_grouped_tier_estimator(template_folder)
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars={"par_a": {"entity_1": 8.0, "entity_2": 8.5}},
+        entity_list=["entity_1", "entity_2"],
+    )
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "entity_1": 8.0,
+            "entity_2": 8.5,
+        }
+    }
+
+
+def test_initial_pars_dataframe_preserves_entity_values(template_folder):
+    tier = build_grouped_tier_estimator(template_folder)
+    initial_pars = pd.DataFrame(
+        {"par_a": [7.0, 7.5]},
+        index=pd.Index(["entity_1", "entity_2"], name="entity"),
+    )
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars=initial_pars,
+        entity_list=["entity_1", "entity_2"],
+    )
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "entity_1": 7.0,
+            "entity_2": 7.5,
+        }
+    }
+
+
+def test_initial_pars_override_base_fallback(template_folder):
+    tier = build_tier_estimator(template_folder)
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars={"par_a": 4.25},
+        entity_list=["entity_1"],
+    )
+
+    assert initial_values.loc["entity_1", "par_a"] == 4.25
+
+
+def test_root_tier_initialization_fails_without_initial_pars_or_fallback(template_folder):
+    tier = build_tier_estimator(template_folder)
+    tier.tier_structure.base_pars = {}
+    tier.tier_structure.pars = {}
+
+    with pytest.raises(ValueError, match="par_a@entity_1"):
+        tier.resolve_initial_parameter_values(entity_list=["entity_1"])
+
+
+def test_lower_tier_inherits_initial_values_from_parent_estimates(template_folder):
+    tier_structure = FakeSummaryTierStructure()
+    breed = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="breed",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "breed_output"),
+    )
+    diet = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="diet",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "diet_output"),
+    )
+    tier_structure.tiers["breed"] = breed
+    tier_structure.tiers["diet"] = diet
+    breed.pars_df.loc["male", "par_a"] = 3.5
+
+    initial_values = diet.resolve_initial_parameter_values(entity_list=["CTRL", "TMR"])
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "CTRL": 3.5,
+            "TMR": 3.5,
+        }
+    }
+
+
+def test_lower_tier_initialization_fails_when_parent_estimate_is_missing(template_folder):
+    tier_structure = FakeSummaryTierStructure()
+    breed = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="breed",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "breed_output"),
+    )
+    diet = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="diet",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "diet_output"),
+    )
+    tier_structure.tiers["breed"] = breed
+    tier_structure.tiers["diet"] = diet
+
+    with pytest.raises(ValueError, match="par_a@CTRL"):
+        diet.resolve_initial_parameter_values(entity_list=["CTRL"])
 
 
 def test_estimate_tracks_per_group_iteration_times(template_folder):

@@ -367,7 +367,6 @@ def test_multitier_structure_coerces_matlab_path_strings_to_copy_templates(tmp_p
         species_name=species_name,
         entity_hierarchy=hierarchy,
         data=data,
-        pars={"par_a": 1.0},
         tier_pars={"tier_1": ["par_a"]},
         estimation_templates={
             "tier_1": {
@@ -384,6 +383,87 @@ def test_multitier_structure_coerces_matlab_path_strings_to_copy_templates(tmp_p
     assert isinstance(multitier.estimation_templates["tier_1"].mydata, CopyFileTemplate)
     assert isinstance(multitier.estimation_templates["tier_1"].predict, CopyFileTemplate)
     assert isinstance(multitier.tiers["tier_1"].estimation_templates.run, CopyFileTemplate)
+    assert multitier.base_pars == {}
+
+
+def test_multitier_structure_accepts_base_pars_fallback(tmp_path):
+    species_name = "Test_species"
+    hierarchy = TierHierarchy(tier_names=["tier_1"], entities={"tier_1": ["entity_1"]})
+    data = {"tier_1": FakeTierData()}
+
+    multitier = MultiTierStructure(
+        species_name=species_name,
+        entity_hierarchy=hierarchy,
+        data=data,
+        base_pars={"par_a": 1.0},
+        tier_pars={"tier_1": ["par_a"]},
+        estimation_templates={
+            "tier_1": {
+                "mydata": str(tmp_path / "mydata_Test_species.m"),
+                "pars_init": str(tmp_path / "pars_init_Test_species.m"),
+                "predict": str(tmp_path / "predict_Test_species.m"),
+                "run": str(tmp_path / "run_Test_species.m"),
+            }
+        },
+        output_folder=tmp_path / "outputs",
+        matlab_session="ignore",
+    )
+
+    assert multitier.base_pars == {"par_a": 1.0}
+    assert multitier.pars == {"par_a": 1.0}
+
+
+def test_multitier_structure_warns_for_deprecated_pars_fallback(tmp_path):
+    species_name = "Test_species"
+    hierarchy = TierHierarchy(tier_names=["tier_1"], entities={"tier_1": ["entity_1"]})
+    data = {"tier_1": FakeTierData()}
+
+    with pytest.warns(DeprecationWarning, match="pars=.*deprecated"):
+        multitier = MultiTierStructure(
+            species_name=species_name,
+            entity_hierarchy=hierarchy,
+            data=data,
+            pars={"par_a": 1.0},
+            tier_pars={"tier_1": ["par_a"]},
+            estimation_templates={
+                "tier_1": {
+                    "mydata": str(tmp_path / "mydata_Test_species.m"),
+                    "pars_init": str(tmp_path / "pars_init_Test_species.m"),
+                    "predict": str(tmp_path / "predict_Test_species.m"),
+                    "run": str(tmp_path / "run_Test_species.m"),
+                }
+            },
+            output_folder=tmp_path / "outputs",
+            matlab_session="ignore",
+        )
+
+    assert multitier.base_pars == {"par_a": 1.0}
+
+
+def test_multitier_structure_rejects_base_pars_and_deprecated_pars(tmp_path):
+    species_name = "Test_species"
+    hierarchy = TierHierarchy(tier_names=["tier_1"], entities={"tier_1": ["entity_1"]})
+    data = {"tier_1": FakeTierData()}
+
+    with pytest.raises(ValueError, match="either base_pars or deprecated pars"):
+        MultiTierStructure(
+            species_name=species_name,
+            entity_hierarchy=hierarchy,
+            data=data,
+            pars={"par_a": 1.0},
+            base_pars={"par_a": 2.0},
+            tier_pars={"tier_1": ["par_a"]},
+            estimation_templates={
+                "tier_1": {
+                    "mydata": str(tmp_path / "mydata_Test_species.m"),
+                    "pars_init": str(tmp_path / "pars_init_Test_species.m"),
+                    "predict": str(tmp_path / "predict_Test_species.m"),
+                    "run": str(tmp_path / "run_Test_species.m"),
+                }
+            },
+            output_folder=tmp_path / "outputs",
+            matlab_session="ignore",
+        )
 
 
 def test_template_folder_deprecation_warning_and_internal_conversion(tmp_path):
@@ -397,7 +477,7 @@ def test_template_folder_deprecation_warning_and_internal_conversion(tmp_path):
             species_name=species_name,
             entity_hierarchy=hierarchy,
             data=data,
-            pars={"par_a": 1.0},
+            base_pars={"par_a": 1.0},
             tier_pars={"tier_1": ["par_a"]},
             template_folder=tmp_path,
             output_folder=tmp_path / "outputs",
@@ -431,6 +511,7 @@ def _build_multitier_context(tmp_path, tier_name="top", entity_list=None):
         extra_info="metaData.extra_info = NaN;",
         output_folder=tmp_path,
         estimation_settings={},
+        initial_par_values=pd.DataFrame({"par_a": [1.0]}, index=pd.Index(entity_list, name="entity")),
     )
     context = MultitierGenerationContext.from_tier_estimator(
         tier_estimator=tier_estimator,
@@ -1029,6 +1110,7 @@ def test_multitier_pseudodata_block_is_empty_for_root_tier(tmp_path):
         extra_info="",
         output_folder=tmp_path,
         estimation_settings={},
+        initial_par_values=pd.DataFrame({"par_a": [1.0]}, index=pd.Index(["root_entity"], name="entity")),
     )
     context = MultitierGenerationContext.from_tier_estimator(
         tier_estimator=tier_estimator,
@@ -1202,6 +1284,7 @@ def test_multitier_pars_init_template_keeps_loops_for_single_target_of_multi_ent
         extra_info="metaData.extra_info = NaN;",
         output_folder=tmp_path,
         estimation_settings={},
+        initial_par_values=pd.DataFrame({"par_a": [1.0]}, index=pd.Index(["root_entity_a"], name="entity")),
     )
     context = MultitierGenerationContext.from_tier_estimator(
         tier_estimator=tier_estimator,

@@ -130,6 +130,8 @@ class FakeMixedRunner(FakeRunner):
 class FakeTierStructure:
     def __init__(self):
         self.species_name = "Test_species"
+        self.base_pars = {"par_a": 1.0}
+        self.pars = self.base_pars
         self.data = {"tier_1": FakeTierData()}
         self.estimation_runner = FakeRunner()
         self.tiers = {}
@@ -150,6 +152,8 @@ class FakeTierStructure:
 class FakeGroupedTierStructure:
     def __init__(self):
         self.species_name = "Test_species"
+        self.base_pars = {"par_a": 1.0}
+        self.pars = self.base_pars
         self.data = {"tier_1": FakeGroupedTierData()}
         self.estimation_runner = FakeGroupedRunner()
         self.tiers = {}
@@ -170,6 +174,8 @@ class FakeGroupedTierStructure:
 class FakeMixedTierStructure:
     def __init__(self):
         self.species_name = "Test_species"
+        self.base_pars = {"par_a": 1.0}
+        self.pars = self.base_pars
         self.data = {"tier_1": FakeMixedTierData()}
         self.estimation_runner = FakeMixedRunner()
         self.tiers = {}
@@ -192,6 +198,8 @@ class FakeMixedTierStructure:
 class FakeSummaryTierStructure:
     def __init__(self):
         self.species_name = "Test_species"
+        self.base_pars = {"par_a": 1.0, "par_b": 2.0}
+        self.pars = self.base_pars
         self.data = {
             "breed": FakeSummaryBreedTierData(),
             "diet": FakeSummaryDietTierData(),

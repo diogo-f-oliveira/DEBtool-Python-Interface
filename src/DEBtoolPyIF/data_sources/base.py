@@ -71,8 +71,8 @@ class DataSourceBase:
             raise Exception(f"DataSource {self.name} has IDs in df.id_col that cannot be used as MATLAB struct field "
                             f"names: {invalid_ids!r}")
 
-    def generate_mydata_code(self, entity_list='all'):
-        return
+    def generate_mydata_code(self, entity_list='all') -> str:
+        return ''
 
     def generate_dataset_code(self, id_, data, converted_aux_data: str = None, auxdata_struct_name=''):
         converted_data = convert_numeric_array_to_matlab(data)

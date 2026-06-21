@@ -12,14 +12,14 @@ from .tier_estimation import TierEstimator
 
 
 class MultiTierStructure:
-    def __init__(self, species_name: str, entity_hierarchy: TierHierarchy, data: dict[str, DataCollection], pars: dict,
+    def __init__(self, species_name: str, entity_hierarchy: TierHierarchy,
+                 data: dict[str, DataCollection], pars: dict,
                  tier_pars: dict, template_folder: str | Path | None = None,
                  estimation_templates: dict | None = None,
                  output_folder: str | Path = ".", matlab_session="auto"):
         self.data = data
         self.species_name = species_name
         self.entity_hierarchy = entity_hierarchy
-        self.tier_names = list(self.entity_hierarchy.tier_names)
         self.template_folder = Path(template_folder) if template_folder is not None else None
         self.output_folder = Path(output_folder)
         self.pars = pars
@@ -51,6 +51,10 @@ class MultiTierStructure:
             matlab_session=matlab_session,
         )
 
+    @property
+    def tier_names(self):
+        return list(self.entity_hierarchy.tier_names)
+
     def build_tiers(self):
         self.output_folder.mkdir(parents=True, exist_ok=True)
         self.entity_hierarchy.to_dataframe().to_csv(self.output_folder / "entity_vs_tier.csv")
@@ -72,6 +76,8 @@ class MultiTierStructure:
                 estimation_templates=self.estimation_templates[tier_name],
                 output_folder=tier_output_folder,
             )
+
+        assert self.tier_names == list(self.tiers.keys())
 
     def get_pars_from_tier_above(self, tier_name):
         return self.tiers[self.entity_hierarchy.get_parent_tier(tier_name)].pars_df

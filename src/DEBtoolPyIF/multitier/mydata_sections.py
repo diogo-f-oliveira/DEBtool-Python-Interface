@@ -246,16 +246,17 @@ class TierParInitValuesSection(MyDataSection):
         )
 
 
+# TODO: Add options to define pseudo-data weight per parameter with a struct (maybe new class or adapt code of this to support both inputs)
 class MultitierPseudoDataSection(MyDataSection):
     key = "multitier_pseudodata_block"
     template_families = ("multitier_mydata",)
     section_tags = ("pseudodata",)
     matlab_code = """%% Add multitier pseudo-data from previous-tier estimates
 psdWeight = ${pseudo_data_weight};
-for e = 1:length(tiers.entity_list)
-    entity_id = tiers.entity_list{e};
-    for p = 1:length(tiers.tier_pars)
-        par_name = tiers.tier_pars{p};
+for p = 1:length(tiers.tier_pars)
+   par_name = tiers.tier_pars{p};
+   for e = 1:length(tiers.entity_list)
+    	entity_id = tiers.entity_list{e};
         varname = [par_name '_' entity_id];
 
         data.psd.(varname) = metaData.tier_par_init_values.(par_name).(entity_id);

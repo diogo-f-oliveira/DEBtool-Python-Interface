@@ -29,6 +29,7 @@
 - `pytest.ini` adds `src` to the pytest import path for repo-root test runs, so the standard pytest commands should work without setting `PYTHONPATH` manually.
 - If a non-pytest command needs import-path help from the repo root before the editable install is repaired, set it explicitly in PowerShell:
   - `$env:PYTHONPATH=(Resolve-Path src); conda run -n debtoolpyif_dev python ...`
+ - Treat the files under `build/` (for example `build/lib/DEBtoolPyIF/...`) and `src/DEBtoolPyIF.egg-info/` as build/package outputs. Do not edit those files directly; change sources under `src/DEBtoolPyIF/` and reinstall in editable mode instead.
 
 ## Testing Expectations
 - For code changes, run relevant tests first, then broader tests if needed.
@@ -49,6 +50,7 @@
   
 ## Code Change Guidelines
 - Keep path handling robust and cross-platform (`os.path.join` or `pathlib`).
+ - Do not edit generated packaging or build outputs (for example `build/` and `src/DEBtoolPyIF.egg-info`). If a change is needed in installed behavior, update the source under `src/DEBtoolPyIF/` and run the editable install workflow described above.
 - After introducing breaking API changes update all affected code and tests, including:
   - example scripts in `examples/`
   - integration tests in `tests/integration/`

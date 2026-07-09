@@ -85,6 +85,7 @@ from DEBtoolPyIF.multitier.mydata import MultitierMyDataTemplate
 from DEBtoolPyIF.multitier.mydata_sections import (
     EntityDescendantsSection,
     EntityPathSection,
+    MultitierAddPseudoDataSection,
     MultitierEntityListSection,
     MultitierGroupsOfEntitySection,
     TierEntitiesSection,
@@ -565,8 +566,9 @@ def test_mydata_template_renders_generated_sections(tmp_path):
     assert "metaData.group_data_types = {'group_a', 'group_m'};" in contents
     assert "% entity data" in contents
     assert "metaData.extra_info = NaN;" in contents
-    assert "[data, units, label, weights] = addpseudodata(data, units, label, weights);" in contents
-    assert "weights.psd.(varname) = 0.25;" in contents
+    assert "[data, units, label, weights] = addpseudodata(data, units, label, weights);" not in contents
+    assert "psdWeight = 0.25;" in contents
+    assert "weights.psd.(varname) = psdWeight;" in contents
 
 
 def test_mydata_template_supports_custom_sections():
@@ -997,7 +999,8 @@ def test_multitier_mydata_template_uses_minimum_required_multitier_blocks(tmp_pa
 
     contents = MultitierMyDataProgrammaticTemplate().render(context)
 
-    assert "weights.psd.(varname) = 0.25;" in contents
+    assert "psdWeight = 0.25;" in contents
+    assert "weights.psd.(varname) = psdWeight;" in contents
     assert "auxData.tiers = tiers;" in contents
 
 
@@ -1079,6 +1082,12 @@ def test_add_pseudo_data_value_is_exported_from_public_apis():
 
 
 def test_multitier_mydata_template_uses_specialized_classes_for_duplicate_generic_keys():
+    sections_by_key = {
+        section.key: type(section)
+        for section in MultitierMyDataProgrammaticTemplate.required_sections()
+    }
+
+    assert sections_by_key["add_pseudodata_block"] is MultitierAddPseudoDataSection
     assert type(MultitierMyDataProgrammaticTemplate.required_sections()[-1]).__name__ == "MultitierPackingSection"
 
 
@@ -1149,6 +1158,38 @@ def test_multitier_pseudodata_block_is_empty_for_root_tier(tmp_path):
     assert "tiers.entity_path = struct(" in contents
     assert "struct('top', 'root_entity', 'bottom', 'child_a')" in contents
     assert "tier_subtree" not in contents
+
+
+def test_multitier_add_pseudodata_block_is_empty_for_child_tier(tmp_path):
+    context = _build_multitier_context(tmp_path, tier_name="bottom", entity_list=["child_a"])
+    source = "\n".join(
+        [
+            "$function_header",
+            "$metadata_block",
+            "$group_data_block",
+            "$entity_data_block",
+            "$entity_list",
+            "$tier_entities",
+            "$tier_groups",
+            "$groups_of_entity",
+            "$entity_descendants",
+            "$entity_path",
+            "$tier_pars",
+            "$tier_par_init_values",
+            "$weights_block",
+            "$save_fields_block",
+            "$remove_dummy_weights_block",
+            "$add_pseudodata_block",
+            "$multitier_pseudodata_block",
+            "$packing_block",
+        ]
+    )
+
+    contents = MultitierMyDataSubstitutionTemplate(source=source).render(context)
+
+    assert "[data, units, label, weights] = addpseudodata(data, units, label, weights);" not in contents
+    assert "psdWeight = 0.25;" in contents
+    assert "weights.psd.(varname) = psdWeight;" in contents
 
 
 def test_multitier_packing_adds_tiers_to_auxdata(tmp_path):

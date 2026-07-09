@@ -24,7 +24,6 @@ from ..estimation_files.mydata_metadata_sections import (
     SaveFieldsSection,
     SpeciesInfoMetadataSection,
 )
-from ..estimation_files.mydata_pseudodata_sections import AddPseudoDataSection
 from ..estimation_files.mydata_weight_sections import (
     RemoveDummyWeightsSection,
     InitializeWeightsSection,
@@ -37,6 +36,7 @@ from ..estimation_files.templates import ProgrammaticTemplate
 from .mydata_sections import (
     EntityDescendantsSection,
     EntityPathSection,
+    MultitierAddPseudoDataSection,
     MultitierEntityListSection,
     MultitierGroupsOfEntitySection,
     MultitierPackingSection,
@@ -81,7 +81,7 @@ class MultitierMyDataTemplate(MyDataTemplate):
             SetTypicalTemperatureForAllDatasetsSection(),
             RemoveDummyWeightsSection(),
             SaveDataFieldsByVariateTypeSection(),
-            AddPseudoDataSection(),
+            MultitierAddPseudoDataSection(),
             MultitierPseudoDataSection(),
             BibkeysSection(),
             DiscussionSection(),
@@ -101,7 +101,7 @@ class MultitierMyDataTemplate(MyDataTemplate):
             InitializeWeightsSection(),
             SaveFieldsSection(),
             RemoveDummyWeightsSection(),
-            AddPseudoDataSection(),
+            MultitierAddPseudoDataSection(),
             MultitierPseudoDataSection(),
             MultitierPackingSection(),
         )

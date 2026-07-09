@@ -11,11 +11,14 @@ from DEBtoolPyIF.parameters import E_Hp, del_M, p_Am
 from DEBtoolPyIF.estimation_files.mydata_metadata_sections import SaveDataFieldsByVariateTypeSection, \
     MyDataFunctionHeader, SpeciesInfoMetadataSection, AuthorInfoMetadataSection, SaveFieldsSection, \
     CompletenessLevelSection
-from DEBtoolPyIF.estimation_files.mydata_pseudodata_sections import AddPseudoDataSection
 from DEBtoolPyIF.estimation_files.mydata_temperature_sections import SetTypicalTemperatureForAllDatasetsSection, \
     TypicalTemperatureSection
 from DEBtoolPyIF.estimation_files.mydata_weight_sections import InitializeWeightsSection, RemoveDummyWeightsSection
-from DEBtoolPyIF.multitier.mydata_sections import MultitierPseudoDataSection, MultitierPackingSection
+from DEBtoolPyIF.multitier.mydata_sections import (
+    MultitierAddPseudoDataSection,
+    MultitierPseudoDataSection,
+    MultitierPackingSection,
+)
 from DEBtoolPyIF.estimation_files.algorithms import RestartingNelderMead
 
 
@@ -70,7 +73,7 @@ def create_mydata_template(source_folder, species_name):
             SaveDataFieldsByVariateTypeSection(),
             SetTypicalTemperatureForAllDatasetsSection(),
             RemoveDummyWeightsSection(),
-            AddPseudoDataSection(),
+            MultitierAddPseudoDataSection(),
             MultitierPseudoDataSection(),
             MultitierPackingSection()
         )

@@ -563,12 +563,15 @@ The multitier subclass extends the generic `mydata` family with hierarchy-aware 
 - `TierParsSection`
 - `TierParInitValuesSection`
 - `SetTypicalTemperatureForAllDatasetsSection`
+- `MultitierAddPseudoDataSection`
 - `MultitierPseudoDataSection`
 - `MultitierPackingSection`
 
 These sections are what make the multitier helper structures explicit in the rendered MATLAB output.
 
 `MultitierEntityListSection` and `MultitierGroupsOfEntitySection` intentionally use the same placeholder keys as the generic sections, but render to `tiers` instead of `info`. The multitier template family includes both `"mydata"` and `"multitier_mydata"`, so registry precedence selects the explicitly named multitier variants for `$entity_list` and `$groups_of_entity`.
+
+`MultitierAddPseudoDataSection` intentionally uses the same `$add_pseudodata_block` placeholder as `AddPseudoDataSection`, but renders the generic DEBtool `addpseudodata(...)` call only for the root tier. Lower tiers should use previous-tier parameter estimates as their anchors through `MultitierPseudoDataSection`; re-adding generic species pseudo-data below the root tier inflates the objective without adding tier-specific information.
 
 ### Defining new `MyDataSection` classes
 

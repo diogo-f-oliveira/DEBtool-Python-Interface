@@ -11,6 +11,7 @@ from ..estimation_files.mydata_data_sections import (
     GroupsOfEntitySection as GenericGroupsOfEntitySection,
 )
 from ..estimation_files.mydata_packing_sections import PackingSection
+from ..estimation_files.mydata_pseudodata_sections import AddPseudoDataSection
 from ..utils.data_conversion import convert_dict_to_matlab, convert_list_of_strings_to_matlab
 from ..utils.mydata_code_generation import generate_meta_data_code, generate_tier_variable_code
 
@@ -244,6 +245,17 @@ class TierParInitValuesSection(MyDataSection):
                 }
             ),
         )
+
+
+class MultitierAddPseudoDataSection(AddPseudoDataSection):
+    key = "add_pseudodata_block"
+    template_families = ("multitier_mydata",)
+    section_tags = ("pseudodata",)
+
+    def render(self, context, state: MultitierMyDataState) -> str:
+        if context.tier_structure.entity_hierarchy.get_parent_tier(context.tier_name) is not None:
+            return ""
+        return super().render(context, state)
 
 
 # TODO: Add options to define pseudo-data weight per parameter with a struct (maybe new class or adapt code of this to support both inputs)

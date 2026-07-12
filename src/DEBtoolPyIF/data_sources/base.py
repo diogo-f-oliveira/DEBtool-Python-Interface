@@ -1,3 +1,7 @@
+from os import PathLike
+from pathlib import Path
+from typing import Union
+
 import pandas as pd
 
 from ..utils.mydata_code_generation import is_valid_matlab_field_name, generate_data_code, generate_aux_data_code
@@ -6,16 +10,19 @@ from ..utils.data_conversion import convert_numeric_array_to_matlab, convert_str
 from ..utils.entity_list import normalize_entity_list
 
 
+CSVPath = Union[str, PathLike]
+
+
 class DataSourceBase:
     TYPE = ''
     LABELS = ''
     AUX_DATA_LABELS = ''
 
-    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+    def __init__(self, csv_filename: CSVPath, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
                  indep_var_col: str = None, indep_var_unit: str = '', aux_datasource=None,
                  prefix: str = '', title: str = '', bibkey: str = '', comment: str = '', id_name: str = '',
                  ):
-        self.csv_filename = csv_filename
+        self.csv_filename = Path(csv_filename)
         self.id_col = id_col
         # Set dependent data
         self.dep_var_col = dep_var_col
@@ -50,7 +57,7 @@ class DataSourceBase:
 
         # Set the name and info of the datasource
         if name is None:
-            name = csv_filename.split('/')[-1][:-4] + '_' + self.TYPE
+            name = f"{self.csv_filename.stem}_{self.TYPE}"
         self.name = name
 
         self.bibkey = bibkey
@@ -129,7 +136,7 @@ class DataSourceBase:
 
 
 class EntityDataSourceBase(DataSourceBase):
-    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+    def __init__(self, csv_filename: CSVPath, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
                  indep_var_col: str = None, indep_var_unit: str = '', aux_datasource: DataSourceBase = None,
                  prefix: str = '', bibkey: str = '', comment: str = '', title: str = '', id_name: str = '',
                  ):
@@ -151,7 +158,7 @@ class EntityDataSourceBase(DataSourceBase):
 
 
 class ZeroVariateEntityDataSource(EntityDataSourceBase):
-    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+    def __init__(self, csv_filename: CSVPath, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
                  aux_datasource: DataSourceBase = None,
                  prefix: str = '', bibkey: str = '', comment: str = '', id_name: str = '',
                  ):
@@ -171,7 +178,7 @@ class ZeroVariateEntityDataSource(EntityDataSourceBase):
 
 class GroupDataSourceBase(DataSourceBase):
 
-    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+    def __init__(self, csv_filename: CSVPath, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
                  indep_var_col: str = None, indep_var_unit: str = '', aux_datasource: DataSourceBase = None,
                  prefix: str = '', bibkey: str = '', comment: str = '', title: str = '', id_name: str = '',
                  ):
@@ -208,7 +215,7 @@ class GroupDataSourceBase(DataSourceBase):
 
 class ZeroVariateGroupDataSourceBase(GroupDataSourceBase):
 
-    def __init__(self, csv_filename: str, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
+    def __init__(self, csv_filename: CSVPath, id_col: str, dep_var_col: str, dep_var_unit: str, name: str = None,
                  aux_datasource: str = None,
                  prefix: str = '', bibkey: str = '', comment: str = '', id_name: str = '',
                  ):

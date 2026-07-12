@@ -1,6 +1,6 @@
 import numpy as np
 
-from .base import EntityDataSourceBase, ZeroVariateEntityDataSource
+from .base import CSVPath, EntityDataSourceBase, ZeroVariateEntityDataSource
 from ..utils.data_conversion import convert_numeric_array_to_matlab
 import pandas as pd
 
@@ -10,7 +10,7 @@ class TimeWeightEntityDataSource(EntityDataSourceBase):
     LABELS = ('Time since start', 'Wet weight')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, weight_col, date_col, name=None,
+    def __init__(self, csv_filename: CSVPath, id_col, weight_col, date_col, name=None,
                  prefix='', bibkey='', comment='', title='', id_name='',
                  time_unit='d', weight_unit='kg',
                  ):
@@ -61,7 +61,7 @@ class WeightEntityDataSource(ZeroVariateEntityDataSource):
     TYPE = "Ww"
     LABELS = 'Wet weight'
 
-    def __init__(self, csv_filename, id_col, weight_col, name=None,
+    def __init__(self, csv_filename: CSVPath, id_col, weight_col, name=None,
                  prefix='', bibkey='', comment='', id_name='',
                  weight_unit='kg',
                  ):
@@ -78,7 +78,7 @@ class TimeFeedEntityDataSource(EntityDataSourceBase):
     LABELS = ('Time since start', 'Daily food consumption')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
+    def __init__(self, csv_filename: CSVPath, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  start_at_first=False, prefix='', name=None, bibkey='', comment='', time_unit='d', feed_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, indep_var_unit=time_unit, dep_var_unit=feed_unit,
@@ -136,7 +136,7 @@ class TimeCH4EntityDataSource(EntityDataSourceBase):
     LABELS = ('Time since start', 'Daily methane (CH4) emissions')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, methane_col, date_col, weight_data_source: TimeWeightEntityDataSource,
+    def __init__(self, csv_filename: CSVPath, id_col, methane_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  start_at_first=False, name=None, prefix='', bibkey='', comment='', title='', id_name='',
                  time_unit='d', methane_unit='g/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
@@ -202,7 +202,7 @@ class TimeCO2EntityDataSource(EntityDataSourceBase):
     LABELS = ('Time since start', 'Daily carbon dioxide (CO2) emissions')
     AUX_DATA_LABELS = 'Initial weight'
 
-    def __init__(self, csv_filename, id_col, co2_col, date_col, weight_data_source: TimeWeightEntityDataSource,
+    def __init__(self, csv_filename: CSVPath, id_col, co2_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  start_at_first=False, name=None, prefix='', bibkey='', comment='', title='', id_name='',
                  time_unit='d', co2_unit='g/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
@@ -268,7 +268,7 @@ class TimeMilkEntityDataSource(EntityDataSourceBase):
     TYPE = 'tJL'
     LABELS = ('Time since start', 'Milk production per day')
 
-    def __init__(self, csv_filename, id_col, milk_col, day_col, name=None, prefix='', bibkey='', comment='',
+    def __init__(self, csv_filename: CSVPath, id_col, milk_col, day_col, name=None, prefix='', bibkey='', comment='',
                  title='', id_name='', time_unit='d', milk_unit='L/d'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, title=title, id_name=id_name, indep_var_unit=time_unit,
@@ -305,7 +305,7 @@ class AgeWeightTwinsEntityDataSource(EntityDataSourceBase):
     LABELS = ('Age since birth', 'Wet weight')
     AUX_DATA_LABELS = 'Number of twins'
 
-    def __init__(self, csv_filename, id_col, weight_col, age_col, n_twins_col, name=None, prefix='', bibkey='',
+    def __init__(self, csv_filename: CSVPath, id_col, weight_col, age_col, n_twins_col, name=None, prefix='', bibkey='',
                  comment='', title='', id_name='', age_unit='d', weight_unit='kg'):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name, prefix=prefix, bibkey=bibkey,
                          comment=comment, title=title, id_name=id_name,
@@ -341,7 +341,7 @@ class OMDigestibilityEntityDataSource(ZeroVariateEntityDataSource):
     TYPE = 'OMD'
     LABELS = 'OM digestibility'
 
-    def __init__(self, csv_filename, id_col, dmd_col, name=None, prefix='', bibkey='', comment='',
+    def __init__(self, csv_filename: CSVPath, id_col, dmd_col, name=None, prefix='', bibkey='', comment='',
                  unit='-', id_name=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
                          dep_var_col=dmd_col, dep_var_unit=unit,

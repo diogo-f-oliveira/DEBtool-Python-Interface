@@ -1,6 +1,6 @@
 import numpy as np
 
-from .base import GroupDataSourceBase
+from .base import CSVPath, GroupDataSourceBase
 from .entity import TimeWeightEntityDataSource
 from ..utils.data_conversion import convert_dict_to_matlab
 import pandas as pd
@@ -11,7 +11,7 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
     LABELS = ('Time since start', 'Daily food consumption of group during test')
     AUX_DATA_LABELS = 'Initial weights for the individuals in the group'
 
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
+    def __init__(self, csv_filename: CSVPath, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
                  name=None, time_unit='d', feed_unit='kg',
                  prefix='', bibkey='', comment='', title='', id_name=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,

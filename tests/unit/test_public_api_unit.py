@@ -21,7 +21,7 @@ from DEBtoolPyIF.parameters import StdParameterRegistry, StxParameterRegistry, p
 from DEBtoolPyIF.data_sources import (
     AgeWeightTwinsEntityDataSource,
     DataSourceBase,
-    DigestibilityEntityDataSource,
+    OMDigestibilityEntityDataSource,
     EntityDataSourceBase,
     GroupDataSourceBase,
     TimeCH4EntityDataSource,
@@ -86,7 +86,7 @@ def test_subpackage_public_api_exports_expected_symbols():
         TimeCO2EntityDataSource,
         TimeMilkEntityDataSource,
         AgeWeightTwinsEntityDataSource,
-        DigestibilityEntityDataSource,
+        OMDigestibilityEntityDataSource,
         TimeFeedGroupDataSource,
     }
 

@@ -337,9 +337,9 @@ class AgeWeightTwinsEntityDataSource(EntityDataSourceBase):
         return my_data_code
 
 
-class DigestibilityEntityDataSource(ZeroVariateEntityDataSource):
-    TYPE = 'DMD'
-    LABELS = 'Digestibility'
+class OMDigestibilityEntityDataSource(ZeroVariateEntityDataSource):
+    TYPE = 'OMD'
+    LABELS = 'OM digestibility'
 
     def __init__(self, csv_filename, id_col, dmd_col, name=None, prefix='', bibkey='', comment='',
                  unit='-', id_name=''):
@@ -365,6 +365,6 @@ class DigestibilityEntityDataSource(ZeroVariateEntityDataSource):
             my_data_code += '\n\n'
 
         if my_data_code:
-            my_data_code = f'%% Dry matter digestibility data \n\n' + my_data_code
+            my_data_code = f'%% Organic matter digestibility data \n\n' + my_data_code
 
         return my_data_code

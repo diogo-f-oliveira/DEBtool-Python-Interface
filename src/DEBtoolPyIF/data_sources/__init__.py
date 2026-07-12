@@ -10,7 +10,7 @@ from .base import (
 from .collection import DataCollection
 from .entity import (
     AgeWeightTwinsEntityDataSource,
-    DigestibilityEntityDataSource,
+    OMDigestibilityEntityDataSource,
     TimeCH4EntityDataSource,
     TimeCO2EntityDataSource,
     TimeMilkEntityDataSource,
@@ -32,6 +32,6 @@ __all__ = [
     "TimeCO2EntityDataSource",
     "TimeMilkEntityDataSource",
     "AgeWeightTwinsEntityDataSource",
-    "DigestibilityEntityDataSource",
+    "OMDigestibilityEntityDataSource",
     "TimeFeedGroupDataSource",
 ]

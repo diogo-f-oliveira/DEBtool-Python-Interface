@@ -18,12 +18,10 @@ Users can copy or adapt the block below into their own `AGENTS.md` when they wan
 - Preserve the standard DEBtool file names:
   `mydata_<species>.m`, `pars_init_<species>.m`, `predict_<species>.m`, and `run_<species>.m`
 - Preserve multitier helper-variable contracts used by `predict`, especially data generated into `mydata_<species>.m`
-- When adding reusable `mydata` section classes, define a stable `key`, set `template_families` directly on the subclass, add `section_tags` for tag-based selection, and import the module before constructing templates.
+- When adding reusable `mydata` or `pars_init` section classes, define a stable `key`, set `template_families` directly on the subclass, add `section_tags` for tag-based selection, and import the module before constructing templates.
 - For `run.m` generation, prefer algorithm templates from `DEBtoolPyIF.estimation_files.algorithms` when available.
 - Use `RunSection` and the typed option classes in `run_options.py` for custom run generation.
-- Do not assume `$algorithm` is a required base run placeholder; use `$estimation_call` for the DEBtool `estim_pars` entry point.
 - When changing estimation logic, prefer updating the Python template construction or source templates and regenerating outputs rather than manually editing generated MATLAB files.
-- Do not assume `examples/` exists in the working environment.
 ```
 
 ## Notes For Users

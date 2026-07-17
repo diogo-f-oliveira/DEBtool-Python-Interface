@@ -91,30 +91,29 @@ def estimated_multitier(
     estimation_module = import_example_estimation_module(example_name)
 
     output_folder = tmp_path_factory.mktemp(f"{example_name}_multitier_outputs")
-    original_output_folder = tier_module.ESTIMATION_FOLDER
-    tier_module.ESTIMATION_FOLDER = str(output_folder)
+
+    data = data_module.load_data(str(examples_root / example_name / "data"))
 
     try:
-        data = data_module.load_data(str(examples_root / example_name / "data"))
-
-        try:
-            multitier = tier_module.create_tier_structure(data, matlab_session="auto")
-        except Exception as exc:
-            pytest.skip(f"MATLAB-backed estimation setup is unavailable: {exc}")
-
-        estimation_settings = getattr(
-            estimation_module,
-            "NELDER_MEAD_ESTIMATION_TEST_SETTINGS",
-            estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
+        multitier = tier_module.create_tier_structure(
+            data,
+            matlab_session="auto",
+            output_folder=output_folder,
         )
+    except Exception as exc:
+        pytest.skip(f"MATLAB-backed estimation setup is unavailable: {exc}")
 
-        estimation_module.run_multitier_estimation(
-            multitier,
-            estimation_settings=estimation_settings,
-        )
+    estimation_settings = getattr(
+        estimation_module,
+        "NELDER_MEAD_ESTIMATION_TEST_SETTINGS",
+        estimation_module.FAST_TEST_ESTIMATION_SETTINGS,
+    )
 
-        result = (multitier, Path(output_folder))
-        ESTIMATION_RESULTS_CACHE[cache_key] = result
-        return result
-    finally:
-        tier_module.ESTIMATION_FOLDER = original_output_folder
+    estimation_module.run_multitier_estimation(
+        multitier,
+        estimation_settings=estimation_settings,
+    )
+
+    result = (multitier, Path(output_folder))
+    ESTIMATION_RESULTS_CACHE[cache_key] = result
+    return result

@@ -178,9 +178,9 @@ Another dimension of partial tier estimation is to not estimate all parameters o
 
 Currently, only the relative errors on each dataset in each tier are printed during estimation. It would be useful to have more detailed print outputs during estimation to help users understand the progress of the estimation and identify any issues. This could include:
 
-- [ ] printing the current tier and entity being estimated,
-- [ ] printing a parameter table after completing the tier estimation
-- [ ] printing the elapsed time at the start and end of the estimation of each tier entity
+- [x] printing the current tier and entities being estimated,
+- [ ] adding an option to print a parameter table after completing the tier estimation
+- [x] printing the elapsed time at the start and end of the estimation of each tier entity
 
 ## Future Pipeline
 

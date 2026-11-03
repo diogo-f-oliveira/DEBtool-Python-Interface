@@ -40,7 +40,8 @@ function allstat2csv(allStatPath, saveFilePath)
         allStatTable{species, 'MRE'} = stat.MRE;
         allStatTable{species, 'SMSE'} = stat.SMSE;
         allStatTable{species, 'completeness'} = stat.COMPLETE;
-        allStatTable{species, 'date'} = sprintf("%d-%d-%d", stat.date_acc(:));
+        allStatTable{species, 'date_update'} = sprintf("%d-%d-%d", stat.date_acc(:));
+        allStatTable{species, 'date_submission'} = sprintf("%d-%d-%d", stat.date_subm(:));
 
         % Save parameters
         for p=1:length(speciesStats)

@@ -85,7 +85,7 @@ T_A = _register_builtin("T_A", "K", "Arrhenius temperature", default_value=8000,
 z = _register_builtin("z", "-", "Zoom factor", default_value=13, include_in_default=True)
 F_m = _register_builtin(
     "F_m",
-    "l/d.cm^2",
+    "l d^{-1} cm^{-2}",
     "Maximum specific searching rate",
     latex_label=r"\{ F_m \}",
     default_value=6.5,
@@ -105,12 +105,12 @@ kap_P = _register_builtin(
     latex_label=r"\kappa_P",
     include_in_default=True
 )
-v = _register_builtin("v", "cm/d", "Energy conductance", latex_label=r'\dot{v}', include_in_default=True)
+v = _register_builtin("v", "cm d^{-1}", "Energy conductance", latex_label=r'\dot{v}', include_in_default=True)
 kap = _register_builtin("kap", "-", "Allocation fraction to soma", latex_label=r"\kappa", include_in_default=True)
-p_M = _register_builtin("p_M", "J/d.cm^3", "Volume-specific somatic maintenance rate", latex_label=r"[\dot{p}_M]", include_in_default=True)
+p_M = _register_builtin("p_M", "J d^{-1} cm^{-3}", "Volume-specific somatic maintenance rate", latex_label=r"[\dot{p}_M]", include_in_default=True)
 p_T = _register_builtin(
     "p_T",
-    "J/d.cm^2",
+    "J d^{-1} cm^{-2}",
     "Surface-specific somatic maintenance rate",
     latex_label=r"\{ \dot{p}_T \}",
     default_value=0,
@@ -118,13 +118,13 @@ p_T = _register_builtin(
 )
 k_J = _register_builtin(
     "k_J",
-    "1/d",
+    "d^{-1}",
     "Maturity maintenance rate coefficient",
     latex_label=r"\dot{k}_J",
     default_value=0.002,
     include_in_default=True,
 )
-E_G = _register_builtin("E_G", "J/cm^3", "Specific cost for structure", latex_label=r"[E_G]", include_in_default=True)
+E_G = _register_builtin("E_G", "J cm^{-3}", "Specific cost for structure", latex_label=r"[E_G]", include_in_default=True)
 E_Hb = _register_builtin("E_Hb", "J", "Maturity at birth", latex_label=r"E_H^b", include_in_default=True)
 E_Hx = _register_builtin("E_Hx", "J", "Maturity at weaning", latex_label=r"E_H^x")
 E_Hp = _register_builtin("E_Hp", "J", "Maturity at puberty", latex_label=r"E_H^p", include_in_default=True)
@@ -136,7 +136,7 @@ kap_R = _register_builtin(
     default_value=0.95,
     include_in_default=True,
 )
-h_a = _register_builtin("h_a", "1/d^2", "Weibull aging acceleration", latex_label=r"\ddot{h}_a", include_in_default=True)
+h_a = _register_builtin("h_a", "d^{-2}", "Weibull aging acceleration", latex_label=r"\ddot{h}_a", include_in_default=True)
 s_G = _register_builtin(
     "s_G",
     "-",
@@ -151,9 +151,9 @@ f = _register_builtin(
     default_value=1,
     include_in_default=True,
 )
-p_Am = _register_builtin("p_Am", "J/d.cm^2", "Surface-specific maximum assimilation rate", latex_label=r"\{ \dot{p}_{Am} \}")
+p_Am = _register_builtin("p_Am", "J d^{-1} cm^{-2}", "Surface-specific maximum assimilation rate", latex_label=r"\{ \dot{p}_{Am} \}")
 t_0 = _register_builtin("t_0", "d", "Time at start of development", latex_label=r"t_0")
-del_M = _register_builtin("del_M", "-", "Shape coefficent", latex_label=r"\delta_M")
+del_M = _register_builtin("del_M", "-", "Shape coefficient", latex_label=r"\delta_M")
 V_0 = _register_builtin("V_0", "cm^3", "Initial structure at fertilization", default_free=0, default_value=0)
 
 # TODO: Add classes for parameters that often have variants, e.g., maturity levels, food levels,

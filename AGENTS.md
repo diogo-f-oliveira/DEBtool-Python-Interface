@@ -64,12 +64,12 @@
   - `mydata` and `run` generation are the most mature paths
   - `pars_init` is usable but still evolving
   - `predict` remains the most workflow-specific species file
-- `MyDataSection` and `RunSection` intentionally follow the same registry-backed section contract. When adding reusable sections for either file family:
+- `MyDataSection`, `ParsInitSection`, and `RunSection` intentionally follow the same registry-backed section contract (`RegisteredTemplateSection`). When adding reusable sections for any of these file families:
   - define a stable `key`
   - set `template_families` directly on the subclass to opt into automatic discovery
   - set `section_tags` when the section should be selected by tag helpers
   - ensure the custom section module is imported before templates are constructed
-- Treat this shared section architecture as the direction for future `pars_init.m` and `predict.m` generation work unless the roadmap or user request says otherwise.
+- Treat this shared section architecture as the direction for further `pars_init.m` work and future `predict.m` generation unless the roadmap or user request says otherwise.
 - For `run.m` generation, prefer algorithm templates from `DEBtoolPyIF.estimation_files.algorithms` when a built-in optimizer fits the workflow.
 - For custom `run.m` generation, use `RunSection` classes and typed option classes from `run_options.py`.
 - The base run template required keys are `setup`, `set_options`, and `estimation_call`.

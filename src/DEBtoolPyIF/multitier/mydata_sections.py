@@ -258,7 +258,6 @@ class MultitierAddPseudoDataSection(AddPseudoDataSection):
         return super().render(context, state)
 
 
-# TODO: Add options to define pseudo-data weight per parameter with a struct (maybe new class or adapt code of this to support both inputs)
 class MultitierPseudoDataSection(MyDataSection):
     key = "multitier_pseudodata_block"
     template_families = ("multitier_mydata",)

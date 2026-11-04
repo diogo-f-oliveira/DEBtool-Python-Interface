@@ -45,8 +45,10 @@ The package is organized by responsibility:
   - notebook-facing helpers and visualizers
   - currently focused on multitier result visualization support
 - `add_my_pet/`
-  - bundled compatibility assets for the broader DEB/add-my-pet ecosystem
-  - not the preferred place for new multitier workflow architecture
+  - integration with the Add-my-Pet (AmP) collection; does not need MATLAB
+  - `client.py` (HTTP listing/downloads with update checks), `download.py` (species and whole-collection downloads), `parameters.py` (load `results_<species>.mat` and `allStat.mat` into Python), `bootstrap.py` (wrap an AmP entry as `EstimationTemplates`)
+  - `resources/` holds MATLAB helpers such as `allstat2csv.m`
+  - see [`docs/ADD_MY_PET.md`](ADD_MY_PET.md)
 
 ## Important Internal Boundaries
 

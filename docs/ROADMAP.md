@@ -248,11 +248,16 @@ Future minor versions should add functionality to work with Add-my-Pet.
 
 Planned directions include:
 
-- fetching species files,
-- fetching parameter sets,
-- using Add-my-Pet material as initialization or reference data,
-- generating datasets or estimation inputs from Add-my-Pet resources,
-- making it easier to bootstrap species workflows from existing Add-my-Pet content.
+- [x] fetching species files (`add_my_pet.download_species`, `download_amp_database`),
+- [x] fetching parameter sets (`add_my_pet.fetch_species_parameters`, `fetch_allstat`),
+- [ ] using Add-my-Pet material as initialization or reference data (e.g. mapping `AmPResults.par` onto `ParameterDefinition` defaults for `pars_init` generation),
+- [ ] generating datasets or estimation inputs from Add-my-Pet resources,
+- [x] making it easier to bootstrap species workflows from existing Add-my-Pet content (`add_my_pet.bootstrap_species`; verbatim `CopyFileTemplate`s only, conversion into substitution templates is still manual).
+
+Known limitations of the AmP file cache (`add_my_pet/cache.py`) to address later:
+
+- [ ] In-memory caching of loaded tables: every `fetch_allstat()` call re-reads the ~23 MB `allStat.mat` (several seconds). Keep the loaded table in memory, keyed on the cached file's hash, so repeated calls in one session are instant.
+- [ ] Safe concurrent downloads across processes: two Python processes fetching the same file at the same time write the same temporary `.part` file. Use a unique temporary name per download (and possibly a lock file) so parallel jobs sharing one cache folder cannot corrupt it.
 
 This should eventually connect the package's multitier workflow with the broader DEB ecosystem in a practical way.
 

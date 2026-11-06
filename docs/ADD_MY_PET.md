@@ -51,6 +51,14 @@ Existing files are kept by default. `check_update=True` replaces a local file on
 
 A file you edit gets a newer date than the AmP copy, so `check_update=True` will not replace it. Use `overwrite=True` to get the AmP version back.
 
+### Large downloads
+
+The AmP server can stop accepting connections after many requests, without any error message, and it can stay unreachable from your connection for hours. To avoid this, requests are sent 0.5 s apart, so downloading the whole collection takes several hours. `download_amp_collection` tells you what to expect at the start of a large download.
+
+If the server stops responding, the download stops with a warning instead of failing species after species. Run the same command later to continue: files you already have are not downloaded again.
+
+To go slower, pass your own client: `download_amp_collection("species", client=AmPClient(request_delay=2))`. Please be considerate of this shared server, and only download the species you need.
+
 ## Versions and the manifest
 
 AmP identifies each version of an entry by its acceptance date: the current version of an entry is published as `entries_zip/<species>_<yyyymmdd>.zip`, and older versions are kept in `entries_archive/`. This package uses that same date as the **AmP version**.

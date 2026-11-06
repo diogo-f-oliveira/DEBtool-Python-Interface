@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import threading
+import time
 from email.utils import formatdate, parsedate_to_datetime
 from enum import Enum
 from html.parser import HTMLParser
@@ -11,8 +13,14 @@ from urllib.parse import unquote
 
 import requests
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .urls import AMP_BASE_URL, ampdata_file_url, species_dir_url, species_file_url
+
+# Seconds between requests; the limit of the AmP server is not published
+DEFAULT_REQUEST_DELAY = 0.5
+# Seconds to connect and to read; a short connect timeout notices quickly that the server stopped responding
+DEFAULT_TIMEOUT = (15.0, 60.0)
 
 
 class DownloadStatus(str, Enum):
@@ -68,27 +76,46 @@ class AmPClient:
     """Thin wrapper around a pooled ``requests.Session`` pointed at the AmP website.
 
     The same client can be shared between threads to download several species concurrently.
+
+    The AmP server stops accepting connections after many requests, so requests are spaced ``request_delay`` seconds
+    apart across all threads using this client.
     """
 
     def __init__(
             self,
             *,
             base_url: str = AMP_BASE_URL,
-            timeout: float = 60.0,
-            max_retries: int = 3,
+            timeout: float | tuple[float, float] = DEFAULT_TIMEOUT,
+            max_retries: int = 2,
             pool_size: int = 50,
+            request_delay: float = DEFAULT_REQUEST_DELAY,
             session: requests.Session | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.request_delay = request_delay
+        self._pacing_lock = threading.Lock()
+        self._next_request_time = 0.0
         if session is None:
             session = requests.Session()
-            adapter = HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size, max_retries=max_retries)
+            retry = Retry(total=max_retries, backoff_factor=2, status_forcelist=(429, 503), raise_on_status=False)
+            adapter = HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size, max_retries=retry)
             session.mount("https://", adapter)
             session.mount("http://", adapter)
         self.session = session
 
+    def _wait_for_turn(self) -> None:
+        if self.request_delay <= 0:
+            return
+        with self._pacing_lock:
+            now = time.monotonic()
+            request_time = max(now, self._next_request_time)
+            self._next_request_time = request_time + self.request_delay
+        if request_time > now:
+            time.sleep(request_time - now)
+
     def list_directory(self, url: str, *, include_dirs: bool = True, include_files: bool = True) -> list[str]:
+        self._wait_for_turn()
         response = self.session.get(url, timeout=self.timeout)
         response.raise_for_status()
         return parse_directory_listing(response.text, include_dirs=include_dirs, include_files=include_files)
@@ -171,6 +198,7 @@ class AmPClient:
                 return DownloadStatus.SKIPPED_EXISTS
             headers["If-Modified-Since"] = formatdate(save_path.stat().st_mtime, usegmt=True)
 
+        self._wait_for_turn()
         with self.session.get(url, headers=headers, stream=True, timeout=self.timeout) as response:
             if response.status_code == 304:
                 return DownloadStatus.NOT_MODIFIED

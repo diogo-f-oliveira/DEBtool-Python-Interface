@@ -1,4 +1,5 @@
 import os
+import time
 from email.utils import parsedate_to_datetime
 
 import numpy as np
@@ -110,7 +111,7 @@ def species_routes():
 
 
 def make_client(routes):
-    return AmPClient(base_url=BASE_URL, session=FakeSession(routes))
+    return AmPClient(base_url=BASE_URL, session=FakeSession(routes), request_delay=0)
 
 
 def test_parse_directory_listing_keeps_only_relative_entries():
@@ -327,6 +328,83 @@ def test_download_amp_database_records_all_species_in_one_manifest(tmp_path):
     manifest = read_manifest(tmp_path).set_index("species")
     assert list(manifest.index) == [SPECIES, "Other_species"]
     assert manifest.loc["Other_species", "amp_version"] == "20200102"
+
+
+def test_client_spaces_requests_apart_across_calls(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr("DEBtoolPyIF.add_my_pet.client.time.sleep", sleeps.append)
+    client = AmPClient(base_url=BASE_URL, session=FakeSession(species_routes()), request_delay=100)
+
+    for _ in range(3):
+        client.list_species_files(SPECIES)
+
+    # The first request goes out immediately and each later one waits its turn
+    assert len(sleeps) == 2
+    assert sleeps[0] == pytest.approx(100, abs=1)
+    assert sleeps[1] == pytest.approx(200, abs=1)
+
+
+def test_download_species_stops_at_the_first_connection_error(tmp_path):
+    routes = species_routes()
+    routes[species_url(f"mydata_{SPECIES}.m")] = requests.ConnectTimeout("timed out")
+    client = make_client(routes)
+
+    report = download_species(SPECIES, tmp_path, files=("mydata", "predict"), client=client)
+
+    assert report.connection_failed
+    assert list(report.files) == [f"mydata_{SPECIES}.m"]
+
+
+def test_download_amp_collection_stops_cleanly_when_the_server_stops_responding(tmp_path):
+    class SlowFailingSession(FakeSession):
+        def get(self, url, **kwargs):
+            if "Slow_species" in url:
+                time.sleep(0.02)
+            return super().get(url, **kwargs)
+
+    slow_species = [f"Slow_species_{index}" for index in range(30)]
+    routes = {species_url(f"mydata_{SPECIES}.m"): b"metaData.date_acc = [2020 01 02];\n"}
+    for name in slow_species:
+        routes[f"{BASE_URL}/entries/{name}/mydata_{name}.m"] = requests.ConnectTimeout("timed out")
+    client = AmPClient(base_url=BASE_URL, session=SlowFailingSession(routes), request_delay=0)
+
+    with pytest.warns(UserWarning, match="stopped responding"):
+        reports = download_amp_collection(
+            tmp_path, [SPECIES, *slow_species], files=("mydata",), max_workers=1, progress=False, client=client,
+        )
+
+    assert 4 <= len(reports) < len(slow_species)
+    assert reports[SPECIES].ok
+    # The species finished before stopping are recorded, so a rerun continues from there
+    assert list(read_manifest(tmp_path)["species"]) == [SPECIES]
+    url = f"{BASE_URL}/entries/{slow_species[0]}/mydata_{slow_species[0]}.m"
+    client.session.routes[url] = b"% back online\n"
+    assert download_species(slow_species[0], tmp_path, files=("mydata",), client=client).ok
+
+
+def test_download_amp_collection_only_stops_for_connection_errors(tmp_path, recwarn):
+    species = [f"Missing_{index}" for index in range(6)]
+
+    reports = download_amp_collection(tmp_path, species, progress=False, client=make_client({}))
+
+    assert list(reports) == species
+    assert not [warning for warning in recwarn if "stopped responding" in str(warning.message)]
+
+
+def test_download_amp_collection_tells_the_user_what_to_expect_for_large_downloads(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr("DEBtoolPyIF.add_my_pet.client.time.sleep", lambda seconds: None)
+    species = [f"Missing_{index}" for index in range(200)]
+    client = AmPClient(base_url=BASE_URL, session=FakeSession(), request_delay=0.5)
+
+    download_amp_collection(tmp_path, species, files=("mydata", "results"), client=client)
+
+    output = capsys.readouterr().out
+    assert "200 AmP species" in output
+    assert "about 3 minutes" in output
+    assert "rerun it later" in output
+
+    download_amp_collection(tmp_path, species[:49], files=("mydata",), client=client)
+    assert "AmP species" not in capsys.readouterr().out
 
 
 def test_read_amp_version_uses_most_recent_of_mydata_and_results(tmp_path):

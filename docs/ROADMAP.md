@@ -260,7 +260,7 @@ Next steps and known limitations of `add_my_pet`:
 - [ ] Carry data files with templates: `mydata` or `predict` may read extra files (14 of the 7,019 entries surveyed in a local copy), but estimation templates only write the four species files, so these entries fail if rendered into another folder.
 
 - [ ] Download a specific AmP version: `download_species(species, folder, version="yyyymmdd")`, fetching `<species>_<yyyymmdd>.zip` from `entries_zip/` or `entries_archive/`. The zips only hold the four source files, not `results_<species>.mat`, so loading parameters of an archived version needs a `pars_init` reader or a MATLAB run.
-- [ ] Download the whole collection without being cut off: the AmP server stops accepting connections after many requests, with no error message or stated limit. `download_amp_collection` needs fewer parallel requests, pauses between them, and a clean stop that can be resumed once connections start timing out.
+- [ ] Confirm a safe request rate for the AmP server: it stops accepting connections after many requests, with no error message or stated limit. `AmPClient` paces requests and `download_amp_collection` stops cleanly and can be resumed, but the 0.5 s delay is an untested guess.
 - [ ] In-memory caching of loaded tables: every `fetch_allstat()` call re-reads the ~23 MB `allStat.mat` (several seconds). Keep the loaded table in memory, keyed on the file's modification time, so repeated calls in one session are instant.
 - [ ] Safe concurrent downloads across processes: two Python processes using one folder at the same time write the same temporary `.part` files and can overwrite each other's manifest updates. Use unique temporary names (and possibly a lock file) so parallel jobs can share a folder.
 

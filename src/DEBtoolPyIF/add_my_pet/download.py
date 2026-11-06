@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import os
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+import requests
 from tqdm.auto import tqdm
 
 from .client import AmPClient, DownloadStatus
@@ -23,6 +25,11 @@ from .manifest import (
 from .urls import ampdata_file_url, species_dir_url
 
 ALLSTAT_FILE_NAME = "allStat.mat"
+
+_CONNECTION_ERRORS = (requests.ConnectionError, requests.Timeout)
+# Downloads of at least this many species print a notice with the expected duration
+_LONG_DOWNLOAD_SPECIES = 50
+_TYPICAL_FILES_PER_SPECIES = 6
 
 # Short keys accepted by ``download_species(files=...)``, expanded with the species name
 SPECIES_FILE_PATTERNS = {
@@ -43,6 +50,7 @@ class SpeciesDownloadReport:
     files: dict[str, DownloadStatus] = field(default_factory=dict)
     errors: dict[str, str] = field(default_factory=dict)
     listing_error: str | None = None
+    connection_failed: bool = False
     amp_version: str | None = None
 
     @property
@@ -81,6 +89,7 @@ def _download_species_files(
             file_names = client.list_species_files(species)
         except Exception as error:
             report.listing_error = str(error)
+            report.connection_failed = isinstance(error, _CONNECTION_ERRORS)
             return report
     else:
         file_names = resolve_species_file_names(species, files)
@@ -93,6 +102,10 @@ def _download_species_files(
         except Exception as error:
             report.files[file_name] = DownloadStatus.FAILED
             report.errors[file_name] = str(error)
+            if isinstance(error, _CONNECTION_ERRORS):
+                # The remaining files would only wait for the same timeout
+                report.connection_failed = True
+                break
 
     report.amp_version = read_amp_version(report.folder, species)
     return report
@@ -174,6 +187,26 @@ def download_allstat(
     return path
 
 
+def _format_duration(seconds: float) -> str:
+    if seconds < 60:
+        return "less than a minute"
+    if seconds < 90 * 60:
+        return f"about {round(seconds / 60)} minutes"
+    return f"about {seconds / 3600:.1f} hours"
+
+
+def _print_long_download_notice(n_species: int, folder: Path, n_files: int | None, client: AmPClient) -> None:
+    # A listing request per species when all of its files are requested
+    requests_per_species = _TYPICAL_FILES_PER_SPECIES + 1 if n_files is None else n_files
+    duration = _format_duration(n_species * requests_per_species * client.request_delay)
+    print(
+        f"Downloading {n_species} AmP species into {folder}.\n"
+        f"The AmP server can stop responding after many requests, so requests are sent {client.request_delay} s apart."
+        f" This can take {duration}, less for files you already have.\n"
+        "If the server stops responding the download stops, and you can rerun it later to continue."
+    )
+
+
 def download_amp_collection(
         folder: str | os.PathLike | None = None,
         species: Iterable[str] | None = None,
@@ -181,11 +214,16 @@ def download_amp_collection(
         files: Iterable[str] | None = None,
         overwrite: bool = False,
         check_update: bool = False,
-        max_workers: int = 8,
+        max_workers: int = 2,
+        max_connection_failures: int = 3,
         progress: bool = True,
         client: AmPClient | None = None,
 ) -> dict[str, SpeciesDownloadReport]:
-    """Download the estimation files of many species in parallel, one species per thread.
+    """Download the estimation files of many species.
+
+    Requests are paced by the client (see ``AmPClient.request_delay``) because the AmP server stops accepting
+    connections after many requests. If it stops responding, the download stops with a warning. Rerun the same call
+    later to continue: files already in ``folder`` are not downloaded again.
 
     @param folder: folder to save into, with one subfolder per species. If None, the default folder from
         ``get_cache_dir`` is used.
@@ -194,33 +232,54 @@ def download_amp_collection(
     @param overwrite: if True, existing local files are always replaced.
     @param check_update: if True, existing local files are replaced when the AmP version is newer.
     @param max_workers: maximum number of parallel download threads.
-    @param progress: if True, show a progress bar.
-    @return: report per species, in the order species were requested.
+    @param max_connection_failures: stop after this many species in a row fail to connect.
+    @param progress: if True, show a progress bar and, for large downloads, a notice with the expected duration.
+    @return: report per species that was attempted, in the order species were requested.
     """
     client = AmPClient() if client is None else client
     folder = resolve_folder(folder)
     species = client.list_species() if species is None else list(species)
     files = None if files is None else list(files)
+    if progress and len(species) >= _LONG_DOWNLOAD_SPECIES:
+        _print_long_download_notice(len(species), folder, None if files is None else len(files), client)
 
     reports = {}
+    future_to_species = {}
+    connection_failures = 0
     try:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_species = {
-                executor.submit(_download_species_files, name, folder, files, overwrite, check_update, client): name
-                for name in species
-            }
+            for name in species:
+                future = executor.submit(_download_species_files, name, folder, files, overwrite, check_update, client)
+                future_to_species[future] = name
             futures = as_completed(future_to_species)
             if progress:
                 futures = tqdm(futures, total=len(future_to_species), desc="Downloading species")
-            for future in futures:
-                name = future_to_species[future]
-                reports[name] = future.result()
-                if progress and not reports[name].ok:
-                    tqdm.write(
-                        f"Errors downloading species {name}: {reports[name].listing_error or reports[name].errors}"
-                    )
+            try:
+                for future in futures:
+                    name = future_to_species[future]
+                    reports[name] = future.result()
+                    if progress and not reports[name].ok:
+                        tqdm.write(
+                            f"Errors downloading species {name}: "
+                            f"{reports[name].listing_error or reports[name].errors}"
+                        )
+                    connection_failures = connection_failures + 1 if reports[name].connection_failed else 0
+                    if connection_failures >= max_connection_failures:
+                        break
+            finally:
+                for future in future_to_species:
+                    future.cancel()
     finally:
         # Written once at the end, and also if the run is interrupted, so finished species are always recorded
+        for future, name in future_to_species.items():
+            if name not in reports and future.done() and not future.cancelled():
+                reports[name] = future.result()
         entries = (_manifest_entry(report, client) for report in reports.values())
         update_manifest(folder, [entry for entry in entries if entry is not None])
-    return {name: reports[name] for name in species}
+
+    if connection_failures >= max_connection_failures:
+        warnings.warn(
+            f"The AmP server stopped responding, so the download stopped after {len(reports)} of {len(species)} "
+            "species. This is usually temporary. Wait a few hours and run the same command again to continue."
+        )
+    return {name: reports[name] for name in species if name in reports}

@@ -27,12 +27,12 @@ Both work the same way. A folder of files you downloaded earlier can be used dir
 ## Downloading species files
 
 ```python
-from DEBtoolPyIF.add_my_pet import download_species, download_amp_collection
+from DEBtoolPyIF.add_my_pet import download_allstat, download_amp_collection, download_species
 
 # All estimation files of one species into species/Bos_primigenius_Angus/
 report = download_species("Bos_primigenius_Angus", "species")
 print(report.amp_version)  # '20161116'
-print(report.files)        # {file name: DownloadStatus}
+print(report.files)  # {file name: DownloadStatus}
 
 # Only some files, using short keys (mydata, pars_init, predict, run, results) or file names
 download_species("Danio_rerio", "species", files=("mydata", "results"))
@@ -40,7 +40,12 @@ download_species("Danio_rerio", "species", files=("mydata", "results"))
 # Many species in parallel (species=None downloads the whole collection)
 reports = download_amp_collection("species", ["Danio_rerio", "Daphnia_magna"], check_update=True)
 failed = {name: r.errors for name, r in reports.items() if not r.ok}
+
+# The allStat.mat table of all species, without loading it
+path = download_allstat("species")
 ```
+
+Without `files=`, everything in the entry is downloaded except result figures. That includes the data files some entries read from `mydata` or `predict` (such as `tL.txt` or `LW.csv`), which have no fixed names. If you pass `files=`, only those files are downloaded, so an entry that reads data files will not run from them alone.
 
 Existing files are kept by default. `check_update=True` replaces a local file only when the AmP copy is newer, and `overwrite=True` always replaces it. Downloaded files take the date AmP published them, so repeated `check_update` runs only transfer what changed. Download errors are collected in each `SpeciesDownloadReport` instead of being raised.
 
@@ -96,7 +101,9 @@ from DEBtoolPyIF.add_my_pet import bootstrap_species
 templates = bootstrap_species("Bos_primigenius_Angus", "workflows")
 ```
 
-This downloads the four species files (and `results_<species>.mat` when available) to `workflows/Bos_primigenius_Angus/` and returns an `EstimationTemplates` whose entries are verbatim `CopyFileTemplate`s. Use it to rerun an AmP estimation, or as the starting point for turning the files into `MultitierMyDataSubstitutionTemplate` / `MultitierParsInitSubstitutionTemplate` sources for a multitier workflow.
+This downloads the four species files to `workflows/Bos_primigenius_Angus/`, along with any data files the entry reads and `results_<species>.mat` when available. Web pages and leftover `.m` files in the entry, such as `mydata_<species>_old.m`, are skipped. It returns an `EstimationTemplates` whose entries are verbatim `CopyFileTemplate`s, which you can use to rerun an AmP estimation.
+
+These templates are copies, not editable templates. Turning an AmP entry into `MultitierMyDataSubstitutionTemplate` / `MultitierParsInitSubstitutionTemplate` sources is still done by hand. Templates also only cover the four species files: if you render them into another folder, copy the entry's data files there as well.
 
 ## Lower-level access
 

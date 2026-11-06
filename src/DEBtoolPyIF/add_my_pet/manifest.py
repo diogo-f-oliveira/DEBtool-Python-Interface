@@ -27,7 +27,7 @@ ALLSTAT_ENTRY = "allStat"
 
 _FILE_SEPARATOR = ";"
 _DATE_ACC_PATTERN = re.compile(
-    r"^[ \t]*metaData\.date_acc\s*=\s*\[\s*(\d{4})[\s,;]+(\d{1,2})[\s,;]+(\d{1,2})",
+    r"^[ \t]*metaData\.date_acc\s*=\s*\[\s*(\d{4})[\s,;]+(\d+)[\s,;]+(\d+)",
     re.MULTILINE,
 )
 

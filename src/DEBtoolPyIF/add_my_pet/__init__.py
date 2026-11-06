@@ -10,6 +10,7 @@ from .client import AmPClient, DownloadStatus, parse_directory_listing
 from .download import (
     SPECIES_FILE_PATTERNS,
     SpeciesDownloadReport,
+    download_allstat,
     download_amp_collection,
     download_species,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "SpeciesDownloadReport",
     "bootstrap_species",
     "clear_cache",
+    "download_allstat",
     "download_amp_collection",
     "download_species",
     "fetch_allstat",

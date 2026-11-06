@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 AMP_BASE_URL = "https://www.bio.vu.nl/thb/deb/deblab/add_my_pet"
 ENTRIES_URL = f"{AMP_BASE_URL}/entries"
 ENTRIES_WEB_URL = f"{AMP_BASE_URL}/entries_web"
@@ -13,8 +15,8 @@ def species_dir_url(species: str, base_url: str = AMP_BASE_URL) -> str:
 
 
 def species_file_url(species: str, file_name: str, base_url: str = AMP_BASE_URL) -> str:
-    return f"{base_url}/entries/{species}/{file_name}"
+    return f"{base_url}/entries/{species}/{quote(file_name)}"
 
 
 def ampdata_file_url(file_name: str, base_url: str = AMP_BASE_URL) -> str:
-    return f"{base_url}/AmPdata/{file_name}"
+    return f"{base_url}/AmPdata/{quote(file_name)}"

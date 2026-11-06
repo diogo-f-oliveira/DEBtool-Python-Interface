@@ -5,14 +5,24 @@ from __future__ import annotations
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
 from tqdm.auto import tqdm
 
 from .client import AmPClient, DownloadStatus
-from .manifest import ManifestEntry, current_timestamp, read_amp_version, resolve_folder, update_manifest
-from .urls import species_dir_url
+from .manifest import (
+    ALLSTAT_ENTRY,
+    ManifestEntry,
+    current_timestamp,
+    read_amp_version,
+    resolve_folder,
+    update_manifest,
+)
+from .urls import ampdata_file_url, species_dir_url
+
+ALLSTAT_FILE_NAME = "allStat.mat"
 
 # Short keys accepted by ``download_species(files=...)``, expanded with the species name
 SPECIES_FILE_PATTERNS = {
@@ -130,6 +140,38 @@ def download_species(
     entry = _manifest_entry(report, client)
     update_manifest(folder, [] if entry is None else [entry])
     return report
+
+
+def download_allstat(
+        folder: str | os.PathLike | None = None,
+        *,
+        overwrite: bool = False,
+        check_update: bool = False,
+        client: AmPClient | None = None,
+) -> Path:
+    """Download the AmP ``allStat.mat`` file into ``folder`` and return its path.
+
+    @param folder: folder to save into. If None, the default folder from ``get_cache_dir`` is used.
+    @param overwrite: if True, an existing local file is always replaced.
+    @param check_update: if True, an existing local file is replaced when the AmP version is newer.
+    @param client: AmPClient to reuse; a new one is created if None.
+    Unlike ``download_species``, download errors are raised, as ``requests.RequestException``.
+    """
+    client = AmPClient() if client is None else client
+    folder = resolve_folder(folder)
+    status = client.download_ampdata_file(ALLSTAT_FILE_NAME, folder, overwrite=overwrite, check_update=check_update)
+    path = folder / ALLSTAT_FILE_NAME
+    # allStat has no entry date, so its version is the date AmP last published the file
+    version = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).strftime("%Y%m%d")
+    transferred = status in (DownloadStatus.DOWNLOADED, DownloadStatus.UPDATED)
+    update_manifest(folder, [ManifestEntry(
+        species=ALLSTAT_ENTRY,
+        files=(ALLSTAT_FILE_NAME,),
+        source_url=ampdata_file_url(ALLSTAT_FILE_NAME, client.base_url),
+        amp_version=version,
+        downloaded_at=current_timestamp() if transferred else None,
+    )])
+    return path
 
 
 def download_amp_collection(

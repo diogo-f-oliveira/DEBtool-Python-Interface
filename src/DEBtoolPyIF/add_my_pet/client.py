@@ -7,6 +7,7 @@ from email.utils import formatdate, parsedate_to_datetime
 from enum import Enum
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -43,7 +44,7 @@ def parse_directory_listing(html: str, *, include_dirs: bool = True, include_fil
     """Return the entries of an Apache directory listing page.
 
     Sorting links (``?C=N;O=D``), absolute links such as the parent directory and external links are skipped.
-    Directory entries keep their trailing ``/``.
+    Directory entries keep their trailing ``/``. Names are returned decoded (``my%20file.csv`` as ``my file.csv``).
     """
     parser = _ListingParser()
     parser.feed(html)
@@ -54,7 +55,7 @@ def parse_directory_listing(html: str, *, include_dirs: bool = True, include_fil
         is_dir = href.endswith("/")
         if (is_dir and not include_dirs) or (not is_dir and not include_files):
             continue
-        entries.append(href)
+        entries.append(unquote(href))
     return entries
 
 
@@ -97,12 +98,23 @@ class AmPClient:
         entries = self.list_directory(f"{self.base_url}/entries/", include_files=False)
         return [entry.rstrip("/") for entry in entries]
 
-    def list_species_files(self, species: str, *, include_results_mat: bool = True) -> list[str]:
-        """Return the files in the ``species`` entry, excluding result figures (other extras such as reports stay)."""
+    def list_species_files(
+            self,
+            species: str,
+            *,
+            include_results_mat: bool = True,
+            include_html: bool = True,
+    ) -> list[str]:
+        """Return the files in the ``species`` entry, excluding result figures.
+
+        This includes data files that ``mydata`` or ``predict`` read (e.g. ``tL.txt``), which have no fixed names.
+        """
         files = self.list_directory(species_dir_url(species, self.base_url), include_dirs=False)
         files = [file for file in files if _is_species_estimation_file(file)]
         if not include_results_mat:
             files = [file for file in files if not file.startswith("results")]
+        if not include_html:
+            files = [file for file in files if not file.lower().endswith(".html")]
         return files
 
     def download_species_file(

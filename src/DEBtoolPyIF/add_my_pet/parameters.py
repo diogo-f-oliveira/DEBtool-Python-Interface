@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import warnings
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -14,19 +13,10 @@ import pandas as pd
 import requests
 import scipy.io
 
-from .client import AmPClient, DownloadStatus
-from .download import download_species
-from .manifest import (
-    ALLSTAT_ENTRY,
-    ManifestEntry,
-    current_timestamp,
-    date_to_amp_version,
-    resolve_folder,
-    update_manifest,
-)
-from .urls import ampdata_file_url
+from .client import AmPClient
+from .download import ALLSTAT_FILE_NAME, download_allstat, download_species
+from .manifest import date_to_amp_version, resolve_folder
 
-ALLSTAT_FILE_NAME = "allStat.mat"
 ALLSTAT_TAXONOMY_COLUMNS = ("species_en", "family", "order", "class", "phylum", "id_CoL")
 
 
@@ -196,24 +186,12 @@ def fetch_allstat(
     @param check_update: if True, replace the local file when the AmP version is newer. If AmP cannot be reached,
         a local file is used with a warning.
     """
-    client = AmPClient() if client is None else client
     folder = resolve_folder(folder)
     path = folder / ALLSTAT_FILE_NAME
     try:
-        status = client.download_ampdata_file(ALLSTAT_FILE_NAME, folder, check_update=check_update)
+        download_allstat(folder, check_update=check_update, client=client)
     except requests.RequestException as error:
         if not path.exists():
             raise
         warnings.warn(f"Could not reach AmP to check {ALLSTAT_FILE_NAME} ({error}); using the local copy.")
-    else:
-        # allStat has no entry date, so its version is the date AmP last published the file
-        version = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).strftime("%Y%m%d")
-        transferred = status in (DownloadStatus.DOWNLOADED, DownloadStatus.UPDATED)
-        update_manifest(folder, [ManifestEntry(
-            species=ALLSTAT_ENTRY,
-            files=(ALLSTAT_FILE_NAME,),
-            source_url=ampdata_file_url(ALLSTAT_FILE_NAME, client.base_url),
-            amp_version=version,
-            downloaded_at=current_timestamp() if transferred else None,
-        )])
     return load_allstat(path)

@@ -12,8 +12,10 @@ from DEBtoolPyIF.add_my_pet import (
     MANIFEST_FILE_NAME,
     bootstrap_species,
     clear_cache,
+    download_allstat,
     download_amp_collection,
     download_species,
+    fetch_allstat,
     fetch_species_parameters,
     get_cache_dir,
     load_allstat,
@@ -311,7 +313,7 @@ def test_download_species_does_not_add_failed_species_to_the_manifest(tmp_path):
     assert read_manifest(tmp_path).empty
 
 
-def test_download_amp_collection_records_all_species_in_one_manifest(tmp_path):
+def test_download_amp_database_records_all_species_in_one_manifest(tmp_path):
     routes = species_routes()
     routes[f"{BASE_URL}/entries/Other_species/mydata_Other_species.m"] = b"metaData.date_acc = [2020 01 02];\n"
     client = make_client(routes)
@@ -336,6 +338,10 @@ def test_read_amp_version_uses_most_recent_of_mydata_and_results(tmp_path):
     mydata = tmp_path / f"mydata_{SPECIES}.m"
     mydata.write_text("% metaData.date_acc = [1999 01 01];\nmetaData.date_acc    = [2021 3 9];\n")
     assert read_amp_version(tmp_path, SPECIES) == "20210309"
+
+    # Written like this in the Manis_pentadactyla entry
+    mydata.write_text("metaData.date_acc    = [2021 012 16]; \n")
+    assert read_amp_version(tmp_path, SPECIES) == "20211216"
 
     mydata.write_text("metaData.date_acc = [2019 01 01];\n")
     assert read_amp_version(tmp_path, SPECIES) == "20200102"
@@ -435,6 +441,58 @@ def test_bootstrap_species_returns_copy_file_templates(tmp_path):
         assert isinstance(template, CopyFileTemplate)
         assert template.get_source() == f"function {kind}_{SPECIES}\n"
     assert (tmp_path / SPECIES / f"results_{SPECIES}.mat").exists()
+
+
+def test_download_allstat_saves_the_file_and_records_its_version(tmp_path):
+    source = tmp_path / "source.mat"
+    scipy.io.savemat(source, {"allStat": {"Sp_a": {"family": "Fa", "model": "std"}}})
+    url = f"{BASE_URL}/AmPdata/allStat.mat"
+    client = make_client({url: source.read_bytes()})
+    folder = tmp_path / "project"
+
+    path = download_allstat(folder, client=client)
+
+    assert path == folder / "allStat.mat"
+    row = read_manifest(folder).set_index("species").loc["allStat"]
+    assert (row["amp_version"], row["files"], row["source_url"]) == ("20221215", "allStat.mat", url)
+
+    # fetch_allstat reuses the downloaded file
+    n_requests = len(client.session.requests)
+    assert fetch_allstat(folder, client=client).loc["Sp_a", "family"] == "Fa"
+    assert len(client.session.requests) == n_requests
+
+
+def test_download_allstat_raises_download_errors(tmp_path):
+    with pytest.raises(requests.HTTPError):
+        download_allstat(tmp_path, client=make_client({}))
+
+
+def test_bootstrap_species_downloads_data_files_read_by_the_entry_but_not_web_pages(tmp_path):
+    routes = species_routes()
+    extra_links = "".join(
+        f'<tr><td><a href="{href}">{href}</a></td></tr>'
+        for href in ("tLW.csv", "my%20data.txt", f"report_{SPECIES}.html", f"mydata_{SPECIES}_old.m")
+    )
+    routes[species_url()] = LISTING_HTML.replace("</table>", f"{extra_links}</table>").encode("utf-8")
+    routes[species_url("tLW.csv")] = b"1,2\n"
+    routes[species_url("my%20data.txt")] = b"3 4\n"
+    routes[species_url(f"report_{SPECIES}.html")] = b"<html></html>"
+    routes[species_url(f"mydata_{SPECIES}_old.m")] = b"% old version\n"
+
+    bootstrap_species(SPECIES, tmp_path, client=make_client(routes))
+
+    entry_folder = tmp_path / SPECIES
+    assert (entry_folder / "tLW.csv").read_text() == "1,2\n"
+    assert (entry_folder / "my data.txt").read_text() == "3 4\n"
+    assert not (entry_folder / f"report_{SPECIES}.html").exists()
+    assert not (entry_folder / f"mydata_{SPECIES}_old.m").exists()
+    files = read_manifest(tmp_path).set_index("species").loc[SPECIES, "files"].split(";")
+    assert {"tLW.csv", "my data.txt"} <= set(files)
+
+
+def test_bootstrap_species_reports_entries_that_cannot_be_listed(tmp_path):
+    with pytest.raises(RuntimeError, match="Missing_species"):
+        bootstrap_species("Missing_species", tmp_path, client=make_client({}))
 
 
 def test_bootstrap_species_tolerates_missing_results_but_not_missing_species_files(tmp_path):

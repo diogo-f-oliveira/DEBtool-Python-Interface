@@ -27,7 +27,7 @@ Both work the same way. A folder of files you downloaded earlier can be used dir
 ## Downloading species files
 
 ```python
-from DEBtoolPyIF.add_my_pet import download_species, download_amp_database
+from DEBtoolPyIF.add_my_pet import download_species, download_amp_collection
 
 # All estimation files of one species into species/Bos_primigenius_Angus/
 report = download_species("Bos_primigenius_Angus", "species")
@@ -38,7 +38,7 @@ print(report.files)        # {file name: DownloadStatus}
 download_species("Danio_rerio", "species", files=("mydata", "results"))
 
 # Many species in parallel (species=None downloads the whole collection)
-reports = download_amp_database("species", ["Danio_rerio", "Daphnia_magna"], check_update=True)
+reports = download_amp_collection("species", ["Danio_rerio", "Daphnia_magna"], check_update=True)
 failed = {name: r.errors for name, r in reports.items() if not r.ok}
 ```
 

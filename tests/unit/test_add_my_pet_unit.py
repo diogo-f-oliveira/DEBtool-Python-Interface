@@ -12,7 +12,7 @@ from DEBtoolPyIF.add_my_pet import (
     MANIFEST_FILE_NAME,
     bootstrap_species,
     clear_cache,
-    download_amp_database,
+    download_amp_collection,
     download_species,
     fetch_species_parameters,
     get_cache_dir,
@@ -311,12 +311,12 @@ def test_download_species_does_not_add_failed_species_to_the_manifest(tmp_path):
     assert read_manifest(tmp_path).empty
 
 
-def test_download_amp_database_records_all_species_in_one_manifest(tmp_path):
+def test_download_amp_collection_records_all_species_in_one_manifest(tmp_path):
     routes = species_routes()
     routes[f"{BASE_URL}/entries/Other_species/mydata_Other_species.m"] = b"metaData.date_acc = [2020 01 02];\n"
     client = make_client(routes)
 
-    reports = download_amp_database(
+    reports = download_amp_collection(
         tmp_path, [SPECIES, "Other_species", "Missing_species"], files=("mydata",), progress=False, client=client,
     )
 

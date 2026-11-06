@@ -248,7 +248,7 @@ Future minor versions should add functionality to work with Add-my-Pet.
 
 Planned directions include:
 
-- [x] fetching species files (`add_my_pet.download_species`, `download_amp_database`),
+- [x] fetching species files (`add_my_pet.download_species`, `download_amp_collection`),
 - [x] fetching parameter sets (`add_my_pet.fetch_species_parameters`, `fetch_allstat`),
 - [ ] using Add-my-Pet material as initialization or reference data (e.g. mapping `AmPResults.par` onto `ParameterDefinition` defaults for `pars_init` generation),
 - [ ] generating datasets or estimation inputs from Add-my-Pet resources,

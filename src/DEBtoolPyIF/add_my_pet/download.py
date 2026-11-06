@@ -132,7 +132,7 @@ def download_species(
     return report
 
 
-def download_amp_database(
+def download_amp_collection(
         folder: str | os.PathLike | None = None,
         species: Iterable[str] | None = None,
         *,

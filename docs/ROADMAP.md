@@ -254,10 +254,11 @@ Planned directions include:
 - [ ] generating datasets or estimation inputs from Add-my-Pet resources,
 - [x] making it easier to bootstrap species workflows from existing Add-my-Pet content (`add_my_pet.bootstrap_species`; verbatim `CopyFileTemplate`s only, conversion into substitution templates is still manual).
 
-Known limitations of the AmP file cache (`add_my_pet/cache.py`) to address later:
+Next steps and known limitations of `add_my_pet`:
 
-- [ ] In-memory caching of loaded tables: every `fetch_allstat()` call re-reads the ~23 MB `allStat.mat` (several seconds). Keep the loaded table in memory, keyed on the cached file's hash, so repeated calls in one session are instant.
-- [ ] Safe concurrent downloads across processes: two Python processes fetching the same file at the same time write the same temporary `.part` file. Use a unique temporary name per download (and possibly a lock file) so parallel jobs sharing one cache folder cannot corrupt it.
+- [ ] Download a specific AmP version: `download_species(species, folder, version="yyyymmdd")`, fetching `<species>_<yyyymmdd>.zip` from `entries_zip/` or `entries_archive/`. The zips only hold the four source files, not `results_<species>.mat`, so loading parameters of an archived version needs a `pars_init` reader or a MATLAB run.
+- [ ] In-memory caching of loaded tables: every `fetch_allstat()` call re-reads the ~23 MB `allStat.mat` (several seconds). Keep the loaded table in memory, keyed on the file's modification time, so repeated calls in one session are instant.
+- [ ] Safe concurrent downloads across processes: two Python processes using one folder at the same time write the same temporary `.part` files and can overwrite each other's manifest updates. Use unique temporary names (and possibly a lock file) so parallel jobs can share a folder.
 
 This should eventually connect the package's multitier workflow with the broader DEB ecosystem in a practical way.
 

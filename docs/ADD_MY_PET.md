@@ -2,6 +2,28 @@
 
 `DEBtoolPyIF.add_my_pet` fetches and reuses content from the [Add-my-Pet (AmP)](https://www.bio.vu.nl/thb/deb/deblab/add_my_pet/) collection. It only needs internet access: files are downloaded over HTTP and `.mat` files are read with SciPy, so no MATLAB session is required.
 
+## Where files go
+
+Every function saves into a **folder**:
+
+- **Pass a folder** to get the files somewhere you can see them, open them in MATLAB, edit them and keep them with your project. This is what most users want.
+
+  ```python
+  download_species("Danio_rerio", "my_project/amp")
+  # my_project/amp/amp_manifest.csv
+  # my_project/amp/Danio_rerio/mydata_Danio_rerio.m, pars_init_..., predict_..., run_..., results_...
+  ```
+
+- **Leave the folder out** to use a default folder, which suits scripts that only read the data through Python, such as machine-learning pipelines. `get_cache_dir()` returns it: the `DEBTOOLPYIF_AMP_CACHE` environment variable if set, otherwise your system's cache folder.
+
+  | OS | Default folder |
+  |---|---|
+  | Windows | `%LOCALAPPDATA%\DEBtoolPyIF\Cache\add_my_pet` |
+  | macOS | `~/Library/Caches/DEBtoolPyIF/add_my_pet` |
+  | Linux | `~/.cache/DEBtoolPyIF/add_my_pet` |
+
+Both work the same way. A folder of files you downloaded earlier can be used directly.
+
 ## Downloading species files
 
 ```python
@@ -9,7 +31,8 @@ from DEBtoolPyIF.add_my_pet import download_species, download_amp_database
 
 # All estimation files of one species into species/Bos_primigenius_Angus/
 report = download_species("Bos_primigenius_Angus", "species")
-print(report.files)  # {file name: DownloadStatus}
+print(report.amp_version)  # '20161116'
+print(report.files)        # {file name: DownloadStatus}
 
 # Only some files, using short keys (mydata, pars_init, predict, run, results) or file names
 download_species("Danio_rerio", "species", files=("mydata", "results"))
@@ -19,47 +42,51 @@ reports = download_amp_database("species", ["Danio_rerio", "Daphnia_magna"], che
 failed = {name: r.errors for name, r in reports.items() if not r.ok}
 ```
 
-Existing files are kept by default. `check_update=True` replaces a local file only when the AmP version is newer (conditional GET), and `overwrite=True` always replaces it. Downloaded files take the AmP modification time, so repeated `check_update` runs only transfer changed files. Download errors are collected in each `SpeciesDownloadReport` instead of being raised.
+Existing files are kept by default. `check_update=True` replaces a local file only when the AmP copy is newer, and `overwrite=True` always replaces it. Downloaded files take the date AmP published them, so repeated `check_update` runs only transfer what changed. Download errors are collected in each `SpeciesDownloadReport` instead of being raised.
+
+A file you edit gets a newer date than the AmP copy, so `check_update=True` will not replace it. Use `overwrite=True` to get the AmP version back.
+
+## Versions and the manifest
+
+AmP identifies each version of an entry by its acceptance date: the current version of an entry is published as `entries_zip/<species>_<yyyymmdd>.zip`, and older versions are kept in `entries_archive/`. This package uses that same date as the **AmP version**.
+
+Each folder has an `amp_manifest.csv`, which can be opened in Excel or read with `read_manifest()`:
+
+| species | amp_version | files | downloaded_at | source_url |
+|---|---|---|---|---|
+| Danio_rerio | 20180809 | mydata_Danio_rerio.m;results_Danio_rerio.mat | 2026-11-06T10:15:02+00:00 | https://www.bio.vu.nl/.../entries/Danio_rerio/ |
+
+Use `species` and `amp_version` to cite what you used. The version is read from `metaData.date_acc` in the `mydata` or `results` file, so it is blank if the folder has neither.
+
+The `allStat` table has its own row. It has no acceptance date, so its version is the date AmP last published the file.
+
+Close the manifest in Excel before downloading: Excel locks open files on Windows. The files still download, but the manifest is not updated and you get a warning.
 
 ## Fetching parameter sets
 
 ```python
 from DEBtoolPyIF.add_my_pet import fetch_species_parameters, fetch_allstat, load_results_mat
 
-results = fetch_species_parameters("Bos_primigenius_Angus")                     # cached after the first call
-results = fetch_species_parameters("Bos_primigenius_Angus", check_update=True)  # refresh if AmP changed
+results = fetch_species_parameters("Bos_primigenius_Angus", "species")
 results.model        # 'stx'
+results.amp_version  # '20161116'
 results.par["p_M"]   # parameter values
 results.to_frame()   # value, free, units and label per parameter
 results.stats        # MRE, SMSE, ...
 
-allstat = fetch_allstat()  # pandas DataFrame, one row per AmP species
+allstat = fetch_allstat("species")  # pandas DataFrame, one row per AmP species
 allstat.loc[allstat["family"] == "Bovidae", ["model", "MRE", "p_M", "kap"]]
 
 load_results_mat("path/to/results_my_species.mat")  # also works for your own estimation results
 ```
 
-## The cache
+Each file is downloaded once and then reused. By default AmP is not contacted again, so rerunning a script gives the same parameters even if the entry was revised. Pass `check_update=True` to refresh. If AmP cannot be reached and a local file exists, it is used with a warning.
 
-`fetch_species_parameters` and `fetch_allstat` download each file once and keep it in a local cache. The other download functions save into the folder you choose and do not use the cache.
+For published analyses, keep the folder with your project: the exact AmP files and their versions travel with the analysis.
 
-**Location.** `get_cache_dir()` returns the folder in use: the `cache_dir` argument if given, otherwise the `DEBTOOLPYIF_AMP_CACHE` environment variable, otherwise the operating system's user cache folder:
+## Clearing the default folder
 
-| OS | Default cache folder |
-|---|---|
-| Windows | `%LOCALAPPDATA%\DEBtoolPyIF\Cache\add_my_pet` |
-| macOS | `~/Library/Caches/DEBtoolPyIF/add_my_pet` |
-| Linux | `~/.cache/DEBtoolPyIF/add_my_pet` (or `$XDG_CACHE_HOME`) |
-
-Files are stored as `<cache>/<species>/results_<species>.mat` and `<cache>/allStat.mat`, each with a small `<file>.amp.json` sidecar recording the source URL, the server's `ETag` and `Last-Modified` values, a SHA-256 hash of the content and the download time (see `read_cache_record`).
-
-**Updates.** By default a cached file is reused without contacting AmP, so rerunning a script returns the same parameters even if the AmP entry was revised in the meantime. Pass `check_update=True` to ask AmP whether the file changed: the stored `ETag` is sent back to the server, which replies "not modified" (nothing is transferred) or sends the new version. If AmP cannot be reached, the cached copy is used with a warning.
-
-**Integrity.** A cached file whose content no longer matches its recorded hash (for example, edited by hand) is downloaded again with a warning. Treat the cache as read-only; copy files elsewhere to modify them.
-
-**Reproducibility.** For published analyses, fetch once and keep the default `check_update=False`, or pass a `cache_dir` inside the project so the exact AmP files travel with the analysis.
-
-**Clearing.** `clear_cache("Danio_rerio")` deletes one species, `clear_cache()` the whole cache. Only files with a `.amp.json` sidecar are deleted, so other files in the folder are never touched.
+`clear_cache("Danio_rerio")` deletes one species from the default folder, `clear_cache("allStat")` the `allStat` file, and `clear_cache()` everything. Only files listed in the manifest are deleted. Folders you chose yourself are never touched by `clear_cache`; delete those files directly.
 
 ## Bootstrapping a workflow
 

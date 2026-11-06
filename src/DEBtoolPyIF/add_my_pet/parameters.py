@@ -3,17 +3,28 @@
 from __future__ import annotations
 
 import os
+import warnings
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import requests
 import scipy.io
 
-from .cache import fetch_cached_file, get_cache_dir
-from .client import AmPClient
-from .urls import ampdata_file_url, species_file_url
+from .client import AmPClient, DownloadStatus
+from .download import download_species
+from .manifest import (
+    ALLSTAT_ENTRY,
+    ManifestEntry,
+    current_timestamp,
+    date_to_amp_version,
+    resolve_folder,
+    update_manifest,
+)
+from .urls import ampdata_file_url
 
 ALLSTAT_FILE_NAME = "allStat.mat"
 ALLSTAT_TAXONOMY_COLUMNS = ("species_en", "family", "order", "class", "phylum", "id_CoL")
@@ -31,6 +42,11 @@ class AmPResults:
     labels: dict[str, str] = field(default_factory=dict)
     stats: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def amp_version(self) -> str | None:
+        """AmP version of the entry: its acceptance date as ``yyyymmdd``, if the file records one."""
+        return date_to_amp_version(self.metadata.get("date_acc", []))
 
     def to_frame(self) -> pd.DataFrame:
         """Parameter table with value, free flag, units and label per parameter."""
@@ -145,44 +161,59 @@ def load_allstat(path: str | os.PathLike) -> pd.DataFrame:
 
 def fetch_species_parameters(
         species: str,
-        cache_dir: str | os.PathLike | None = None,
+        folder: str | os.PathLike | None = None,
         *,
         check_update: bool = False,
         client: AmPClient | None = None,
 ) -> AmPResults:
-    """Load the parameter set of ``species`` from AmP, downloading ``results_<species>.mat`` if it is not cached.
+    """Load the parameter set of ``species``, downloading ``results_<species>.mat`` if it is not in ``folder``.
 
-    @param cache_dir: folder where files are cached, see ``get_cache_dir``.
-    @param check_update: if True, ask AmP whether the entry changed and refresh the cached copy if so. By default
-        a cached copy is reused as-is, so repeated runs return the same parameters.
+    @param folder: folder holding the species subfolders. If None, the default folder from ``get_cache_dir`` is used.
+    @param check_update: if True, replace the local file when the AmP version is newer. By default a local file is
+        reused as-is, so repeated runs return the same parameters. If AmP cannot be reached, a local file is used
+        with a warning.
     """
-    client = AmPClient() if client is None else client
+    folder = resolve_folder(folder)
     file_name = f"results_{species}.mat"
-    path = fetch_cached_file(
-        client,
-        species_file_url(species, file_name, client.base_url),
-        get_cache_dir(cache_dir) / species / file_name,
-        check_update=check_update,
-    )
-    return load_results_mat(path)
+    report = download_species(species, folder, files=("results",), check_update=check_update, client=client)
+    if report.errors:
+        error = report.errors[file_name]
+        if not (report.folder / file_name).exists():
+            raise RuntimeError(f"Could not download {file_name} from AmP: {error}")
+        warnings.warn(f"Could not reach AmP to check {file_name} ({error}); using the local copy.")
+    return load_results_mat(report.folder / file_name)
 
 
 def fetch_allstat(
-        cache_dir: str | os.PathLike | None = None,
+        folder: str | os.PathLike | None = None,
         *,
         check_update: bool = False,
         client: AmPClient | None = None,
 ) -> pd.DataFrame:
-    """Load the AmP ``allStat.mat`` table with ``load_allstat``, downloading it if it is not cached.
+    """Load the AmP ``allStat.mat`` table with ``load_allstat``, downloading it if it is not in ``folder``.
 
-    @param cache_dir: folder where files are cached, see ``get_cache_dir``.
-    @param check_update: if True, ask AmP whether the file changed and refresh the cached copy if so.
+    @param folder: folder holding the file. If None, the default folder from ``get_cache_dir`` is used.
+    @param check_update: if True, replace the local file when the AmP version is newer. If AmP cannot be reached,
+        a local file is used with a warning.
     """
     client = AmPClient() if client is None else client
-    path = fetch_cached_file(
-        client,
-        ampdata_file_url(ALLSTAT_FILE_NAME, client.base_url),
-        get_cache_dir(cache_dir) / ALLSTAT_FILE_NAME,
-        check_update=check_update,
-    )
+    folder = resolve_folder(folder)
+    path = folder / ALLSTAT_FILE_NAME
+    try:
+        status = client.download_ampdata_file(ALLSTAT_FILE_NAME, folder, check_update=check_update)
+    except requests.RequestException as error:
+        if not path.exists():
+            raise
+        warnings.warn(f"Could not reach AmP to check {ALLSTAT_FILE_NAME} ({error}); using the local copy.")
+    else:
+        # allStat has no entry date, so its version is the date AmP last published the file
+        version = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).strftime("%Y%m%d")
+        transferred = status in (DownloadStatus.DOWNLOADED, DownloadStatus.UPDATED)
+        update_manifest(folder, [ManifestEntry(
+            species=ALLSTAT_ENTRY,
+            files=(ALLSTAT_FILE_NAME,),
+            source_url=ampdata_file_url(ALLSTAT_FILE_NAME, client.base_url),
+            amp_version=version,
+            downloaded_at=current_timestamp() if transferred else None,
+        )])
     return load_allstat(path)

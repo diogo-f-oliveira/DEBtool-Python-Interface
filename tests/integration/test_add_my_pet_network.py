@@ -7,7 +7,7 @@ from DEBtoolPyIF.add_my_pet import (
     DownloadStatus,
     bootstrap_species,
     fetch_species_parameters,
-    read_cache_record,
+    read_manifest,
 )
 
 pytestmark = [pytest.mark.integration, pytest.mark.network]
@@ -24,20 +24,24 @@ def require_amp_website():
 
 
 def test_bootstrap_and_fetch_parameters_from_amp(tmp_path):
-    templates = bootstrap_species(SPECIES, tmp_path / "workflow")
+    workflow = tmp_path / "workflow"
+    templates = bootstrap_species(SPECIES, workflow)
     assert f"mydata_{SPECIES}" in templates.mydata.get_source()
 
-    results = fetch_species_parameters(SPECIES, tmp_path / "cache")
+    results = fetch_species_parameters(SPECIES, tmp_path / "parameters")
     assert results.species == SPECIES
     assert results.model
     assert {"p_M", "kap", "v"} <= set(results.par)
 
-    cached = tmp_path / "cache" / SPECIES / f"results_{SPECIES}.mat"
-    record = read_cache_record(cached)
-    assert record.etag and record.last_modified
+    # The version in the manifest is the date AmP uses to name the entry's zip file
+    version = read_manifest(workflow).set_index("species").loc[SPECIES, "amp_version"]
+    assert version == results.amp_version
+    client = AmPClient()
+    zip_files = client.list_directory(f"{AMP_BASE_URL}/entries_zip/", include_dirs=False)
+    assert f"{SPECIES}_{version}.zip" in zip_files
 
-    # An update check finds the cached file up to date, by ETag in the cache and by date for plain downloads
-    fetch_species_parameters(SPECIES, tmp_path / "cache", check_update=True)
-    assert read_cache_record(cached) == record
-    status = AmPClient().download_species_file(SPECIES, cached.name, cached.parent, check_update=True)
+    # An update check finds the local file up to date
+    status = client.download_species_file(
+        SPECIES, f"results_{SPECIES}.mat", tmp_path / "parameters" / SPECIES, check_update=True,
+    )
     assert status is DownloadStatus.NOT_MODIFIED

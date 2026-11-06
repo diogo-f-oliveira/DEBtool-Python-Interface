@@ -1,10 +1,11 @@
 """Tools to fetch and reuse content from the Add-my-Pet (AmP) collection.
 
-No MATLAB session is needed: files are downloaded over HTTP and ``.mat`` files are read with SciPy.
+No MATLAB session is needed: files are downloaded over HTTP and ``.mat`` files are read with SciPy. Files are saved in
+a folder of your choice, or in a default folder when none is given, and each folder's ``amp_manifest.csv`` records the
+AmP version of every species it contains.
 """
 
 from .bootstrap import bootstrap_species
-from .cache import CacheRecord, clear_cache, get_cache_dir, read_cache_record
 from .client import AmPClient, DownloadStatus, parse_directory_listing
 from .download import (
     SPECIES_FILE_PATTERNS,
@@ -12,6 +13,7 @@ from .download import (
     download_amp_database,
     download_species,
 )
+from .manifest import MANIFEST_FILE_NAME, clear_cache, get_cache_dir, read_amp_version, read_manifest
 from .parameters import (
     AmPResults,
     fetch_allstat,
@@ -26,10 +28,10 @@ __all__ = [
     "AMPDATA_URL",
     "AmPClient",
     "AmPResults",
-    "CacheRecord",
     "DownloadStatus",
     "ENTRIES_URL",
     "ENTRIES_WEB_URL",
+    "MANIFEST_FILE_NAME",
     "SPECIES_FILE_PATTERNS",
     "SpeciesDownloadReport",
     "bootstrap_species",
@@ -42,5 +44,6 @@ __all__ = [
     "load_allstat",
     "load_results_mat",
     "parse_directory_listing",
-    "read_cache_record",
+    "read_amp_version",
+    "read_manifest",
 ]

@@ -12,7 +12,7 @@ from .download import SPECIES_FILE_PATTERNS, download_species
 
 def bootstrap_species(
         species: str,
-        dest_folder: str | os.PathLike,
+        folder: str | os.PathLike,
         *,
         overwrite: bool = False,
         check_update: bool = False,
@@ -20,16 +20,16 @@ def bootstrap_species(
 ) -> EstimationTemplates:
     """Download an AmP species entry and wrap its files as ``EstimationTemplates``.
 
-    The four species files (and ``results_<species>.mat`` when available) are saved in
-    ``dest_folder/<species>/``. Each species file is wrapped verbatim in a ``CopyFileTemplate``, so the returned
-    object can be used directly for a single-species estimation or as the starting point for adapting the files
-    into substitution templates for a multitier workflow.
+    The four species files (and ``results_<species>.mat`` when available) are saved in ``folder/<species>/``.
+    Each species file is wrapped verbatim in a ``CopyFileTemplate``, so the returned object can be used directly for
+    a single-species estimation or as the starting point for adapting the files into substitution templates for a
+    multitier workflow.
 
     @raise RuntimeError: if any of the four species files could not be downloaded.
     """
     report = download_species(
         species,
-        dest_folder,
+        folder,
         files=(*FILE_KEYS, "results"),
         overwrite=overwrite,
         check_update=check_update,

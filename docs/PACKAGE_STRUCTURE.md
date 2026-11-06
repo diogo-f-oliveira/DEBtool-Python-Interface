@@ -46,7 +46,7 @@ The package is organized by responsibility:
   - currently focused on multitier result visualization support
 - `add_my_pet/`
   - integration with the Add-my-Pet (AmP) collection; does not need MATLAB
-  - `client.py` (HTTP listing/downloads with update checks), `download.py` (species and whole-collection downloads), `parameters.py` (load `results_<species>.mat` and `allStat.mat` into Python), `bootstrap.py` (wrap an AmP entry as `EstimationTemplates`)
+  - `client.py` (HTTP listing/downloads with update checks), `download.py` (species and whole-collection downloads), `manifest.py` (default folder and the `amp_manifest.csv` recording AmP versions), `parameters.py` (load `results_<species>.mat` and `allStat.mat` into Python), `bootstrap.py` (wrap an AmP entry as `EstimationTemplates`)
   - `resources/` holds MATLAB helpers such as `allstat2csv.m`
   - see [`docs/ADD_MY_PET.md`](ADD_MY_PET.md)
 

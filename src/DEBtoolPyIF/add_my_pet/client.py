@@ -7,7 +7,6 @@ from email.utils import formatdate, parsedate_to_datetime
 from enum import Enum
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Mapping
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -60,7 +59,7 @@ def parse_directory_listing(html: str, *, include_dirs: bool = True, include_fil
 
 
 def _is_species_estimation_file(file_name: str) -> bool:
-    # Result figures and html pages are skipped, the results .mat file is kept
+    # Result figures are skipped, the results .mat file is kept
     return not file_name.startswith("results") or file_name.endswith(".mat")
 
 
@@ -99,7 +98,7 @@ class AmPClient:
         return [entry.rstrip("/") for entry in entries]
 
     def list_species_files(self, species: str, *, include_results_mat: bool = True) -> list[str]:
-        """Return the estimation files available for ``species`` (result figures and html pages are excluded)."""
+        """Return the files in the ``species`` entry, excluding result figures (other extras such as reports stay)."""
         files = self.list_directory(species_dir_url(species, self.base_url), include_dirs=False)
         files = [file for file in files if _is_species_estimation_file(file)]
         if not include_results_mat:
@@ -160,29 +159,9 @@ class AmPClient:
                 return DownloadStatus.SKIPPED_EXISTS
             headers["If-Modified-Since"] = formatdate(save_path.stat().st_mtime, usegmt=True)
 
-        response_headers = self.fetch_to_file(url, save_path, headers=headers)
-        if response_headers is None:
-            return DownloadStatus.NOT_MODIFIED
-        return DownloadStatus.UPDATED if exists else DownloadStatus.DOWNLOADED
-
-    def fetch_to_file(
-            self,
-            url: str,
-            save_path: str | os.PathLike,
-            *,
-            headers: dict[str, str] | None = None,
-    ) -> Mapping[str, str] | None:
-        """GET ``url`` into ``save_path`` and return the response headers, or None if the server answered 304.
-
-        ``headers`` can carry conditional-request validators (``If-None-Match``, ``If-Modified-Since``).
-        The file is written to a temporary ``.part`` file first, so a failed download never leaves a partial file
-        and keeps any existing one. The saved file takes the remote ``Last-Modified`` time.
-        Raises ``requests.RequestException`` on HTTP or connection errors.
-        """
-        save_path = Path(save_path)
-        with self.session.get(url, headers=headers or {}, stream=True, timeout=self.timeout) as response:
+        with self.session.get(url, headers=headers, stream=True, timeout=self.timeout) as response:
             if response.status_code == 304:
-                return None
+                return DownloadStatus.NOT_MODIFIED
             response.raise_for_status()
 
             save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -195,13 +174,12 @@ class AmPClient:
             finally:
                 if part_path.exists():
                     part_path.unlink()
-            response_headers = response.headers
+            last_modified = response.headers.get("Last-Modified")
 
-        last_modified = response_headers.get("Last-Modified")
         if last_modified:
             try:
                 timestamp = parsedate_to_datetime(last_modified).timestamp()
                 os.utime(save_path, (timestamp, timestamp))
             except (TypeError, ValueError):
                 pass
-        return response_headers
+        return DownloadStatus.UPDATED if exists else DownloadStatus.DOWNLOADED

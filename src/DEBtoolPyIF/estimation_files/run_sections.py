@@ -25,8 +25,7 @@ class RunSetupSection(RunSection):
     key = "setup"
     template_families = ("run",)
     section_tags = ("pre_estimation",)
-    matlab_code = """    
-clear;
+    matlab_code = """clear;
 close all;"""
 
 

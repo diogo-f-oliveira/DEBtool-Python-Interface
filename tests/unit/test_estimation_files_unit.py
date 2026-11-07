@@ -68,7 +68,7 @@ from DEBtoolPyIF.estimation_files.mydata_temperature_sections import TypicalTemp
 from DEBtoolPyIF.estimation_files.pars_init import ParsInitFunctionHeader, ParsInitTemplate
 from DEBtoolPyIF.estimation_files.pars_init_sections import ParsInitAddChemSection
 from DEBtoolPyIF.estimation_files.run_sections import RestartLoopSection
-from DEBtoolPyIF.multitier.pars_init import build_registry_multitier_pars_init_sections
+from DEBtoolPyIF.multitier.pars_init import MultitierParsInitLoopsSection, build_registry_multitier_pars_init_sections
 from DEBtoolPyIF.multitier import (
     MultiTierStructure,
     MultitierMyDataProgrammaticTemplate,
@@ -755,7 +755,7 @@ def test_mydata_source_template_renders_additional_pseudodata_placeholder_when_s
 
     assert (
         contents
-        == "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'time at start development';"
+        == "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'Time at start of development';"
     )
 
 
@@ -863,7 +863,7 @@ def test_add_pseudo_data_value_renders_single_entry():
 
     assert (
         rendered
-        == "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'time at start development';"
+        == "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'Time at start of development';"
     )
 
 
@@ -883,7 +883,7 @@ def test_add_pseudo_data_value_renders_multiple_entries_in_input_order():
     assert rendered.splitlines() == [
         "data.psd.custom_par = 1.23; units.psd.custom_par = 'J'; "
         "label.psd.custom_par = 'custom pseudo-data target';",
-        "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'time at start development';",
+        "data.psd.t_0 = 80; units.psd.t_0 = 'd'; label.psd.t_0 = 'Time at start of development';",
     ]
 
 
@@ -1302,7 +1302,17 @@ def test_multitier_pars_init_template_skips_loops_for_root_singleton(tmp_path):
     ).render(context)
 
     assert "par.p_Am = 12.5;" in contents
-    assert "varname = [par_name '_' entity_id];" not in contents
+    assert "varName = [parName '_' entity_id];" not in contents
+
+
+def test_multitier_pars_init_loops_section_uses_tier_label_template():
+    context = SimpleNamespace(expand_current_tier_parameters=True)
+
+    default_contents = MultitierParsInitLoopsSection().render(context)
+    custom_contents = MultitierParsInitLoopsSection(tier_label_template=" in pen ").render(context)
+
+    assert "label.(varName) = [label.(parName) ' for tier entity ' entity_id];" in default_contents
+    assert "label.(varName) = [label.(parName) ' in pen ' entity_id];" in custom_contents
 
 
 def test_multitier_pars_init_template_keeps_loops_for_single_lower_tier_entity(tmp_path):
@@ -1313,7 +1323,7 @@ def test_multitier_pars_init_template_keeps_loops_for_single_lower_tier_entity(t
     ).render(context)
 
     assert context.expand_current_tier_parameters is True
-    assert "varname = [par_name '_' entity_id];" in contents
+    assert "varName = [parName '_' entity_id];" in contents
 
 
 def test_multitier_pars_init_template_keeps_loops_for_single_target_of_multi_entity_root(tmp_path):
@@ -1339,7 +1349,7 @@ def test_multitier_pars_init_template_keeps_loops_for_single_target_of_multi_ent
     ).render(context)
 
     assert context.expand_current_tier_parameters is True
-    assert "varname = [par_name '_' entity_id];" in contents
+    assert "varName = [parName '_' entity_id];" in contents
 
 
 def test_pars_init_template_required_sections_returns_complete_valid_tuple():
@@ -1514,7 +1524,7 @@ def test_registry_multitier_pars_init_programmatic_template_inserts_extra_sectio
     ).render(context)
 
     assert "metaPar.model = 'nat';" in contents
-    assert "varname = [par_name '_' entity_id];" in contents
+    assert "varName = [parName '_' entity_id];" in contents
     assert "[par, units, label, free] = addchem" not in contents
     assert contents.index("% custom extra") < contents.index("txtPar.units = units;")
 
@@ -1558,7 +1568,7 @@ def test_registry_multitier_pars_init_substitution_template_keeps_registry_behav
 
     assert "metaPar.model = 'nat';" in contents
     assert "par.p_Am = 12.5;" in contents
-    assert "varname = [par_name '_' entity_id];" in contents
+    assert "varName = [parName '_' entity_id];" in contents
     assert "[par, units, label, free] = addchem" not in contents
     assert "% custom extra" in contents
 
@@ -2214,7 +2224,7 @@ def test_registry_multitier_pars_init_substitution_template_accepts_custom_param
     ).render(context)
 
     assert "par.unknown_par = 1.23;" in contents
-    assert "varname = [par_name '_' entity_id];" in contents
+    assert "varName = [parName '_' entity_id];" in contents
 
 
 def test_registry_multitier_pars_init_programmatic_template_accepts_custom_parameter_registry():
@@ -2234,7 +2244,7 @@ def test_registry_multitier_pars_init_programmatic_template_accepts_custom_param
     ).render(context)
 
     assert "par.unknown_par = 1.23;" in contents
-    assert "varname = [par_name '_' entity_id];" in contents
+    assert "varName = [parName '_' entity_id];" in contents
 
 
 def test_run_template_renders_required_sections():
@@ -2410,6 +2420,7 @@ def test_add_path_section_renders_fixed_folders_in_order():
     contents = section.render(context)
 
     assert contents.splitlines() == [
+        "%% Add folders to MATLAB path",
         "addpath('data_pipeline');",
         "addpath('ode');",
     ]
@@ -2421,7 +2432,7 @@ def test_add_path_section_accepts_path_objects_and_escapes_quotes():
     section = AddPathSection([folder])
     escaped_folder = str(folder).replace("'", "''")
 
-    assert section.render(context) == f"addpath('{escaped_folder}');"
+    assert section.render(context) == f"%% Add folders to MATLAB path\naddpath('{escaped_folder}');"
 
 
 def test_add_path_section_rejects_non_collection_folders():
@@ -2450,6 +2461,7 @@ def test_estim_option_run_section_renders_initialization_and_ordered_options():
     contents = section.render(context)
 
     assert contents.splitlines() == [
+        "%% Set estimation options",
         SetDefaultEstimOptions().render(context),
         "estim_options('max_step_number', 25);",
         "estim_options('method', 'nm');",
@@ -2780,8 +2792,8 @@ def test_alternating_restart_nelder_mead_renders_global_simplex_and_alternation(
 def test_set_estim_options_section_defaults_to_initialization_only_when_options_are_empty():
     context = SimpleNamespace(estimation_settings={})
 
-    assert SetEstimOptionsSection().render(context) == "estim_options('default');"
-    assert SetEstimOptionsSection(options=()).render(context) == "estim_options('default');"
+    assert SetEstimOptionsSection().render(context) == "%% Set estimation options\nestim_options('default');"
+    assert SetEstimOptionsSection(options=()).render(context) == "%% Set estimation options\nestim_options('default');"
 
 
 def test_estim_option_run_section_rejects_tuple_options():

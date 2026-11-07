@@ -304,16 +304,17 @@ def build_estimation_iteration_metadata(
         success,
 ):
     entity_list = normalize_entity_list(entity_list, allow_all=False)
-    return serialize_metadata_value({
+    metadata = serialize_metadata_value({
         "estimation_target_type": target_type,
         "estimation_target_name": target_name,
         "entity_list": list(entity_list),
         "relative_output_folder": _get_normalized_relative_output_folder(output_folder, tier_output_folder),
-        "estimation_start_time": start_time,
-        "estimation_end_time": end_time,
         "elapsed_duration_seconds": get_duration_seconds(start_time, end_time),
         "success": success,
     })
+    metadata["estimation_start_time"] = start_time
+    metadata["estimation_end_time"] = end_time
+    return metadata
 
 
 def build_result_metadata(tier_estimator):

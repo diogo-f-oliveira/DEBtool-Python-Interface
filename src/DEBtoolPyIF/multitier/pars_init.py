@@ -30,7 +30,7 @@ for p = 1:length(metaData.tier_pars)
         par.(varName) = metaData.tier_par_init_values.(parName).(entity_id);
         free.(varName) = 1;
         units.(varName) = units.(parName);
-        label.(varName) = [label.(parName) ' for tier entity ' entity_id];
+        label.(varName) = [label.(parName) '${tier_label_template}' entity_id];
     end
 end"""
 

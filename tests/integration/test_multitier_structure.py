@@ -5,7 +5,7 @@ from DEBtoolPyIF.multitier import MultiTierStructure
 
 @pytest.mark.integration
 def test_create_tier_structure_returns_multitier_structure(
-    example_name, examples_root, import_example_data_module, import_example_tier_module
+    example_name, examples_root, import_example_data_module, import_example_tier_module, tmp_path
 ):
     data_module = import_example_data_module(example_name)
     tier_module = import_example_tier_module(example_name)
@@ -16,20 +16,20 @@ def test_create_tier_structure_returns_multitier_structure(
     )
 
     data = data_module.load_data(str(examples_root / example_name / "data"))
-    tier_structure = tier_module.create_tier_structure(data, matlab_session="ignore")
+    tier_structure = tier_module.create_tier_structure(data, matlab_session="ignore", output_folder=tmp_path)
 
     assert isinstance(tier_structure, MultiTierStructure)
 
 
 @pytest.mark.integration
 def test_create_tier_structure_has_core_multitier_attributes(
-    example_name, examples_root, import_example_data_module, import_example_tier_module
+    example_name, examples_root, import_example_data_module, import_example_tier_module, tmp_path
 ):
     data_module = import_example_data_module(example_name)
     tier_module = import_example_tier_module(example_name)
 
     data = data_module.load_data(str(examples_root / example_name / "data"))
-    tier_structure = tier_module.create_tier_structure(data, matlab_session="ignore")
+    tier_structure = tier_module.create_tier_structure(data, matlab_session="ignore", output_folder=tmp_path)
 
     assert hasattr(tier_structure, "tier_names")
     assert hasattr(tier_structure, "entity_hierarchy")

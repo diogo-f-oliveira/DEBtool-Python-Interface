@@ -31,9 +31,9 @@ for e=1:length(auxData.tiers.entity_list)
     vars_pull(diet_pars);  vars_pull(parscomp_st(diet_pars));
 
     %% Predict digestibility
-    DMD_varname = ['DMD_' diet_id];
-    if isfield(data, DMD_varname)
-        prdData.(DMD_varname) = (w_X - w_P * y_P_E / y_X_E) / w_X;
+    OMD_varname = ['OMD_' diet_id];
+    if isfield(data, OMD_varname)
+        prdData.(OMD_varname) = (w_X - w_P * y_P_E / y_X_E) / w_X;
     end
 
     % Growth curve parameters

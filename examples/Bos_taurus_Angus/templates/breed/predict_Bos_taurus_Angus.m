@@ -91,9 +91,9 @@ diet_list = auxData.tiers.entity_descendants.male.diet;
 for i=1:length(diet_list)
     diet_id = diet_list{i};
     % Digestibility
-    DMD_varname = ['DMD_' diet_id];
-    if isfield(data, DMD_varname)
-        prdData.(DMD_varname) = (w_X - w_P * y_P_E / y_X_E) / w_X;
+    OMD_varname = ['OMD_' diet_id];
+    if isfield(data, OMD_varname)
+        prdData.(OMD_varname) = (w_X - w_P * y_P_E / y_X_E) / w_X;
     end
 end
 

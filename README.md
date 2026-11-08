@@ -76,13 +76,13 @@ python -m pip install .
 
 If you use `DEBtoolPyIF`, please cite the software package:
 
-> Oliveira, D. F. (2026). DEBtoolPyIF (Version 0.2.1) [Computer software]. GitHub. https://github.com/diogo-f-oliveira/DEBtool-Python-Interface
+> Oliveira, D. F. (2026). DEBtoolPyIF (Version 0.3.0) [Computer software]. GitHub. https://github.com/diogo-f-oliveira/DEBtool-Python-Interface
 
 ```bibtex
 @software{oliveira_debtoolpyif_2026,
   author = {Oliveira, Diogo F.},
   title = {DEBtoolPyIF},
-  version = {0.2.1},
+  version = {0.3.0},
   year = {2026},
   publisher = {GitHub},
   url = {https://github.com/diogo-f-oliveira/DEBtool-Python-Interface}

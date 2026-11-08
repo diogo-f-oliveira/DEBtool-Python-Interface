@@ -54,14 +54,16 @@ It is recommended to add the DEBtool folder and all subfolders to the MATLAB pat
 
 Additionally, you will need to install the MATLAB Engine API for Python.
 You can find instructions on how to install it in the [official documentation](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html).
+It is not installed with DEBtoolPyIF, because each MATLAB release needs its own version of it.
+DEBtoolPyIF can be imported without it, but running estimations requires it.
 
 ### Troubleshooting the installation of the MATLAB Engine API for Python
 
- Each version of MATLAB has a corresponding version of the `matlab-engine` package for Python, so ensure that you are installing the correct version for your MATLAB release. For example, for MATLAB R2025b, you would install version 25.2.2:
+ Each version of MATLAB has a corresponding version of the `matlabengine` package for Python, so ensure that you are installing the correct version for your MATLAB release. For example, for MATLAB R2025b, you would install version 25.2.2:
 ```console
-pip install matlab-engine==25.2.2
+pip install matlabengine==25.2.2
 ```
-The version number corresponds to the MATLAB release year, with the major version matching the release year and the minor version indicating the specific release (a for the first release, b for the second release of that year). The last number is the patch version. You can find the correct version to install in the [PyPI repository](pypi.org/project/matlabengine/).
+The version number corresponds to the MATLAB release year, with the major version matching the release year and the minor version indicating the specific release (a for the first release, b for the second release of that year). The last number is the patch version. You can find the correct version to install in the [PyPI repository](https://pypi.org/project/matlabengine/).
 
 If you are having trouble installing the package from PyPI, you can try to install it through the local version by doing the following:
 

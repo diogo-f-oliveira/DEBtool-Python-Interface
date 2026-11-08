@@ -1,6 +1,13 @@
+import subprocess
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from DEBtoolPyIF.estimation.wrapper import MATLABWrapper
+
+SRC_DIR = Path(__file__).resolve().parents[2] / "src"
 
 
 def _build_wrapper():
@@ -19,7 +26,7 @@ def test_start_matlab_engine_auto_connects_to_shared_session(monkeypatch):
         start_matlab=lambda: calls.append(("start", None)) or object(),
     )
 
-    monkeypatch.setattr("DEBtoolPyIF.estimation.wrapper.matlab.engine", engine_stub)
+    monkeypatch.setattr("DEBtoolPyIF.estimation.wrapper._import_matlab_engine", lambda: engine_stub)
 
     wrapper = _build_wrapper()
     wrapper.start_matlab_engine(MATLABWrapper.AUTO_SESSION)
@@ -38,10 +45,38 @@ def test_start_matlab_engine_auto_starts_when_no_shared_session_exists(monkeypat
         start_matlab=lambda: calls.append(("start", None)) or started_engine,
     )
 
-    monkeypatch.setattr("DEBtoolPyIF.estimation.wrapper.matlab.engine", engine_stub)
+    monkeypatch.setattr("DEBtoolPyIF.estimation.wrapper._import_matlab_engine", lambda: engine_stub)
 
     wrapper = _build_wrapper()
     wrapper.start_matlab_engine(MATLABWrapper.AUTO_SESSION)
 
     assert wrapper.eng is started_engine
     assert calls == [("start", None)]
+
+
+def test_starting_matlab_without_engine_api_names_the_package_to_install(monkeypatch):
+    monkeypatch.setitem(sys.modules, "matlab", None)
+    monkeypatch.setitem(sys.modules, "matlab.engine", None)
+
+    wrapper = _build_wrapper()
+    with pytest.raises(ImportError, match="matlabengine"):
+        wrapper.start_matlab_engine("start")
+
+    wrapper.start_matlab_engine("ignore")
+    assert wrapper.eng is None
+
+
+def test_package_imports_without_matlab_engine_api():
+    code = (
+        "import sys\n"
+        "sys.modules['matlab'] = None\n"
+        "import DEBtoolPyIF, DEBtoolPyIF.add_my_pet, DEBtoolPyIF.multitier, DEBtoolPyIF.estimation\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=SRC_DIR,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr

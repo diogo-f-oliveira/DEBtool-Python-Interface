@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/DEBtool-Python-Interface.iml" filepath="$PROJECT_DIR$/.idea/DEBtool-Python-Interface.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/DEBtoolPyIF.iml" filepath="$PROJECT_DIR$/.idea/DEBtoolPyIF.iml" />
     </modules>
   </component>
 </project>

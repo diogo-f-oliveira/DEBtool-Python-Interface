@@ -39,6 +39,11 @@ dependencies = [
     'numpy<=1.26.4',
     'pandas>=1.2.0',
     'tabulate>=0.9.0',
+]
+
+[project.optional-dependencies]
+# Needed by DEBtoolPyIF.add_my_pet. Keep this extra defined even if these move to the required dependencies.
+amp = [
     'platformdirs>=2.0.0',
     'requests>=2.25.0',
     'scipy>=1.7.0',

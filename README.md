@@ -42,6 +42,12 @@ You can install DEBtoolPyIF using pip:
 pip install DEBtoolPyIF
 ```
 
+To also use the `DEBtoolPyIF.add_my_pet` subpackage for fetching [Add-my-Pet](https://www.bio.vu.nl/thb/deb/deblab/add_my_pet/) files, install the `amp` extra:
+
+```console
+pip install "DEBtoolPyIF[amp]"
+```
+
 To use the package you also need to install the MATLAB package DEBtool. 
 You can download it from its [GitHub repository](https://github.com/add-my-pet/DEBtool_M).
 It is recommended to add the DEBtool folder and all subfolders to the MATLAB path.

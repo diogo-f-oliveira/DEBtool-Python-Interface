@@ -1,4 +1,6 @@
+import importlib
 import os
+import sys
 import time
 from email.utils import parsedate_to_datetime
 
@@ -581,3 +583,13 @@ def test_bootstrap_species_tolerates_missing_results_but_not_missing_species_fil
     del routes[species_url(f"predict_{SPECIES}.m")]
     with pytest.raises(RuntimeError, match=f"predict_{SPECIES}.m"):
         bootstrap_species(SPECIES, tmp_path / "no_predict", client=make_client(routes))
+
+
+def test_importing_add_my_pet_without_amp_extra_names_the_install_command(monkeypatch):
+    for module_name in list(sys.modules):
+        if module_name == "DEBtoolPyIF.add_my_pet" or module_name.startswith("DEBtoolPyIF.add_my_pet."):
+            monkeypatch.delitem(sys.modules, module_name)
+    monkeypatch.setitem(sys.modules, "platformdirs", None)
+
+    with pytest.raises(ImportError, match=r"platformdirs.*DEBtoolPyIF\[amp\]"):
+        importlib.import_module("DEBtoolPyIF.add_my_pet")

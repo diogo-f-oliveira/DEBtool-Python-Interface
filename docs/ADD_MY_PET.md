@@ -2,6 +2,16 @@
 
 `DEBtoolPyIF.add_my_pet` fetches and reuses content from the [Add-my-Pet (AmP)](https://www.bio.vu.nl/thb/deb/deblab/add_my_pet/) collection. It only needs internet access: files are downloaded over HTTP and `.mat` files are read with SciPy, so no MATLAB session is required.
 
+## Installation
+
+`add_my_pet` needs a few extra packages (`requests`, `scipy`, `platformdirs` and `tqdm`) that the rest of DEBtoolPyIF does not use. Install them with the `amp` extra:
+
+```console
+pip install "DEBtoolPyIF[amp]"
+```
+
+Importing `DEBtoolPyIF.add_my_pet` without them raises an `ImportError` that names the missing package and this command.
+
 ## Where files go
 
 Every function saves into a **folder**:

@@ -3,7 +3,21 @@
 No MATLAB session is needed: files are downloaded over HTTP and ``.mat`` files are read with SciPy. Files are saved in
 a folder of your choice, or in a default folder when none is given, and each folder's ``amp_manifest.csv`` records the
 AmP version of every species it contains.
+
+This subpackage needs the optional ``amp`` dependencies: ``pip install "DEBtoolPyIF[amp]"``.
 """
+
+try:
+    import platformdirs  # noqa: F401
+    import requests  # noqa: F401
+    import scipy.io  # noqa: F401
+    import tqdm  # noqa: F401
+except ImportError as error:
+    missing = error.name or "an optional dependency"
+    raise ImportError(
+        f"DEBtoolPyIF.add_my_pet needs {missing}, which is not installed. "
+        'Install the Add-my-Pet dependencies with: pip install "DEBtoolPyIF[amp]"'
+    ) from error
 
 from .bootstrap import bootstrap_species
 from .client import AmPClient, DownloadStatus, parse_directory_listing

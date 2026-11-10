@@ -100,6 +100,10 @@ Current assumptions:
   - caches the generated outputs
   - allows multiple integration files to reuse the same generated results without relying on test ordering
 
+## Single-species example tests
+
+`test_single_species_example.py` covers `examples/Danio_rerio`, which has no tiers and so does not follow the multitier example contract. It renders the four species files without MATLAB, and runs a fast MATLAB estimation (`integration`, `slow`, `matlab`) that must move the free parameters towards the values used to generate the mock data.
+
 ## Example-specific context
 
 There is currently one example workflow:

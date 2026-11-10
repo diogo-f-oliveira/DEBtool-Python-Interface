@@ -238,7 +238,7 @@ This work should help make top-tier data handling feel like part of the Python p
 
 #### Single-species (regular Add-my-Pet) estimation
 
-The generic `mydata`, `pars_init` and `run` template classes are meant to work for a regular Add-my-Pet estimation of one species, without tiers. A prototype on the local branch `feature/single-species` runs this end to end. It is not tested enough for 0.3.0 and adds public API, so it should go into 0.4.0 rather than a patch release. The Danio rerio example should ship only once the parts below are implemented.
+The generic `mydata`, `pars_init` and `run` template classes are meant to work for a regular Add-my-Pet estimation of one species, without tiers. A prototype on the branch `feature/single-species` runs this end to end; keep it rebased onto `dev` so the example keeps tracking package changes. It is not tested enough for 0.3.0 and adds public API, so it should go into 0.4.0 rather than a patch release. The Danio rerio example should ship only once the parts below are implemented.
 
 Possible implementation, as prototyped:
 
@@ -255,7 +255,8 @@ Still needed before release:
 - [ ] A species-level results object (parameters, errors and predictions), analogous to `MultiTierResults`.
 - [ ] Automated biblist and ecoCode generation (see "Automated `mydata.m` generation").
 - [ ] Parameter registries for other typified models used in AmP (e.g. `abj`, which the real zebrafish entry uses).
-- [ ] Integration tests that run the single-species example in MATLAB, and real data for the example.
+- [x] Integration tests for the single-species example (`tests/integration/test_single_species_example.py`): rendering without MATLAB, and a fast MATLAB estimation that must end closer to the mock parameters than it started.
+- [ ] Real data for the example.
 
 ### 3. Higher-Level Abstractions For `predict` Logic
 

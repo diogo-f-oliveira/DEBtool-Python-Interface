@@ -29,14 +29,15 @@ from examples.Danio_rerio.data import MOCK_BIBKEY, SpeciesDataSection, load_mock
 EXAMPLE_FOLDER = Path(__file__).resolve().parent
 SPECIES_NAME = "Danio_rerio"
 
-# Do not reuse the AmP idiom ``bibkey = '...'; ... metaData.biblist.(bibkey) = ...`` here: this block renders
-# before PackingSection, so reassigning ``bibkey`` would overwrite the per-dataset bibkey struct.
+# References use the usual AmP idiom. BibkeysSection renders after PackingSection, as in DEBtool's mydata_my_pet.m,
+# so reassigning ``bibkey`` here does not overwrite the per-dataset bibkey struct.
 MOCK_BIBLIST = f"""%% References
-metaData.biblist.{MOCK_BIBKEY} = ['@Misc{{{MOCK_BIBKEY}, ' ...
+bibkey = '{MOCK_BIBKEY}'; type = 'Misc'; bib = [ ...
 'author = {{DEBtoolPyIF}}, ' ...
 'year = {{2026}}, ' ...
 'title = {{Mock data for the Danio rerio example}}, ' ...
-'note = {{Generated values, not observations}}}}'];"""
+'note = {{Generated values, not observations}}'];
+metaData.biblist.(bibkey) = ['@', type, '{{', bibkey, ', ' bib, '}}'];"""
 
 
 def build_parameter_registry():
@@ -68,9 +69,9 @@ def create_mydata_template(datasets=None) -> MyDataProgrammaticTemplate:
             SaveFieldsSection(),
             RemoveDummyWeightsSection(),
             AddPseudoDataSection(),
+            PackingSection(),
             DiscussionSection(discussion_points={"D1": "All data are mock values generated from the std model."}),
             BibkeysSection(bibkeys_content=MOCK_BIBLIST),
-            PackingSection(),
         )
     )
 

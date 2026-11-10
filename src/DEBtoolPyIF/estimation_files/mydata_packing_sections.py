@@ -24,5 +24,7 @@ class PackingSection(MyDataSection):
         aux_lines = [f"auxData.{field_name} = {field_name};" for field_name in self.aux_data_fields]
         txt_lines = [f"txtData.{field_name} = {field_name};" for field_name in self.txt_data_fields]
 
-        lines = ["%% pack auxData and txtData for output", *aux_lines, *txt_lines, "", "end"]
+        # No closing ``end``: like DEBtool's mydata_my_pet.m, the discussion and reference blocks follow the
+        # packing block, and the AmP reference idiom reassigns ``bibkey`` after ``txtData.bibkey`` is packed.
+        lines = ["%% pack auxData and txtData for output", *aux_lines, *txt_lines]
         super().__init__(matlab_code="\n".join(lines))

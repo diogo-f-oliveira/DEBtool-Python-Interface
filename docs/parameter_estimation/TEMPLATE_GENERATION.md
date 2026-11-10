@@ -550,6 +550,8 @@ Representative generic sections include:
 - `info.entity_list`
 - `info.groups_of_entity`
 
+`PackingSection` (and `MultitierPackingSection`) only packs `auxData` and `txtData`; it does not close the function with `end`. As in DEBtool's `mydata_my_pet.m`, discussion and reference blocks go after packing. This matters for the usual Add-my-Pet reference format (`bibkey = '...'; ... metaData.biblist.(bibkey) = ...`), which overwrites the per-dataset `bibkey` struct and would corrupt `txtData.bibkey` if it ran before packing. The default section order and the bundled generic `mydata` source follow this layout.
+
 ### Multitier `mydata` sections
 
 The multitier subclass extends the generic `mydata` family with hierarchy-aware sections:

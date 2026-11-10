@@ -59,10 +59,10 @@ $add_pseudodata_block
 %% Optional multitier pseudo-data
 $multitier_pseudodata_block
 
-%% Optional bibliography metadata
-$bibkeys_block
+$packing_block
 
 %% Discussion points
 $discussion_block
 
-$packing_block
+%% Optional bibliography metadata
+$bibkeys_block

@@ -83,9 +83,9 @@ class MultitierMyDataTemplate(MyDataTemplate):
             SaveDataFieldsByVariateTypeSection(),
             MultitierAddPseudoDataSection(),
             MultitierPseudoDataSection(),
-            BibkeysSection(),
-            DiscussionSection(),
             MultitierPackingSection(),
+            DiscussionSection(),
+            BibkeysSection(),
         )
 
     @classmethod

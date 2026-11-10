@@ -105,9 +105,9 @@ class MyDataTemplate:
             RemoveDummyWeightsSection(),
             # SaveDataFieldsByVariateTypeSection(),
             AddPseudoDataSection(),
-            BibkeysSection(),
-            DiscussionSection(),
             PackingSection(),
+            DiscussionSection(),
+            BibkeysSection(),
         )
 
     @classmethod

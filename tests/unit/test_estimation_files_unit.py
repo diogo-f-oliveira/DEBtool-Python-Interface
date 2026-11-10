@@ -59,6 +59,7 @@ from DEBtoolPyIF.estimation_files.mydata_data_sections import (
 )
 from DEBtoolPyIF.estimation_files.mydata_metadata_sections import (
     AuthorInfoMetadataSection,
+    BibkeysSection,
     CompletenessLevelSection,
     MyDataFunctionHeader,
     SpeciesInfoMetadataSection,
@@ -727,7 +728,27 @@ def test_packing_section_accepts_custom_field_lists():
     assert "auxData.custom_aux = custom_aux;" in rendered
     assert "txtData.units = units;" in rendered
     assert "txtData.custom_txt = custom_txt;" in rendered
-    assert rendered.endswith("end")
+    assert not rendered.rstrip().endswith("end")
+
+
+def test_mydata_references_using_amp_bibkey_idiom_render_after_packing():
+    # The AmP reference idiom reassigns ``bibkey``, so the per-dataset bibkey struct must already be packed.
+    amp_reference = (
+        "bibkey = 'Kooy2010'; type = 'Book'; bib = 'author = {Kooijman}';\n"
+        "metaData.biblist.(bibkey) = ['''@', type, '{', bibkey, ', ' bib, '}'';'];"
+    )
+    programmatic = MyDataProgrammaticTemplate(
+        sections=(*MyDataProgrammaticTemplate.required_sections(), BibkeysSection(bibkeys_content=amp_reference)),
+    ).render(SimpleNamespace(species_name="Test_species"))
+    generic_source = (
+        resources.files("DEBtoolPyIF.multitier.resources.generic").joinpath("mydata_template.m").read_text()
+    )
+
+    assert programmatic.index("txtData.bibkey = bibkey;") < programmatic.index("bibkey = 'Kooy2010';")
+    assert generic_source.index("$packing_block") < generic_source.index("$bibkeys_block")
+    for template_class in (MyDataSubstitutionTemplate, MultitierMyDataSubstitutionTemplate):
+        keys = [section.key for section in template_class.default_sections()]
+        assert keys.index("packing_block") < keys.index("bibkeys_block")
 
 
 def test_mydata_source_template_preserves_unsupported_template_keys(tmp_path):

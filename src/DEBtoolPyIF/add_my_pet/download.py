@@ -19,7 +19,9 @@ from .manifest import (
     ManifestEntry,
     current_timestamp,
     read_amp_version,
+    read_complete_species,
     resolve_folder,
+    split_manifest_files,
     update_manifest,
 )
 from .urls import ampdata_file_url, species_dir_url
@@ -111,7 +113,9 @@ def _download_species_files(
     return report
 
 
-def _manifest_entry(report: SpeciesDownloadReport, client: AmPClient) -> ManifestEntry | None:
+def _manifest_entry(
+        report: SpeciesDownloadReport, client: AmPClient, all_files: bool
+) -> ManifestEntry | None:
     file_names = report.paths()
     if not file_names:
         return None
@@ -124,6 +128,32 @@ def _manifest_entry(report: SpeciesDownloadReport, client: AmPClient) -> Manifes
         source_url=species_dir_url(report.species, client.base_url),
         amp_version=report.amp_version,
         downloaded_at=current_timestamp() if transferred else None,
+        # Only a download of every file in the entry can show that the species is complete
+        complete=report.ok if all_files else None,
+    )
+
+
+def _uses_manifest(files: Iterable[str] | None, overwrite: bool, check_update: bool) -> bool:
+    """Whether species the manifest records as complete can be skipped without contacting AmP."""
+    return files is None and not overwrite and not check_update
+
+
+def _report_from_manifest(species: str, folder: Path, row: dict[str, str] | None) -> SpeciesDownloadReport | None:
+    """Return a report for a species the manifest records as complete, or None if it has to be downloaded.
+
+    The species is only skipped if every file the manifest lists for it is still in its folder.
+    """
+    if row is None:
+        return None
+    species_folder = folder / species
+    file_names = split_manifest_files(row["files"])
+    if not file_names or not all((species_folder / file_name).is_file() for file_name in file_names):
+        return None
+    return SpeciesDownloadReport(
+        species=species,
+        folder=species_folder,
+        files={file_name: DownloadStatus.SKIPPED_EXISTS for file_name in file_names},
+        amp_version=row.get("amp_version") or None,
     )
 
 
@@ -145,12 +175,18 @@ def download_species(
     @param check_update: if True, existing local files are replaced when the AmP version is newer.
     @param client: AmPClient to reuse; a new one is created if None.
     Download errors are recorded in the returned report instead of being raised. The species is recorded in the
-    ``amp_manifest.csv`` of ``folder``, including its AmP version.
+    ``amp_manifest.csv`` of ``folder``, including its AmP version. If the manifest records an earlier download of
+    every file of the species as complete and those files are still in ``folder``, AmP is not contacted, unless
+    ``files``, ``overwrite`` or ``check_update`` is given.
     """
     client = AmPClient() if client is None else client
     folder = resolve_folder(folder)
+    if _uses_manifest(files, overwrite, check_update):
+        report = _report_from_manifest(species, folder, read_complete_species(folder).get(species))
+        if report is not None:
+            return report
     report = _download_species_files(species, folder, files, overwrite, check_update, client)
-    entry = _manifest_entry(report, client)
+    entry = _manifest_entry(report, client, all_files=files is None)
     update_manifest(folder, [] if entry is None else [entry])
     return report
 
@@ -223,7 +259,8 @@ def download_amp_collection(
 
     Requests are paced by the client (see ``AmPClient.request_delay``) because the AmP server stops accepting
     connections after many requests. If it stops responding, the download stops with a warning. Rerun the same call
-    later to continue: files already in ``folder`` are not downloaded again.
+    later to continue: files already in ``folder`` are not downloaded again, and species the manifest records as
+    complete are skipped without contacting AmP. Pass ``check_update=True`` to check every species for newer files.
 
     @param folder: folder to save into, with one subfolder per species. If None, the default folder from
         ``get_cache_dir`` is used.
@@ -240,15 +277,29 @@ def download_amp_collection(
     folder = resolve_folder(folder)
     species = client.list_species() if species is None else list(species)
     files = None if files is None else list(files)
-    if progress and len(species) >= _LONG_DOWNLOAD_SPECIES:
-        _print_long_download_notice(len(species), folder, None if files is None else len(files), client)
 
     reports = {}
+    species_to_download = species
+    if _uses_manifest(files, overwrite, check_update):
+        complete_rows = read_complete_species(folder)
+        species_to_download = []
+        for name in species:
+            report = _report_from_manifest(name, folder, complete_rows.get(name))
+            if report is None:
+                species_to_download.append(name)
+            else:
+                reports[name] = report
+        if progress and reports:
+            print(f"Skipping {len(reports)} species already complete in {folder}.")
+    skipped_species = set(reports)
+    if progress and len(species_to_download) >= _LONG_DOWNLOAD_SPECIES:
+        _print_long_download_notice(len(species_to_download), folder, None if files is None else len(files), client)
+
     future_to_species = {}
     connection_failures = 0
     try:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for name in species:
+            for name in species_to_download:
                 future = executor.submit(_download_species_files, name, folder, files, overwrite, check_update, client)
                 future_to_species[future] = name
             futures = as_completed(future_to_species)
@@ -274,7 +325,11 @@ def download_amp_collection(
         for future, name in future_to_species.items():
             if name not in reports and future.done() and not future.cancelled():
                 reports[name] = future.result()
-        entries = (_manifest_entry(report, client) for report in reports.values())
+        entries = (
+            _manifest_entry(report, client, all_files=files is None)
+            for name, report in reports.items()
+            if name not in skipped_species
+        )
         update_manifest(folder, [entry for entry in entries if entry is not None])
 
     if connection_failures >= max_connection_failures:

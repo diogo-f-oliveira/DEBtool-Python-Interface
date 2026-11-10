@@ -61,15 +61,17 @@ Without `files=`, everything in the entry is downloaded except result figures. T
 
 Existing files are kept by default. `check_update=True` replaces a local file only when the AmP copy is newer, and `overwrite=True` always replaces it. Downloaded files take the date AmP published them, so repeated `check_update` runs only transfer what changed. Download errors are collected in each `SpeciesDownloadReport` instead of being raised.
 
+Without `files=`, `check_update` or `overwrite`, a species the manifest marks as complete is not requested from AmP at all, as long as all its files are still in the folder. Use `check_update=True` to look for revised entries, including files AmP added to an entry after you downloaded it.
+
 A file you edit gets a newer date than the AmP copy, so `check_update=True` will not replace it. Use `overwrite=True` to get the AmP version back.
 
 ### Large downloads
 
 The AmP server can stop accepting connections after many requests, without any error message, and it can stay unreachable from your connection for hours. To avoid this, requests are sent 0.5 s apart, so downloading the whole collection takes several hours. `download_amp_collection` tells you what to expect at the start of a large download.
 
-If the server stops responding, the download stops with a warning instead of failing species after species. Run the same command later to continue: files you already have are not downloaded again.
+If the server stops responding, the download stops with a warning instead of failing species after species. Run the same command later to continue: species already complete in the manifest are skipped without any request, and files you already have are not downloaded again. Leave out `check_update=True` when continuing, because it sends a request for every file you already have.
 
-To go slower, pass your own client: `download_amp_collection("species", client=AmPClient(request_delay=2))`. Please be considerate of this shared server, and only download the species you need.
+To change the delay, pass your own client: `download_amp_collection("species", client=AmPClient(request_delay=2))`. The same delay applies across all download threads, so adding threads with `max_workers` does not send requests faster. Please be considerate of this shared server, and only download the species you need.
 
 ## Versions and the manifest
 
@@ -77,11 +79,13 @@ AmP identifies each version of an entry by its acceptance date: the current vers
 
 Each folder has an `amp_manifest.csv`, which can be opened in Excel or read with `read_manifest()`:
 
-| species | amp_version | files | downloaded_at | source_url |
-|---|---|---|---|---|
-| Danio_rerio | 20180809 | mydata_Danio_rerio.m;results_Danio_rerio.mat | 2026-11-06T10:15:02+00:00 | https://www.bio.vu.nl/.../entries/Danio_rerio/ |
+| species | amp_version | files | downloaded_at | source_url | complete |
+|---|---|---|---|---|---|
+| Danio_rerio | 20180809 | mydata_Danio_rerio.m;pars_init_Danio_rerio.m;... | 2026-11-06T10:15:02+00:00 | https://www.bio.vu.nl/.../entries/Danio_rerio/ | yes |
 
 Use `species` and `amp_version` to cite what you used. The version is read from `metaData.date_acc` in the `mydata` or `results` file, so it is blank if the folder has neither.
+
+`complete` is `yes` when the last download of every file in the entry finished without errors, and `no` when some file failed. It is blank for species downloaded only with `files=`, and in manifests written by DEBtoolPyIF before this column existed; those species are checked with AmP again on the next download.
 
 The `allStat` table has its own row. It has no acceptance date, so its version is the date AmP last published the file.
 

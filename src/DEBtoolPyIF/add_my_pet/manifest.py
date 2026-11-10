@@ -1,6 +1,7 @@
 """Folders of Add-my-Pet files and the manifest recording what each one contains.
 
-Every folder holds one ``amp_manifest.csv`` with a row per species: its AmP version, files, download time and source.
+Every folder holds one ``amp_manifest.csv`` with a row per species: its AmP version, files, download time, source and
+whether its last full download finished without errors.
 The AmP version is the entry's acceptance date as ``yyyymmdd``, the same date AmP uses to name and archive its
 entries (``<species>_<yyyymmdd>.zip``), so it can be cited and looked up on the AmP website.
 """
@@ -22,7 +23,7 @@ import scipy.io
 
 CACHE_DIR_ENV_VAR = "DEBTOOLPYIF_AMP_CACHE"
 MANIFEST_FILE_NAME = "amp_manifest.csv"
-MANIFEST_COLUMNS = ("species", "amp_version", "files", "downloaded_at", "source_url")
+MANIFEST_COLUMNS = ("species", "amp_version", "files", "downloaded_at", "source_url", "complete")
 ALLSTAT_ENTRY = "allStat"
 
 _FILE_SEPARATOR = ";"
@@ -41,6 +42,8 @@ class ManifestEntry:
     source_url: str
     amp_version: str | None = None
     downloaded_at: str | None = None
+    # Whether a download of every file in the entry finished without errors; None keeps the row's value
+    complete: bool | None = None
 
 
 def get_cache_dir() -> Path:
@@ -146,8 +149,23 @@ def update_manifest(folder: Path, entries: Iterable[ManifestEntry]) -> None:
             "files": _FILE_SEPARATOR.join(sorted(files - {""})),
             "downloaded_at": entry.downloaded_at or previous.get("downloaded_at", ""),
             "source_url": entry.source_url,
+            "complete": previous.get("complete", "") if entry.complete is None else ("yes" if entry.complete else "no"),
         }
     _write_manifest(folder, rows)
+
+
+def read_complete_species(folder: Path) -> dict[str, dict[str, str]]:
+    """Return the manifest rows of species whose last full download finished without errors, keyed by species."""
+    return {
+        row["species"]: row
+        for row in read_manifest(folder).to_dict("records")
+        if row.get("complete") == "yes"
+    }
+
+
+def split_manifest_files(value: str) -> list[str]:
+    """Split the ``files`` value of a manifest row into file names."""
+    return [file_name for file_name in value.split(_FILE_SEPARATOR) if file_name]
 
 
 def clear_cache(species: str | Iterable[str] | None = None) -> list[Path]:

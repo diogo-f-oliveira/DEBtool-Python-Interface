@@ -332,6 +332,41 @@ def test_download_amp_database_records_all_species_in_one_manifest(tmp_path):
     assert manifest.loc["Other_species", "amp_version"] == "20200102"
 
 
+def test_rerun_skips_species_complete_in_the_manifest_without_contacting_amp(tmp_path):
+    client = make_client(species_routes())
+    assert download_amp_collection(tmp_path, [SPECIES], progress=False, client=client)[SPECIES].ok
+    assert read_manifest(tmp_path).set_index("species").loc[SPECIES, "complete"] == "yes"
+    client.session.requests.clear()
+
+    reports = download_amp_collection(tmp_path, [SPECIES], progress=False, client=client)
+    report = download_species(SPECIES, tmp_path, client=client)
+
+    assert client.session.requests == []
+    assert set(reports[SPECIES].files.values()) == {DownloadStatus.SKIPPED_EXISTS}
+    assert set(report.files) == set(reports[SPECIES].files)
+
+    # check_update still checks every species for newer files
+    download_amp_collection(tmp_path, [SPECIES], check_update=True, progress=False, client=client)
+    assert client.session.requests
+
+
+def test_rerun_downloads_species_that_were_incomplete_or_lost_files(tmp_path):
+    routes = species_routes()
+    predict = routes.pop(species_url(f"predict_{SPECIES}.m"))
+    client = make_client(routes)
+    download_amp_collection(tmp_path, [SPECIES], progress=False, client=client)
+    assert read_manifest(tmp_path).set_index("species").loc[SPECIES, "complete"] == "no"
+
+    client.session.routes[species_url(f"predict_{SPECIES}.m")] = predict
+    reports = download_amp_collection(tmp_path, [SPECIES], progress=False, client=client)
+    assert reports[SPECIES].files[f"predict_{SPECIES}.m"] is DownloadStatus.DOWNLOADED
+    assert read_manifest(tmp_path).set_index("species").loc[SPECIES, "complete"] == "yes"
+
+    (tmp_path / SPECIES / f"run_{SPECIES}.m").unlink()
+    reports = download_amp_collection(tmp_path, [SPECIES], progress=False, client=client)
+    assert reports[SPECIES].files[f"run_{SPECIES}.m"] is DownloadStatus.DOWNLOADED
+
+
 def test_client_spaces_requests_apart_across_calls(monkeypatch):
     sleeps = []
     monkeypatch.setattr("DEBtoolPyIF.add_my_pet.client.time.sleep", sleeps.append)

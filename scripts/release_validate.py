@@ -333,25 +333,19 @@ def run_example(example_path: Path, repo_root: Path, output_root: Path) -> dict:
     output_folder = output_root / example_name
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    original_output_folder = tier_module.ESTIMATION_FOLDER
-    tier_module.ESTIMATION_FOLDER = str(output_folder)
-
-    try:
-        data = data_module.load_data(str(example_path / "data"))
-        multitier = tier_module.create_tier_structure(data, matlab_session="auto")
-        estimation_module.run_multitier_estimation(
-            multitier,
-            estimation_settings=estimation_settings,
-        )
-        tier_summaries = verify_outputs(multitier, output_folder)
-        return {
-            "example_name": example_name,
-            "estimation_mode": estimation_mode,
-            "output_folder": str(output_folder.resolve()),
-            "tier_summaries": tier_summaries,
-        }
-    finally:
-        tier_module.ESTIMATION_FOLDER = original_output_folder
+    data = data_module.load_data(str(example_path / "data"))
+    multitier = tier_module.create_tier_structure(data, matlab_session="auto", output_folder=output_folder)
+    estimation_module.run_multitier_estimation(
+        multitier,
+        estimation_settings=estimation_settings,
+    )
+    tier_summaries = verify_outputs(multitier, output_folder)
+    return {
+        "example_name": example_name,
+        "estimation_mode": estimation_mode,
+        "output_folder": str(output_folder.resolve()),
+        "tier_summaries": tier_summaries,
+    }
 
 
 def main() -> int:

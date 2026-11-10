@@ -6,6 +6,8 @@ Its most mature current capability is multitier DEB parameter estimation across 
 
 The package also provides template-based generation of DEBtool species files (`mydata`, `pars_init`, `predict`, `run`) that support these workflows while preserving DEBtool naming and structure conventions. Broader AmP/species estimation support is still under development for future versions.
 
+The experimental `add_my_pet` subpackage downloads entries and parameter sets from the [Add-my-Pet](https://www.bio.vu.nl/thb/deb/deblab/add_my_pet/) collection, without MATLAB.
+
 ## Learn More
 
 The multitier workflow estimates DEB parameters sequentially across a hierarchy, from broader tiers to more specific ones. In practice, this lets users combine information from higher-level groups with more specific subgroup or individual data, so lower-tier fits start from a stable baseline instead of estimating every parameter from scratch.
@@ -17,22 +19,107 @@ You can find more details on the multitier workflow and its implementation in [`
 For a compact map of the source tree and module responsibilities, see [`docs/PACKAGE_STRUCTURE.md`](docs/PACKAGE_STRUCTURE.md).
 For a concrete example of a multitier DEB estimation, see [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/). 
 
-## Quick Start Imports
+## Quick Start
 
-For the main multitier workflow, the package now exposes a curated top-level API:
-
-```python
-from DEBtoolPyIF import DataCollection, MultiTierStructure, TierEstimator, TierHierarchy
-```
-
-Concrete observation types remain grouped under `DEBtoolPyIF.data_sources`, e.g.:
+A multitier estimation needs four things for each tier: its data, where its entities sit in the hierarchy, the parameters it estimates, and templates for the four DEBtool species files. The main classes are available from the top-level package, and data source types from `DEBtoolPyIF.data_sources`.
 
 ```python
-from DEBtoolPyIF.data_sources import (
-    TimeFeedGroupDataSource,
-    TimeWeightEntityDataSource,
+from pathlib import Path
+
+from DEBtoolPyIF import (
+    CopyFileTemplate,
+    DataCollection,
+    EstimationTemplates,
+    MultiTierStructure,
+    MultitierMyDataSubstitutionTemplate,
+    RegistryMultitierParsInitProgrammaticTemplate,
+    RestartingNelderMead,
+    TierHierarchy,
 )
+from DEBtoolPyIF.data_sources import TimeWeightEntityDataSource
+
+species_name = "My_species"
+tier_names = ["population", "individual"]
+template_folder = Path("templates")
+
+# 1. Data: one DataCollection per tier
+weights = TimeWeightEntityDataSource("weights.csv", id_col="id", weight_col="weight", date_col="date")
+data = {
+    "population": DataCollection(tier="population", data_sources=[]),
+    "individual": DataCollection(tier="individual", data_sources=[weights]),
+}
+
+# 2. Hierarchy: the entity each individual belongs to in the tier above
+hierarchy = TierHierarchy.from_paths(
+    tier_names=tier_names,
+    paths=[{"population": "all", "individual": entity_id} for entity_id in sorted(weights.entities)],
+)
+
+# 3. Parameters estimated at each tier; lower tiers inherit the rest
+tier_pars = {
+    "population": ["z", "v", "kap", "p_M"],
+    "individual": ["z"],
+}
+
+# 4. Templates for the four DEBtool species files of each tier
+estimation_templates = {
+    tier: EstimationTemplates(
+        mydata=MultitierMyDataSubstitutionTemplate(source=template_folder / tier / f"mydata_{species_name}.m"),
+        pars_init=RegistryMultitierParsInitProgrammaticTemplate(model="std"),
+        predict=CopyFileTemplate(template_folder / tier / f"predict_{species_name}.m"),
+        run=RestartingNelderMead(simplex_size=0.25),
+    )
+    for tier in tier_names
+}
+
+multitier = MultiTierStructure(
+    species_name=species_name,
+    entity_hierarchy=hierarchy,
+    data=data,
+    tier_pars=tier_pars,
+    estimation_templates=estimation_templates,
+    output_folder="multitier",
+)
+
+# Estimate tier by tier, from the most general to the most specific
+estimation_settings = dict(n_runs=3, n_steps=50, n_evals=50000, pars_init_method=2,
+                           results_output_mode=0, tol_simplex=1e-4, tol_restart=1e-4)
+multitier.tiers["population"].estimate(
+    estimation_settings=estimation_settings,
+    initial_pars={"z": 13, "v": 0.05, "kap": 0.97, "p_M": 80},
+)
+multitier.tiers["individual"].estimate(estimation_settings=estimation_settings)
 ```
+
+Each tier writes its parameters, errors and metadata to `output_folder`. Load them later without rebuilding the workflow:
+
+```python
+from DEBtoolPyIF import MultiTierResults
+
+results = MultiTierResults.from_folder(output_folder="multitier", species_name="My_species")
+```
+
+About the templates:
+
+- `mydata` and `run` generation are the most mature. A starting `mydata` source with every placeholder is bundled at `DEBtoolPyIF/multitier/resources/generic/mydata_template.m`.
+- `pars_init` generation is usable but still evolving. `RegistryMultitierParsInitProgrammaticTemplate` builds the file from the parameters of a typified model (`std` or `stx`), and you can add your own parameter definitions.
+- `predict` is specific to each workflow, so it is copied as written. A starting point with the multitier loop structure is bundled at `DEBtoolPyIF/multitier/resources/generic/predict_template.m`.
+
+For a complete, runnable workflow see [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/), and for how templates and sections work see [`docs/parameter_estimation/TEMPLATE_GENERATION.md`](docs/parameter_estimation/TEMPLATE_GENERATION.md).
+
+## Add-my-Pet (experimental)
+
+`DEBtoolPyIF.add_my_pet` downloads species files and parameter sets from the Add-my-Pet collection over HTTP, so it does not need MATLAB. It needs the `amp` extra (see [Installation](#installation)).
+
+```python
+from DEBtoolPyIF.add_my_pet import download_species, fetch_species_parameters
+
+download_species("Danio_rerio", "amp")  # mydata, pars_init, predict, run and results files
+results = fetch_species_parameters("Danio_rerio", "amp")
+results.to_frame()  # value, free, units and label of each parameter
+```
+
+This subpackage is experimental, and its functions may change in later releases. The Add-my-Pet server can stop accepting connections after many requests, so please download only the species you need. See [`docs/ADD_MY_PET.md`](docs/ADD_MY_PET.md) for folders, versions and large downloads.
 
 ## Installation
 

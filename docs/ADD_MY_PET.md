@@ -1,5 +1,7 @@
 # Add-my-Pet Integration
 
+> **Experimental.** `add_my_pet` is new in 0.3.0, and its functions may change in later releases. The delay between requests to the AmP server (0.5 s) has not been tested against the server's limits yet; see [Large downloads](#large-downloads).
+
 `DEBtoolPyIF.add_my_pet` fetches and reuses content from the [Add-my-Pet (AmP)](https://www.bio.vu.nl/thb/deb/deblab/add_my_pet/) collection. It only needs internet access: files are downloaded over HTTP and `.mat` files are read with SciPy, so no MATLAB session is required.
 
 ## Installation

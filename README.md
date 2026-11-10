@@ -20,7 +20,7 @@ For a compact map of the source tree and module responsibilities, see [`docs/PAC
 
 ## Quick Start
 
-A multitier estimation needs four things for each tier: its data, where its entities sit in the hierarchy, the parameters it estimates, and templates for the four DEBtool species files. The runnable example in [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/) sets these up for a three-tier Angus cattle estimation (breed, diet and individual), one file per step:
+A multitier estimation needs four things for each tier: its data, where its entities sit in the hierarchy, the parameters it estimates, and templates for the four DEBtool species files. The [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/) folder is a complete project for a three-tier Angus cattle estimation (breed, diet and individual) that you can copy and adapt to your own data. Each file covers one step:
 
 | File | What it sets up |
 | --- | --- |
@@ -29,13 +29,7 @@ A multitier estimation needs four things for each tier: its data, where its enti
 | [`templates.py`](examples/Bos_taurus_Angus/templates.py) | The `estimation_templates`: one `EstimationTemplates` per tier for the `mydata`, `pars_init`, `predict` and `run` files. |
 | [`estimation.py`](examples/Bos_taurus_Angus/estimation.py) | Estimates tier by tier, from the most general to the most specific, and loads saved results with `MultiTierResults`. |
 
-From a clone of the repository, run it with:
-
-```console
-python -m examples.Bos_taurus_Angus.estimation --settings fast
-```
-
-See the [example README](examples/Bos_taurus_Angus/README.md) for the available settings.
+The folder also holds the example data, the `mydata` and `predict` sources, and a [README](examples/Bos_taurus_Angus/README.md) on how to run it.
 
 About the templates:
 

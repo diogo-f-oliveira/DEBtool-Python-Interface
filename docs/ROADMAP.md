@@ -1,0 +1,375 @@
+# DEBtoolPyIF Development Plan
+
+This document captures the current development direction for `DEBtoolPyIF` based on the present package state, the multitier methodology paper, and project priorities discussed after reviewing the codebase.
+
+The package is still pre-1.0. The main goal is to make the multitier workflow reliable, easier to use, and broad enough to support a near-term major release without breaking the current example-driven workflow.
+
+## Guiding Priorities
+
+- Preserve compatibility with the existing multitier workflow and example structure unless a deliberate interface change is made.
+- Prioritize reliability, clear APIs, and reproducible estimation outputs over experimental methodology extensions.
+- Focus first on features that improve estimation quality and make multitier estimation easier to inspect and iterate on.
+- Treat more advanced statistical extensions as future work unless they directly support the core package workflow.
+
+## Release Plan
+
+Features planned for the next releases. A patch release only fixes bugs and changes internals or documentation; anything that adds public API goes into the next minor release. Details for each item are in the linked sections below.
+
+### 0.3.1
+
+- [ ] Make the examples self-contained: replace imports of the form `from examples.Bos_taurus_Angus.data import ...` with relative imports, so an example folder runs wherever it is copied (see "Project setup and downloadable examples"). No public API change.
+- [ ] Keep unit tests isolated from the example folders, as `AGENTS.md` requires. `test_angus_registry_adds_non_default_and_example_specific_definitions` in `tests/unit/test_estimation_files_unit.py` imports `build_angus_parameter_registry` from the Angus example. Either move it to `tests/integration/`, where tests check the examples, or rewrite it to build a registry with the same extra definitions inside the test. Do this together with the import change above, since that change touches the same import.
+
+### 0.4.0
+
+1. [ ] Project setup command, `create_project` (top priority; see "Project setup and downloadable examples").
+2. [ ] Example download command, `download_example` (see "Project setup and downloadable examples").
+3. [ ] Single-species (regular Add-my-Pet) estimation and the Danio rerio example (see "Single-species (regular Add-my-Pet) estimation" under "Future Minor Versions").
+
+## Immediate Priorities
+
+These are the highest-priority items to add.
+
+### 1. Better documentation and examples for the multitier workflow
+
+The package currently has some documentation and examples, but they are still limited and example-oriented. Improving the documentation and examples should be a top priority to make the multitier workflow more accessible to users. This includes:
+
+- [ ] Improving the description of the example on Bos taurus Angus with at least a README file in the example folder that explains the workflow and how to run it.
+- [x] Writing a document explaining the overall logic of AmP estimation, which will be useful for both agents and users
+- [x] Writing a document explaining the multitier estimation methodology and the steps involved in the workflow, including how to define data sources, create tier structures, and run estimations. This document should also point to the relevant code and examples in the package to help users understand how to use the package effectively.
+- [x] Adding comments in the generic template files to explain the purpose of each section and how it relates to the multitier estimation process, making it easier for users to understand and modify the templates as needed.
+- [ ] Providing more examples that cover different types of data sources, tier structures, and estimation scenarios to help users see how the package can be applied to a variety of use cases.
+
+### 2. Project setup and downloadable examples
+
+Today the only easy way to run or modify an example is to clone the repository. Examples are not in the wheel, and GitHub cannot download a single folder. Two commands in the package API would fix this. They share the code that copies files into a folder, but they get their files from different places:
+
+- `create_project(species, tiers, dest)` writes a new multitier project skeleton from files shipped in the wheel. It works offline and always matches the installed version. This is the most useful of the two, also for our own work, and is planned first for 0.4.0.
+- `download_example(name, dest)` (with `list_examples()`) downloads a complete example from GitHub, such as `Bos_taurus_Angus`, so users can run and inspect it.
+
+`create_project`:
+
+- [ ] Writes the four example-style files (`data.py`, `tier_structure.py`, `templates.py`, `estimation.py`) with stubs for the given species and tier names.
+- [ ] Copies the bundled generic `mydata_template.m` and `predict_template.m` from `multitier/resources/generic/` into a templates folder for each tier.
+- [ ] Refuses to write into a folder that is not empty unless `overwrite=True`.
+- [ ] Optionally a thin command-line wrapper (`debtoolpyif new-project ...`) once the Python function is stable.
+
+`download_example`:
+
+- [ ] Downloads GitHub's automatic archive for the tag `v{__version__}` and extracts only `examples/<name>/`. Pinning to the installed version keeps the example in step with the API. The archive is a single request with no GitHub API rate limits and needs only the standard library (`urllib`, `zipfile`), not the `amp` extra. Release tagging is already part of the release workflow, so no extra release assets are needed.
+- [ ] Accepts an explicit `ref=` argument for development installs, whose version has no matching tag.
+- [ ] Refuses to write into a folder that is not empty unless `overwrite=True`, and prints the command to run the example when it finishes.
+- [ ] Prerequisite (0.3.1): the example must run outside the repository. The Angus files import each other as `examples.Bos_taurus_Angus.*`, which only works from the repository root. Use relative imports (`from .data import load_data`) and run the example as `python -m Bos_taurus_Angus.estimation` from the folder above it. Plain imports (`from data import load_data`) would also work outside the repository, but the integration tests load every example in one session, so modules with generic names such as `data` and `templates` from different examples would collide.
+
+## Important Improvements To Existing Functionality
+
+These areas are already implemented in some form, but should be improved to make the package more capable and easier to maintain.
+
+### 1. Better Control over Dataset Weights
+
+The current implementation of dataset weighting is basic and does not allow for fine-grained control over how different datasets contribute to the estimation process. It depends solely on the user to create code in the template files to set dataset weights. This should be simplified and made more flexible by:
+
+- Adding capabilities to specify dataset weights directly in the Python API, with sensible defaults.
+- Update generic template files to include logic for applying these weights without requiring users to write custom code in the templates.
+- Providing clearer documentation and examples on how to use dataset weights effectively in multitier estimation.
+
+### 2. Richer Pseudo-Data And Constraint Handling
+
+Pseudo-data inheritance is already implemented, but the current interface is still narrow.
+
+Future improvements should include:
+
+- better control of pseudo-data weights,
+- easier overrides for specific entities or parameters,
+- clearer APIs for tier-to-tier anchoring,
+- groundwork for later uncertainty-aware constraints if needed.
+
+An integration of pseudo-data with `ParameterDefinition` classes has already been made, but pseudo-data can also be defined from compound parameters. Creating classes for compound parameter definitions and integrating pseudo-data with those classes would be a useful next step to make pseudo-data handling more flexible and integrated into the overall parameter definition framework.
+
+### 3. Better Data-Source Automation And Generation
+
+The package still needs more work on data sources and on how their generation is automated.
+
+This should be one of the next priorities after adding more functionality for results. In particular, the package should move toward a clearer and more reliable workflow for:
+
+- defining data sources,
+- generating estimation-ready datasets from those sources,
+- reducing manual wiring between Python-side data definitions and MATLAB estimation files,
+- supporting a broader range of tier data setups without relying on ad hoc example-specific code.
+
+This area matters both for usability and for correctness, because the data-source layer is the foundation of the generated multitier estimation inputs.
+
+### 4. Automatic Data Conversion between Python and MATLAB
+
+The package currently relies on users to ensure that data passed from Python to MATLAB is in the correct format, especially for numeric arrays. This can lead to issues with missing values, infinite values, or other special cases that need to be represented correctly in MATLAB. There are internal functions to handle most of this conversion, but they are not yet fully integrated into the user-facing API. Next steps would be to:
+
+- Develop a more robust data conversion layer that automatically handles the conversion of Python data structures to MATLAB-compatible formats, including proper handling of `NaN`, `Inf`, and `-Inf` values.
+- Integrate this conversion layer into the API so that users can pass data in native Python formats without worrying about MATLAB compatibility.
+- Provide clear documentation and examples on how the data conversion works and how users can ensure their data is correctly formatted for MATLAB estimation.
+- Update and improve the existing test suite to cover edge cases in data conversion, ensuring that the package can handle a wide range of input data without errors.
+
+The current conversion functions already check the input data types and raise errors when they do not match expected formats. With this improvement, we are likely close to a generalized converter function which could be made available to users. However, for internal code development, these should not be used. Instead, the internal code should use the expected data formats directly.
+
+### 5. Automated `pars_init.m` Generation
+
+The `pars_init.m` file is currently generated from a template created by the user. Parameter values are defined in code and are then filled by the template. Given the simple structure of the `pars_init.m` file, it should be possible to automate its generation based on the parameters defined in the Python code. This would reduce the amount of manual work required to set up the estimation and ensure that the `pars_init.m` file is always consistent with the parameters defined in Python. Steps to achieve this include:
+
+- [x] Define a clear structure for how parameters are defined in Python, including any necessary metadata such as parameter names, values, and sources. 
+- [x] Create classes to host estimated parameters and their metadata, which can be used to generate the `pars_init.m` file automatically.
+- [x] Core parameters should be defined in the package code, but base classes should be made available for users to define their own parameters as needed, with clear APIs for how to specify parameter values and metadata.
+- [x] Create a `Section` class that renders parameters in the correct format for the `pars_init.m` file
+- [x] Create a `pars_init.m` template class that generates the template file from the parameter registry
+
+This has been mostly implemented, with some small improvements in the pipeline. However, the interface between the ParameterRegistry defined in the template and the estimation of tier parameters is not completed yet. Here are some issues we need to solve:
+
+- [ ] Which object decides which parameters are actually rendered in the template file? The intended behavior should be that the template file defines all parameters needed for estimation, with the `tier_pars` object defining which are estimated and which are fixed. Initial values are either default values or those estimated in the previous tier. The `pars_init.m` template should then render all parameters, but the estimation process should only update the values of those defined in `tier_pars` and set the `free.(par)` value. 
+- [ ] Should a `ParameterRegistry` class be used to host `tier_pars`? To simplify user API, this object could be generated from a list.
+- [ ] The current behavior does not set `free.(tier_par) = 0` which means there are parameters which are not estimated but are still free to vary during estimation. This should be fixed so that only the entity tier parameters are free. This likely requires a new ParsInitSection class for rendering parameters which sets the free/fixed status of parameters based on the context object. 
+
+Other improvements to consider include:
+- [ ] For estimations with a single entity, the parameters may not need to be duplicated with the entity name as a suffix. This would require handling the internal logic for fetching parameter values and loading results, as well as updating the `predict.m` templates to use the correct parameter names. 
+- [ ] If the above is implemented (or even if not), then an automated MATLAB function for setting tier parameters could be very useful for users.
+- [ ] The format of the `pars_init.m` file is very heavy, with a lot of code duplication for units and labels. This could be automated in some ways, but one simple improvement which would help readability is to have the free/fixed status of parameters be determined by the `tier_pars` object, rather than requiring users to set `free.(par)` in the template. Alternatively, another variable could be used to indicate which parameters are estimated, and the template could set `free.(par)` based on that variable. This would reduce the amount of manual code required in the template and make it clearer which parameters are being estimated.
+
+### 6. Automated `run.m` generation for different optimization algorithms
+
+Generation for `run.m` files is moving from handwritten example templates toward registry-backed Python generation. The base structure now separates the generic DEBtool entry point from optimizer-specific policy, while algorithm templates can define different run strategies such as Nelder-Mead, Restarting Nelder-Mead, Restarting Alternating Nelder-Mead, or future MultiCalib4DEB work. Steps to achieve this include:
+
+- [x] Define a clear base structure for the `run.m` file, including setup, option initialization, and the `estim_pars` entry point.
+- [x] Create `RunSection` classes for reusable run blocks such as setup, estimation option initialization, the estimation call, and prediction saving.
+- [x] Create `RunProgrammaticTemplate` and `RunSubstitutionTemplate` classes backed by the `RunSection` registry.
+- [x] Add typed `estim_options` objects so run-option rendering uses explicit numeric and string conversion with option-owned validation.
+- [x] Add an initial `NelderMead` algorithm template as the first programmatic optimizer-specific run template.
+- [x] Complete `RestartingNelderMead` behavior using the same section and option architecture.
+- [x] Add Restarting Alternating Nelder-Mead template using the same section and option architecture.
+- [ ] Add MultiCalib4DEB-oriented templates once the required algorithm behavior is specified.
+- [ ] Future variants of Nelder-Mead with decaying simplex sizes or time-based stopping criteria.
+
+### 7. Automated `mydata.m` generation
+
+The `mydata.m` file is currently generated from a template created by the user. Given the structure of the `mydata.m` file, it should be possible to automate its generation based on the data sources defined in Python and species metadata defined by the user. This would reduce the amount of manual work required to set up the estimation and ensure that the `mydata.m` file is always consistent with the data sources and species metadata defined in Python. Steps to achieve this include:
+
+- [x] Define a clear structure for how data sources and species metadata are defined in Python, including any necessary metadata such as data source names, values, and sources.
+- [x] Create `Section` classes that render `mydata.m` code snippets for different functionalities of the `mydata.m` file
+- [x] Integrate with `DataSource` classes to automatically generate the necessary data definitions in the `mydata.m` file based on the data sources defined in Python.
+- [x] Create a generic template class for `mydata.m` generation 
+
+We have built the entire rendering pipeline for `mydata.m` generation, but the API is not very user-friendly yet. The next steps would be to:
+- [ ] Define simplified template classes where users supply only the python objects and rendering is mostly automated. The `mydata.m` templates are usually separated into data and metadata sections. We need to increase functionality for both. When all functionality is implemented, the template class should be easy to use.
+- [ ] Data should be rendered through `DataSource` classes, but until we have classes for zero-variate data, this block needs to be defined by hand in the template. Implementing zero-variate data source classes is therefore a requirement for this.
+- [ ] For metadata, only ecocodes and biblist are still not automated. For ecocodes, the class is easy to generated, although we'd want to build a correspondence between the ecocodes and their meaning so they are easier to use. For biblist, ideally, we'd generate the code from a .bib file, with bibkeys matching those of the `DataSource` objects. This would require a bit of work to parse the .bib file and generate the necessary code, but it would make it much easier for users to manage their references and ensure that they are correctly linked to the data sources.
+
+The remaining weight and pseudodata sections of the template have baseline functionality which should be sufficient for a simplified template class once they are transformed into easy-to-use class arguments.
+
+
+### 8. Better Visualization And Comparison Tooling
+
+The package has notebook visualization utilities, but they are still limited and example-oriented.
+
+Useful next improvements include:
+
+- better comparison views across runs,
+- parameter distribution plots, with values for all tiers and entities
+- tier-to-tier deviation summaries,
+- candidate ranking dashboards,
+- cleaner figure generation for paper-style analysis.
+
+### 9. Evaluate how extra info should be incorporated into multitier estimation
+
+Currently, the package supports a simple form of extra information in the estimation for code not based on DataSource classes but that users want to generate programmatically. This is done by allowing users to pass a dictionary of extra info to the `estimate` method of `TierEstimator`, which is then passed to the MATLAB templates for use in estimation. This should be replace by a more structured version which includes metadata saving and better integration with the rest of the package. Next steps include:
+
+- Define a clear structure for the extra information that can be passed to the estimation process, including what types of information are expected and how they should be formatted.
+- Store both raw and converted versions of the extra information in the estimation results for reproducibility and easier inspection.
+- Design guidelines for users to prefer using custom DataSource classes for defining extra information when possible, and provide clear documentation and examples on how to do this effectively.
+
+Alternatively, due to Template classes, extra info should be removed. Any additional variables that users which to define programmatically should be defined within `Section` classes and then rendered in the template files. This even allows for the custom sections to render based on the context for the current tier estimation being rendered.
+
+
+### 10. Selective Reruns And Partial Tier Estimation
+
+Partial tier estimation can now be requested by passing a subset of tier entities into `TierEstimator.estimate(...)`.
+The current implementation resolves estimation targets conservatively:
+
+- standalone requested entities are estimated on their own,
+- requested entities that belong to a group expand to the full group estimation target,
+- the user receives a warning listing the additional entities that must be estimated with that group.
+
+This is an intentional interim behavior. Truly estimating only a subset of entities within a grouped run requires updating the generated MATLAB templates so shared group data can be included, but the estimation logic only runs for the requested entities. This requires fixing the parameters of non-estimated entries. Implementation steps would be:
+
+- [ ] Improve functionality of `TierEstimator.estimate(...)` to allow users to specify which entities to estimate while ensuring that the necessary data for those entities is still included in the estimation process.
+- [ ] Update `MultitierGenerationContext` to generate list of parameters estimated for each entity.
+- [ ] Add logic to the estimation process to fix parameters of non-estimated entities based on the generated list, ensuring that the estimation runs correctly even when only a subset of entities is being estimated.
+- [ ] Update metadata reporting to clearly indicate which entities were estimated and which were fixed, along with the rationale for any fixed parameters.
+- [ ] Provide clear documentation and examples on how to use selective reruns and partial tier estimation effectively, including any limitations or considerations users should be aware of when using this feature.
+
+Another dimension of partial tier estimation is to not estimate all parameters of a given entity. Currently, the `tier_pars` are defined at the tier level, meaning that all parameters are estimated for all entities in that tier. Depending on the available data for each entity, it may be desirable to estimate only a subset of parameters for certain entities. This would require:
+
+- [ ] Updating the `tier_pars` structure to allow for entity-specific parameter definitions
+- [ ] Modifying the estimation logic to handle cases where only a subset of parameters is estimated for certain entities, while others are fixed based on previous tiers or default values.
+- [ ] Ensuring that the generated MATLAB templates correctly reflect the entity-specific parameter estimation setup, including any necessary adjustments to the `pars_init.m` file. A programmatic setting of free/fixed status for parameters based on the `tier_pars` object would be particularly useful here to reduce manual code in the templates.
+- [ ] Providing clear documentation and examples on how to use entity-specific parameter estimation effectively, including any limitations or considerations users should be aware of when using this feature.
+
+
+### 11. Better print outputs during multitier estimation
+
+Currently, only the relative errors on each dataset in each tier are printed during estimation. It would be useful to have more detailed print outputs during estimation to help users understand the progress of the estimation and identify any issues. This could include:
+
+- [x] printing the current tier and entities being estimated,
+- [ ] adding an option to print a parameter table after completing the tier estimation
+- [x] printing the elapsed time at the start and end of the estimation of each tier entity
+
+## Future Pipeline
+
+These items are desirable, but not current core priorities.
+
+### 1. Data-source classes for zero-variate species data
+
+Species zero-variate data are currently handled by hardcoded template content. This should be moved toward a more uniform data-source class that can be used for both individual and species-level data, with clearer APIs for defining and generating zero-variate datasets. This would help make the top-tier data handling feel more integrated into the Python package API and reduce reliance on handwritten MATLAB templates for species-level data. Steps to achieve this include:
+
+- Defining a new data-source simplified class specifically for zero-variate species data, with methods for specifying the data and its associated metadata including sources.
+- Creating a specific DataCollection subclass for species-level data that can handle zero-variate datasets and integrate with the existing multitier structure or future species estimation pipelines.
+- Updating the template generation logic to use this new data-source class for species-level data, ensuring that the generated MATLAB files correctly reflect the data defined in Python.
+- Providing documentation and examples on how to use the new data-source class for species-level data, including how to define zero-variate datasets and how they fit into the overall estimation workflow.
+
+### 2. Simultaneous Estimation Formulations
+
+The paper discusses simultaneous estimation as an alternative formulation, but the package currently implements only the sequential multitier approach.
+
+Support for simultaneous estimation would be useful in the future, but it is not a short-term priority. The current focus should remain on making the sequential multitier workflow strong and ergonomic.
+
+### 3. Integration tests with generic multitier estimation template files
+
+We have updated the generic template files to cover all multiter estimation steps. We should leverage these templates to create integration tests that run through the full multitier estimation workflow using generated data and parameters. This will help ensure that the core workflow is reliable and that changes to the package do not break the expected estimation process. Examples are still useful, but the generic templates allow us to test edge cases in multitier formulations. Steps to achieve this include:
+
+- [ ] Create integration tests that use the generic template files to run through the full multitier estimation workflow, including data loading, tier structure creation, and estimation.
+- [ ] Use generated data and parameters in the tests to cover a variety of scenarios and edge cases in multitier estimation.
+- [ ] Ensure that the tests check for expected outputs and that any changes to the package do not break the core estimation workflow.
+- [ ] Update the test suite to include these integration tests and run them regularly to maintain confidence in the package's reliability.
+
+## Future Minor Versions
+
+These are planned directions for future minor releases, but not immediate priorities for the core multitier workflow.
+
+### 1. Automated Parameter-Set Search And Comparison
+
+The package currently requires `tier_pars` to be chosen manually before running the workflow. The paper, however, relies heavily on comparing alternative trial-level and individual-level parameter choices and then selecting among them using fit quality and biological plausibility.
+
+This should be added in a future minor version rather than in the immediate development phase.
+
+The package should eventually gain first-class support for:
+
+- defining candidate parameter subsets for one or more tiers,
+- running batch experiments over those combinations,
+- collecting results in a uniform format,
+- ranking or filtering candidates,
+- making it easy to compare tradeoffs across candidate tier parameterizations.
+
+### 2. More Complete Species Estimation File Generation
+
+A future minor version should improve support for generating species estimation files more systematically.
+
+This includes moving toward a cleaner and more uniform workflow for higher-tier and species-level datasets, instead of relying on hardcoded template content where possible.
+
+This work should help make top-tier data handling feel like part of the Python package API, not only part of handwritten MATLAB templates.
+
+#### Single-species (regular Add-my-Pet) estimation
+
+The generic `mydata`, `pars_init` and `run` template classes are meant to work for a regular Add-my-Pet estimation of one species, without tiers. A prototype on the local branch `feature/single-species` runs this end to end. It is not tested enough for 0.3.0 and adds public API, so it should go into 0.4.0 rather than a patch release. The Danio rerio example should ship only once the parts below are implemented.
+
+Possible implementation, as prototyped:
+
+- [ ] `SpeciesGenerationContext` (in `estimation_files/context.py`): a generation context with `full_pars_dict`, `free_pars` and `estimation_settings`, so generic templates render without `MultitierGenerationContext`.
+- [ ] `InitializeParametersSection` reads `context.free_pars` instead of the multitier-only `context.tier_pars`; `MultitierGenerationContext.free_pars` returns the tier parameters, so multitier output is unchanged.
+- [ ] A generic `write_estimation_files(estimation_templates, context)`, with `write_tier_estimation_files` kept as an alias.
+- [ ] Species-level data classes (`ZeroVariateData`, `UnivariateData`) and a `SpeciesDataSection` that renders them into `mydata.m`. Prototyped inside the example only; the package design belongs to "Data-source classes for zero-variate species data" under Future Pipeline.
+- [ ] `examples/Danio_rerio`: std-model estimation on mock data generated from known parameters, using `MyDataProgrammaticTemplate`, `RegistryParsInitProgrammaticTemplate`, `NelderMead` and a hand-written `predict`.
+
+Still needed before release:
+
+- [ ] Decide how species-level data sources relate to `DataCollection` (subclass, separate collection, or plain list of datasets).
+- [ ] Remove the need to include the empty multitier `GroupDataSection` and `EntityDataSection` in single-species `MyDataProgrammaticTemplate`s, for example with a species-specific required-section set.
+- [ ] A species-level results object (parameters, errors and predictions), analogous to `MultiTierResults`.
+- [ ] Automated biblist and ecoCode generation (see "Automated `mydata.m` generation").
+- [ ] Parameter registries for other typified models used in AmP (e.g. `abj`, which the real zebrafish entry uses).
+- [ ] Integration tests that run the single-species example in MATLAB, and real data for the example.
+
+### 3. Higher-Level Abstractions For `predict` Logic
+
+The current template-based approach works well, but `predict` files still require a lot of tier-specific MATLAB logic.
+
+This should be treated as future minor-version work. The goal is to reduce repeated hierarchy boilerplate by adding clearer abstractions or reusable generation patterns for common multitier structures.
+
+### 4. Add-my-Pet Integration
+
+Future minor versions should add functionality to work with Add-my-Pet.
+
+Planned directions include:
+
+- [x] fetching species files (`add_my_pet.download_species`, `download_amp_collection`),
+- [x] fetching parameter sets (`add_my_pet.fetch_species_parameters`, `fetch_allstat`),
+- [ ] using Add-my-Pet material as initialization or reference data (e.g. mapping `AmPResults.par` onto `ParameterDefinition` defaults for `pars_init` generation),
+- [ ] generating datasets or estimation inputs from Add-my-Pet resources,
+- [x] making it easier to bootstrap species workflows from existing Add-my-Pet content (`add_my_pet.bootstrap_species`; verbatim `CopyFileTemplate`s only, conversion into substitution templates is still manual).
+
+Next steps and known limitations of `add_my_pet`:
+
+- [ ] Convert AmP entries into editable templates. `bootstrap_species` only returns verbatim `CopyFileTemplate`s; a useful bootstrap needs `mydata`, `pars_init` and `run` turned into template objects that users can modify from Python, which requires parsing handwritten MATLAB files that do not follow a strict format. The `mydata` work overlaps with zero-variate data-source classes and automated `mydata.m` generation, and `predict` stays workflow-specific.
+- [ ] Carry data files with templates: `mydata` or `predict` may read extra files (14 of the 7,019 entries surveyed in a local copy), but estimation templates only write the four species files, so these entries fail if rendered into another folder.
+
+- [ ] Download a specific AmP version: `download_species(species, folder, version="yyyymmdd")`, fetching `<species>_<yyyymmdd>.zip` from `entries_zip/` or `entries_archive/`. The zips only hold the four source files, not `results_<species>.mat`, so loading parameters of an archived version needs a `pars_init` reader or a MATLAB run.
+- [x] Confirm a safe request rate for the AmP server: it stops accepting connections after many requests, with no error message or stated limit. The whole collection downloaded with the default 0.5 s delay, while 0.2 s got the connection blocked, so 0.5 s stays the default.
+- [ ] In-memory caching of loaded tables: every `fetch_allstat()` call re-reads the ~23 MB `allStat.mat` (several seconds). Keep the loaded table in memory, keyed on the file's modification time, so repeated calls in one session are instant.
+- [ ] Safe concurrent downloads across processes: two Python processes using one folder at the same time write the same temporary `.part` files and can overwrite each other's manifest updates. Use unique temporary names (and possibly a lock file) so parallel jobs can share a folder.
+
+This should eventually connect the package's multitier workflow with the broader DEB ecosystem in a practical way.
+
+### 5. Parallel Execution Of Independent Estimations
+
+The package already separates estimations by independent tier groups or entities, but it currently runs them serially.
+
+Support for parallel execution would be useful eventually where tiers contain independent runs, such as:
+
+- multiple diets,
+- multiple pens,
+- many individuals,
+- multiple candidate parameter combinations.
+
+This is a long-term priority. It is harder to implement safely than several other improvements, so it should come late in the roadmap. When it is eventually added, it should be done carefully so the output structure remains deterministic and easy to inspect.
+
+## Suggested Development Order
+
+The current recommended order of work is:
+
+1. better documentation and examples for the multitier workflow, starting with project setup and downloadable examples,
+2. better control over dataset weights,
+3. richer pseudo-data and constraint handling,
+4. better data-source automation and generation,
+5. automatic data conversion between Python and MATLAB,
+6. automated `pars_init.m` generation,
+7. automated `run.m` generation for different optimization algorithms,
+8. automated `mydata.m` generation,
+9. better visualization and comparison tooling,
+10. evaluate how extra info should be incorporated into multitier estimation,
+11. selective reruns and partial tier estimation.
+13. data-source classes for zero-variate species data,
+
+
+## Future minor-version work includes:
+1. future minor-version work on species-file generation 
+2. future minor-version work on Add-my-Pet integration,
+3. future minor-version work on automated parameter-set search, 
+4. future minor version on `predict` code generation, 
+5. long-term work on parallel execution.
+
+
+## Summary
+
+The near-term direction for `DEBtoolPyIF` is to make multitier estimation easier to run as a serious workflow:
+
+- better at producing strong results,
+- easier to compare,
+- easier to inspect,
+- easier to rerun,
+- easier to extend.
+
+The package already contains the essential multitier execution machinery. The next phase is to turn that machinery into a fuller research and development workflow while keeping broader automation, ecosystem integrations, and harder execution features on a staged roadmap.

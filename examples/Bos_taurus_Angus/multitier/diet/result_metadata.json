@@ -1,26 +1,26 @@
 {
-  "elapsed_duration_seconds": 6.497824,
-  "estimation_end_time": "2026-04-03T12:15:56.337676",
+  "elapsed_duration_seconds": 7.370562,
+  "estimation_end_time": "2026-06-21T18:55:04.318297",
   "estimation_iterations": [
     {
-      "elapsed_duration_seconds": 4.603204,
+      "elapsed_duration_seconds": 4.771508,
       "entity_list": [
         "CTRL"
       ],
-      "estimation_end_time": "2026-04-03T12:15:54.443056",
-      "estimation_start_time": "2026-04-03T12:15:49.839852",
+      "estimation_end_time": "2026-06-21T18:55:01.725986",
+      "estimation_start_time": "2026-06-21T18:54:56.954478",
       "estimation_target_name": "CTRL",
       "estimation_target_type": "entity",
       "relative_output_folder": "CTRL",
       "success": 1.0
     },
     {
-      "elapsed_duration_seconds": 1.595974,
+      "elapsed_duration_seconds": 2.183815,
       "entity_list": [
         "TMR"
       ],
-      "estimation_end_time": "2026-04-03T12:15:56.195040",
-      "estimation_start_time": "2026-04-03T12:15:54.599066",
+      "estimation_end_time": "2026-06-21T18:55:04.156888",
+      "estimation_start_time": "2026-06-21T18:55:01.973073",
       "estimation_target_name": "TMR",
       "estimation_target_type": "entity",
       "relative_output_folder": "TMR",
@@ -28,13 +28,29 @@
     }
   ],
   "estimation_settings": {
+    "n_evals": 50000,
     "n_runs": 10,
     "n_steps": 500,
     "pars_init_method": 2,
     "results_output_mode": 0,
+    "tol_restart": 0.0001,
     "tol_simplex": 0.0001
   },
-  "estimation_start_time": "2026-04-03T12:15:49.839852",
+  "estimation_start_time": "2026-06-21T18:54:56.947735",
+  "initial_parameter_values": {
+    "kap_P": {
+      "CTRL": 0.23817610163987085,
+      "TMR": 0.23817610163987085
+    },
+    "kap_X": {
+      "CTRL": 0.21712962240000422,
+      "TMR": 0.21712962240000422
+    },
+    "p_Am": {
+      "CTRL": 2133.9524997467324,
+      "TMR": 2133.9524997467324
+    }
+  },
   "schema_version": 2,
   "species_name": "Bos_taurus_Angus",
   "stable_output_files": [

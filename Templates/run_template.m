@@ -3,6 +3,8 @@
 
 clear;
 close all;
+
+% Add optional addpath(...) calls here before check_my_pet(pets).
 global pets
 
 pets = {'your_species_name'}; % Replace with the actual species name.
@@ -13,7 +15,6 @@ estim_options('default');
 estim_options('max_step_number', $n_steps);
 estim_options('max_fun_evals', 5e4);
 estim_options('simplex_size', 0.05);
-estim_options('filter', 0);
 tol_simplex = $tol_simplex;
 estim_options('tol_simplex', tol_simplex);
 

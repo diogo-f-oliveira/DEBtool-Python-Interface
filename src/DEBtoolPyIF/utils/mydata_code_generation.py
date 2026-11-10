@@ -67,13 +67,21 @@ def generate_dummy_variable_code(var_name, struct_name: str, converted_data, con
     return s
 
 
-def generate_tier_variable_code(var_name, converted_data, label, units='-', bibkey='', comment='',
-                                pars_init_access=False):
+def generate_struct_variable_code(var_name, converted_data, struct_name: str, label, units='-', bibkey='',
+                                  comment='', pars_init_access=False):
     return generate_dummy_variable_code(var_name=var_name, converted_data=converted_data,
                                         converted_label=convert_string_to_matlab(label),
                                         converted_units=convert_string_to_matlab(units),
-                                        struct_name='tiers', bibkey=bibkey, comment=comment,
+                                        struct_name=struct_name, bibkey=bibkey, comment=comment,
                                         pars_init_access=pars_init_access)
+
+
+def generate_tier_variable_code(var_name, converted_data, label, units='-', bibkey='', comment='',
+                                pars_init_access=False):
+    return generate_struct_variable_code(var_name=var_name, converted_data=converted_data,
+                                         struct_name='tiers', label=label, units=units,
+                                         bibkey=bibkey, comment=comment,
+                                         pars_init_access=pars_init_access)
 
 
 def is_valid_matlab_field_name(fieldname: str) -> bool:

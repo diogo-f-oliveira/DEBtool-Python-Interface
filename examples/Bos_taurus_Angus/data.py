@@ -1,6 +1,6 @@
 from typing import Dict
 from DEBtoolPyIF.data_sources.collection import DataCollection
-from DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource, DigestibilityEntityDataSource
+from DEBtoolPyIF.data_sources.entity import TimeWeightEntityDataSource, OMDigestibilityEntityDataSource
 from DEBtoolPyIF.data_sources.group import TimeFeedGroupDataSource
 
 DATA_FOLDER = 'examples/Bos_taurus_Angus/data'
@@ -12,7 +12,7 @@ def load_data(data_folder: str = DATA_FOLDER) -> Dict[str, DataCollection]:
     comment = 'Data from GreenBeef trial 1'
     prefix = 'Pen'
 
-    dmdds = DigestibilityEntityDataSource(
+    dmdds = OMDigestibilityEntityDataSource(
         f"{data_folder}/greenbeef_1_diet_info.csv",
         id_col='diet', dmd_col='digestibility', id_name='diet',
         bibkey=bibkey, comment=comment

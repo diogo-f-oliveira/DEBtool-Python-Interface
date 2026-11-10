@@ -43,7 +43,7 @@ for e=1:length(auxData.tiers.entity_list)
     a_JX = f * w_X .* p_Am * TC / mu_X / kap_X;
     
     %% Iterate for each individual that belongs to the tier sample
-    ind_list = auxData.tiers.tier_subtree.(diet_id).individual;
+    ind_list = auxData.tiers.entity_descendants.(diet_id).individual;
     for i=1:length(ind_list)
         ind_id = ind_list{i};
         
@@ -88,7 +88,8 @@ end
 prdData.entity_list = 10;
 prdData.tier_entities = 10;
 prdData.tier_groups = 10;
-prdData.tier_subtree = 10;
+prdData.entity_descendants = 10;
+prdData.entity_path = 10;
 prdData.groups_of_entity = 10;
 prdData.tier_pars = 10;
 

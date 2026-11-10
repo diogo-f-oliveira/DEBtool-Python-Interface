@@ -1,6 +1,6 @@
 import numpy as np
 
-from .base import GroupDataSourceBase
+from .base import CSVPath, GroupDataSourceBase
 from .entity import TimeWeightEntityDataSource
 from ..utils.data_conversion import convert_dict_to_matlab
 import pandas as pd
@@ -11,8 +11,8 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
     LABELS = ('Time since start', 'Daily food consumption of group during test')
     AUX_DATA_LABELS = 'Initial weights for the individuals in the group'
 
-    def __init__(self, csv_filename, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
-                 name=None, time_unit='d', feed_unit='kg',
+    def __init__(self, csv_filename: CSVPath, id_col, feed_col, date_col, weight_data_source: TimeWeightEntityDataSource,
+                 start_at_first=False, name=None, time_unit='d', feed_unit='kg',
                  prefix='', bibkey='', comment='', title='', id_name=''):
         super().__init__(csv_filename=csv_filename, id_col=id_col, name=name,
                          dep_var_col=feed_col, dep_var_unit=feed_unit,
@@ -28,6 +28,7 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
         self.comment = comment
         self.weight_data = weight_data_source
         self.weight_data.df[self.id_col] = self.weight_data.df[self.id_col].astype('str')
+        self.start_at_first = start_at_first
         if self.prefix:
             self.weight_data.df[self.id_col] = f"{self.prefix}_" + self.weight_data.df[self.id_col]
         self.create_entity_vs_group_df(self.weight_data)
@@ -38,12 +39,17 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
         initial_dates = []
         initial_weights = {}
         for entity_id in self.get_entity_list_of_group(group_id):
-            ind_weight_data = self.weight_data.get_entity_data(entity_id).copy()
-            ind_weight_data['diff'] = (ind_weight_data[self.weight_data.date_col] -
-                                       group_data.iloc[0][self.date_col]).apply(lambda d: d.days - 1)
-            ind_weight_data = ind_weight_data[ind_weight_data['diff'] < 0].sort_values('diff', ascending=False)
-            initial_weights[entity_id] = ind_weight_data.iloc[0][self.weight_data.weight_col]
-            initial_dates.append(ind_weight_data.iloc[0][self.weight_data.date_col])
+            entity_weight_data = self.weight_data.get_entity_data(entity_id).copy()
+            if self.start_at_first:
+                entity_weight_data.sort_values(by=self.weight_data.date_col, inplace=True)
+                initial_weights[entity_id] = entity_weight_data.iloc[0][self.weight_data.weight_col]
+                initial_dates.append(entity_weight_data.iloc[0][self.weight_data.date_col])
+            else:
+                entity_weight_data['diff'] = (entity_weight_data[self.weight_data.date_col] -
+                                        group_data.iloc[0][self.date_col]).apply(lambda d: d.days - 1)
+                entity_weight_data = entity_weight_data[entity_weight_data['diff'] < 0].sort_values('diff', ascending=False)
+                initial_weights[entity_id] = entity_weight_data.iloc[0][self.weight_data.weight_col]
+                initial_dates.append(entity_weight_data.iloc[0][self.weight_data.date_col])
 
         return group_data, initial_dates, initial_weights
 
@@ -64,7 +70,10 @@ class TimeFeedGroupDataSource(GroupDataSourceBase):
             feed_data = group_data[self.feed_col].values
             data = np.column_stack([time_data, feed_data])
 
-            conv_aux_data = convert_dict_to_matlab(initial_weights)
+            conv_aux_data = convert_dict_to_matlab(
+                initial_weights,
+                convert_values_to="scalar",
+            )
             my_data_code += self.generate_dataset_code(id_=group_id, data=data, converted_aux_data=conv_aux_data,
                                                        auxdata_struct_name='init')
 

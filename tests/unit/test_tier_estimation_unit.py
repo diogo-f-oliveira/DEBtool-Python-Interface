@@ -2,16 +2,28 @@ import pandas as pd
 import pytest
 
 from tests.unit.multitier_test_helpers import (
+    FakeSummaryTierStructure,
     build_grouped_tier_estimator,
     build_mixed_tier_estimator,
     build_tier_estimator,
 )
+from DEBtoolPyIF.multitier import TierEstimator
+
+
+def _run_settings(*, n_runs: int, n_steps: int) -> dict:
+    return {
+        "n_runs": n_runs,
+        "n_steps": n_steps,
+        "tol_simplex": 1e-4,
+        "pars_init_method": 2,
+        "results_output_mode": 0,
+    }
 
 
 def test_estimate_accepts_settings_and_persists_them(template_folder):
     tier = build_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 5, "n_steps": 10}
+    estimation_settings = _run_settings(n_runs=5, n_steps=10)
     tier.estimate(
         save_results=False,
         print_results=False,
@@ -21,6 +33,44 @@ def test_estimate_accepts_settings_and_persists_them(template_folder):
 
     assert tier.estimation_settings == estimation_settings
     assert tier.pars_df.loc["entity_1", "par_a"] == 1.23
+
+
+def test_estimate_can_print_traces_and_final_parameters(template_folder, capsys):
+    tier = build_tier_estimator(template_folder)
+
+    tier.estimate(
+        save_results=False,
+        print_results=False,
+        hide_output=True,
+        estimation_settings=_run_settings(n_runs=5, n_steps=10),
+        trace_output=True,
+        print_pars_after_estimation=True,
+    )
+
+    out = capsys.readouterr().out
+    assert "Tier tier_1 | start" in out
+    assert "[1/1]" in out
+    assert "| entity_1" in out
+    assert "Tier tier_1 | done" in out
+    assert "Trace:" not in out
+    assert "entity" in out
+    assert "par_a" in out
+    assert "1.23" in out
+
+
+def test_estimate_keeps_traces_disabled_by_default(template_folder, capsys):
+    tier = build_tier_estimator(template_folder)
+
+    tier.estimate(
+        save_results=False,
+        print_results=False,
+        hide_output=True,
+        estimation_settings=_run_settings(n_runs=5, n_steps=10),
+    )
+
+    out = capsys.readouterr().out
+    assert "Tier tier_1 | start" not in out
+    assert "[1/1]" not in out
 
 
 def test_tier_estimator_converts_string_paths_to_path_objects(template_folder):
@@ -40,7 +90,7 @@ def test_estimate_requires_settings_when_no_default_exists(template_folder):
 def test_estimate_reuses_last_settings_when_not_overridden(template_folder):
     tier = build_tier_estimator(template_folder)
 
-    estimation_settings = {"n_runs": 3, "n_steps": 20}
+    estimation_settings = _run_settings(n_runs=3, n_steps=20)
     tier.estimate(
         save_results=False,
         print_results=False,
@@ -53,6 +103,131 @@ def test_estimate_reuses_last_settings_when_not_overridden(template_folder):
     assert tier.estimation_settings == estimation_settings
 
 
+def test_initial_pars_flat_dict_broadcasts_to_target_entities(template_folder):
+    tier = build_grouped_tier_estimator(template_folder)
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars={"par_a": 9.5},
+        entity_list=["entity_1", "entity_2"],
+    )
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "entity_1": 9.5,
+            "entity_2": 9.5,
+        }
+    }
+
+
+def test_initial_pars_nested_dict_preserves_entity_values(template_folder):
+    tier = build_grouped_tier_estimator(template_folder)
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars={"par_a": {"entity_1": 8.0, "entity_2": 8.5}},
+        entity_list=["entity_1", "entity_2"],
+    )
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "entity_1": 8.0,
+            "entity_2": 8.5,
+        }
+    }
+
+
+def test_initial_pars_dataframe_preserves_entity_values(template_folder):
+    tier = build_grouped_tier_estimator(template_folder)
+    initial_pars = pd.DataFrame(
+        {"par_a": [7.0, 7.5]},
+        index=pd.Index(["entity_1", "entity_2"], name="entity"),
+    )
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars=initial_pars,
+        entity_list=["entity_1", "entity_2"],
+    )
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "entity_1": 7.0,
+            "entity_2": 7.5,
+        }
+    }
+
+
+def test_initial_pars_override_base_fallback(template_folder):
+    tier = build_tier_estimator(template_folder)
+
+    initial_values = tier.resolve_initial_parameter_values(
+        initial_pars={"par_a": 4.25},
+        entity_list=["entity_1"],
+    )
+
+    assert initial_values.loc["entity_1", "par_a"] == 4.25
+
+
+def test_root_tier_initialization_fails_without_initial_pars_or_fallback(template_folder):
+    tier = build_tier_estimator(template_folder)
+    tier.tier_structure.base_pars = {}
+    tier.tier_structure.pars = {}
+
+    with pytest.raises(ValueError, match="par_a@entity_1"):
+        tier.resolve_initial_parameter_values(entity_list=["entity_1"])
+
+
+def test_lower_tier_inherits_initial_values_from_parent_estimates(template_folder):
+    tier_structure = FakeSummaryTierStructure()
+    breed = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="breed",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "breed_output"),
+    )
+    diet = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="diet",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "diet_output"),
+    )
+    tier_structure.tiers["breed"] = breed
+    tier_structure.tiers["diet"] = diet
+    breed.pars_df.loc["male", "par_a"] = 3.5
+
+    initial_values = diet.resolve_initial_parameter_values(entity_list=["CTRL", "TMR"])
+
+    assert initial_values.to_dict() == {
+        "par_a": {
+            "CTRL": 3.5,
+            "TMR": 3.5,
+        }
+    }
+
+
+def test_lower_tier_initialization_fails_when_parent_estimate_is_missing(template_folder):
+    tier_structure = FakeSummaryTierStructure()
+    breed = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="breed",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "breed_output"),
+    )
+    diet = TierEstimator(
+        tier_structure=tier_structure,
+        tier_name="diet",
+        tier_pars=["par_a"],
+        template_folder=str(template_folder),
+        output_folder=str(template_folder / "diet_output"),
+    )
+    tier_structure.tiers["breed"] = breed
+    tier_structure.tiers["diet"] = diet
+
+    with pytest.raises(ValueError, match="par_a@CTRL"):
+        diet.resolve_initial_parameter_values(entity_list=["CTRL"])
+
+
 def test_estimate_tracks_per_group_iteration_times(template_folder):
     tier = build_grouped_tier_estimator(template_folder)
 
@@ -60,7 +235,7 @@ def test_estimate_tracks_per_group_iteration_times(template_folder):
         save_results=True,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
     )
 
     assert len(tier.estimation_iterations) == 2
@@ -78,7 +253,7 @@ def test_estimate_mixes_group_and_standalone_entity_iterations(template_folder):
         save_results=False,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
     )
 
     assert [iteration["estimation_target_name"] for iteration in tier.estimation_iterations] == [
@@ -123,7 +298,7 @@ def test_estimate_requested_entities_expands_group_and_warns(template_folder):
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list=["PT20", "PT42"],
         )
 
@@ -153,7 +328,7 @@ def test_estimate_requested_entities_rejects_unknown_entities(template_folder):
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list=["PT999"],
         )
 
@@ -165,7 +340,7 @@ def test_estimate_accepts_single_entity_string_for_ungrouped_entity(template_fol
         save_results=False,
         print_results=False,
         hide_output=True,
-        estimation_settings={"n_runs": 4, "n_steps": 12},
+        estimation_settings=_run_settings(n_runs=4, n_steps=12),
         entity_list="PT42",
     )
 
@@ -183,7 +358,7 @@ def test_estimate_accepts_single_entity_string_for_grouped_entity(template_folde
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list="PT20",
         )
 
@@ -202,6 +377,6 @@ def test_estimate_rejects_none_entity_list(template_folder):
             save_results=False,
             print_results=False,
             hide_output=True,
-            estimation_settings={"n_runs": 4, "n_steps": 12},
+            estimation_settings=_run_settings(n_runs=4, n_steps=12),
             entity_list=None,
         )

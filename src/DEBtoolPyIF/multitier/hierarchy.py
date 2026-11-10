@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import pandas as pd
@@ -168,6 +169,11 @@ class TierHierarchy:
                 parents[tier_name][child_id] = parent_id
 
         return cls(tier_names=tier_names, entities=entities, parents=parents)
+
+    @classmethod
+    def from_csv(cls, path: str | Path, **read_csv_kwargs) -> "TierHierarchy":
+        dataframe = pd.read_csv(path, **read_csv_kwargs)
+        return cls.from_dataframe(dataframe)
 
     @property
     def root_tier(self) -> str:

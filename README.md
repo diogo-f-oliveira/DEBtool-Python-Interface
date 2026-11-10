@@ -17,87 +17,25 @@ This approach is useful when individual-level datasets are too sparse to support
 
 You can find more details on the multitier workflow and its implementation in [`docs/parameter_estimation/`](docs/parameter_estimation/). The [`README.md`](docs/parameter_estimation/README.md) inside provides a description of what each document covers and how they relate to each other.
 For a compact map of the source tree and module responsibilities, see [`docs/PACKAGE_STRUCTURE.md`](docs/PACKAGE_STRUCTURE.md).
-For a concrete example of a multitier DEB estimation, see [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/). 
 
 ## Quick Start
 
-A multitier estimation needs four things for each tier: its data, where its entities sit in the hierarchy, the parameters it estimates, and templates for the four DEBtool species files. The main classes are available from the top-level package, and data source types from `DEBtoolPyIF.data_sources`.
+A multitier estimation needs four things for each tier: its data, where its entities sit in the hierarchy, the parameters it estimates, and templates for the four DEBtool species files. The runnable example in [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/) sets these up for a three-tier Angus cattle estimation (breed, diet and individual), one file per step:
 
-```python
-from pathlib import Path
+| File | What it sets up |
+| --- | --- |
+| [`data.py`](examples/Bos_taurus_Angus/data.py) | One `DataCollection` per tier, built from data sources. |
+| [`tier_structure.py`](examples/Bos_taurus_Angus/tier_structure.py) | The `TierHierarchy`, the parameters each tier estimates, and the `MultiTierStructure`. |
+| [`templates.py`](examples/Bos_taurus_Angus/templates.py) | The `estimation_templates`: one `EstimationTemplates` per tier for the `mydata`, `pars_init`, `predict` and `run` files. |
+| [`estimation.py`](examples/Bos_taurus_Angus/estimation.py) | Estimates tier by tier, from the most general to the most specific, and loads saved results with `MultiTierResults`. |
 
-from DEBtoolPyIF import (
-    CopyFileTemplate,
-    DataCollection,
-    EstimationTemplates,
-    MultiTierStructure,
-    MultitierMyDataSubstitutionTemplate,
-    RegistryMultitierParsInitProgrammaticTemplate,
-    RestartingNelderMead,
-    TierHierarchy,
-)
-from DEBtoolPyIF.data_sources import TimeWeightEntityDataSource
+From a clone of the repository, run it with:
 
-species_name = "My_species"
-tier_names = ["population", "individual"]
-template_folder = Path("templates")
-
-# 1. Data: one DataCollection per tier
-weights = TimeWeightEntityDataSource("weights.csv", id_col="id", weight_col="weight", date_col="date")
-data = {
-    "population": DataCollection(tier="population", data_sources=[]),
-    "individual": DataCollection(tier="individual", data_sources=[weights]),
-}
-
-# 2. Hierarchy: the entity each individual belongs to in the tier above
-hierarchy = TierHierarchy.from_paths(
-    tier_names=tier_names,
-    paths=[{"population": "all", "individual": entity_id} for entity_id in sorted(weights.entities)],
-)
-
-# 3. Parameters estimated at each tier; lower tiers inherit the rest
-tier_pars = {
-    "population": ["z", "v", "kap", "p_M"],
-    "individual": ["z"],
-}
-
-# 4. Templates for the four DEBtool species files of each tier
-estimation_templates = {
-    tier: EstimationTemplates(
-        mydata=MultitierMyDataSubstitutionTemplate(source=template_folder / tier / f"mydata_{species_name}.m"),
-        pars_init=RegistryMultitierParsInitProgrammaticTemplate(model="std"),
-        predict=CopyFileTemplate(template_folder / tier / f"predict_{species_name}.m"),
-        run=RestartingNelderMead(simplex_size=0.25),
-    )
-    for tier in tier_names
-}
-
-multitier = MultiTierStructure(
-    species_name=species_name,
-    entity_hierarchy=hierarchy,
-    data=data,
-    tier_pars=tier_pars,
-    estimation_templates=estimation_templates,
-    output_folder="multitier",
-)
-
-# Estimate tier by tier, from the most general to the most specific
-estimation_settings = dict(n_runs=3, n_steps=50, n_evals=50000, pars_init_method=2,
-                           results_output_mode=0, tol_simplex=1e-4, tol_restart=1e-4)
-multitier.tiers["population"].estimate(
-    estimation_settings=estimation_settings,
-    initial_pars={"z": 13, "v": 0.05, "kap": 0.97, "p_M": 80},
-)
-multitier.tiers["individual"].estimate(estimation_settings=estimation_settings)
+```console
+python -m examples.Bos_taurus_Angus.estimation --settings fast
 ```
 
-Each tier writes its parameters, errors and metadata to `output_folder`. Load them later without rebuilding the workflow:
-
-```python
-from DEBtoolPyIF import MultiTierResults
-
-results = MultiTierResults.from_folder(output_folder="multitier", species_name="My_species")
-```
+See the [example README](examples/Bos_taurus_Angus/README.md) for the available settings.
 
 About the templates:
 
@@ -105,7 +43,7 @@ About the templates:
 - `pars_init` generation is usable but still evolving. `RegistryMultitierParsInitProgrammaticTemplate` builds the file from the parameters of a typified model (`std` or `stx`), and you can add your own parameter definitions.
 - `predict` is specific to each workflow, so it is copied as written. A starting point with the multitier loop structure is bundled at `DEBtoolPyIF/multitier/resources/generic/predict_template.m`.
 
-For a complete, runnable workflow see [`examples/Bos_taurus_Angus`](examples/Bos_taurus_Angus/), and for how templates and sections work see [`docs/parameter_estimation/TEMPLATE_GENERATION.md`](docs/parameter_estimation/TEMPLATE_GENERATION.md).
+For how templates and sections work, see [`docs/parameter_estimation/TEMPLATE_GENERATION.md`](docs/parameter_estimation/TEMPLATE_GENERATION.md).
 
 ## Add-my-Pet (experimental)
 

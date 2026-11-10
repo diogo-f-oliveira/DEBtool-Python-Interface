@@ -78,7 +78,8 @@ class AmPClient:
     The same client can be shared between threads to download several species concurrently.
 
     The AmP server stops accepting connections after many requests, so requests are spaced ``request_delay`` seconds
-    apart across all threads using this client.
+    apart across all threads using this client. The default of 0.5 s is enough to download the whole collection; a
+    delay of 0.2 s got the connection blocked.
     """
 
     def __init__(

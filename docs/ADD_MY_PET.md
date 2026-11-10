@@ -1,6 +1,6 @@
 # Add-my-Pet Integration
 
-> **Experimental.** `add_my_pet` is new in 0.3.0, and its functions may change in later releases. The delay between requests to the AmP server (0.5 s) has not been tested against the server's limits yet; see [Large downloads](#large-downloads).
+> **Experimental.** `add_my_pet` is new in 0.3.0, and its functions may change in later releases. Requests to the AmP server are sent 0.5 s apart; see [Large downloads](#large-downloads).
 
 `DEBtoolPyIF.add_my_pet` fetches and reuses content from the [Add-my-Pet (AmP)](https://www.bio.vu.nl/thb/deb/deblab/add_my_pet/) collection. It only needs internet access: files are downloaded over HTTP and `.mat` files are read with SciPy, so no MATLAB session is required.
 
@@ -67,11 +67,11 @@ A file you edit gets a newer date than the AmP copy, so `check_update=True` will
 
 ### Large downloads
 
-The AmP server can stop accepting connections after many requests, without any error message, and it can stay unreachable from your connection for hours. To avoid this, requests are sent 0.5 s apart, so downloading the whole collection takes several hours. `download_amp_collection` tells you what to expect at the start of a large download.
+The AmP server can stop accepting connections after many requests, without any error message, and it can stay unreachable from your connection for hours. To avoid this, requests are sent 0.5 s apart, so downloading the whole collection takes several hours. The whole collection has been downloaded at this delay, while a delay of 0.2 s got the connection blocked. `download_amp_collection` tells you what to expect at the start of a large download.
 
 If the server stops responding, the download stops with a warning instead of failing species after species. Run the same command later to continue: species already complete in the manifest are skipped without any request, and files you already have are not downloaded again. Leave out `check_update=True` when continuing, because it sends a request for every file you already have.
 
-To change the delay, pass your own client: `download_amp_collection("species", client=AmPClient(request_delay=2))`. The same delay applies across all download threads, so adding threads with `max_workers` does not send requests faster. Please be considerate of this shared server, and only download the species you need.
+To change the delay, pass your own client: `download_amp_collection("species", client=AmPClient(request_delay=2))`. Shorter delays than 0.5 s are not recommended. The same delay applies across all download threads, so adding threads with `max_workers` does not send requests faster. Please be considerate of this shared server, and only download the species you need.
 
 ## Versions and the manifest
 

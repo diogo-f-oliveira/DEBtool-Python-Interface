@@ -236,6 +236,27 @@ This includes moving toward a cleaner and more uniform workflow for higher-tier 
 
 This work should help make top-tier data handling feel like part of the Python package API, not only part of handwritten MATLAB templates.
 
+#### Single-species (regular Add-my-Pet) estimation
+
+The generic `mydata`, `pars_init` and `run` template classes are meant to work for a regular Add-my-Pet estimation of one species, without tiers. A prototype on the local branch `feature/single-species` runs this end to end. It is not tested enough for 0.3.0 and adds public API, so it should go into 0.4.0 rather than a patch release. The Danio rerio example should ship only once the parts below are implemented.
+
+Possible implementation, as prototyped:
+
+- [ ] `SpeciesGenerationContext` (in `estimation_files/context.py`): a generation context with `full_pars_dict`, `free_pars` and `estimation_settings`, so generic templates render without `MultitierGenerationContext`.
+- [ ] `InitializeParametersSection` reads `context.free_pars` instead of the multitier-only `context.tier_pars`; `MultitierGenerationContext.free_pars` returns the tier parameters, so multitier output is unchanged.
+- [ ] A generic `write_estimation_files(estimation_templates, context)`, with `write_tier_estimation_files` kept as an alias.
+- [ ] Species-level data classes (`ZeroVariateData`, `UnivariateData`) and a `SpeciesDataSection` that renders them into `mydata.m`. Prototyped inside the example only; the package design belongs to "Data-source classes for zero-variate species data" under Future Pipeline.
+- [ ] `examples/Danio_rerio`: std-model estimation on mock data generated from known parameters, using `MyDataProgrammaticTemplate`, `RegistryParsInitProgrammaticTemplate`, `NelderMead` and a hand-written `predict`.
+
+Still needed before release:
+
+- [ ] Decide how species-level data sources relate to `DataCollection` (subclass, separate collection, or plain list of datasets).
+- [ ] Remove the need to include the empty multitier `GroupDataSection` and `EntityDataSection` in single-species `MyDataProgrammaticTemplate`s, for example with a species-specific required-section set.
+- [ ] A species-level results object (parameters, errors and predictions), analogous to `MultiTierResults`.
+- [ ] Automated biblist and ecoCode generation (see "Automated `mydata.m` generation").
+- [ ] Parameter registries for other typified models used in AmP (e.g. `abj`, which the real zebrafish entry uses).
+- [ ] Integration tests that run the single-species example in MATLAB, and real data for the example.
+
 ### 3. Higher-Level Abstractions For `predict` Logic
 
 The current template-based approach works well, but `predict` files still require a lot of tier-specific MATLAB logic.

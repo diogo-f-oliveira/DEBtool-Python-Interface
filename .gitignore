@@ -162,3 +162,5 @@ AGENTS.md
 
 # Example results
 examples/*/multitier/*
+# Single-species example outputs
+examples/*/estimation/*

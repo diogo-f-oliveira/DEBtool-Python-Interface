@@ -110,6 +110,11 @@ class MultitierGenerationContext(GenerationContext):
         return list(self.tier_estimator.tier_pars)
 
     @property
+    def free_pars(self) -> list[str]:
+        """Parameters estimated for this target; in multitier estimation these are the tier parameters."""
+        return self.tier_pars
+
+    @property
     def extra_info(self):
         return self.tier_estimator.extra_info
 

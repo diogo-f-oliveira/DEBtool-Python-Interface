@@ -134,8 +134,7 @@ class InitializeParametersSection(ParsInitSection):
                 if definition.default_value is None:
                     continue
                 value = definition.default_value
-            # TODO: This currently depends on context.tier_pars which is multitier specific. Need to refactor
-            free_value = 1 if parameter_name in context.tier_pars else definition.default_free
+            free_value = 1 if parameter_name in context.free_pars else definition.default_free
             lines.append(_render_parameter_assignment_line(definition, value, free_value=free_value))
         return "\n".join(lines)
 

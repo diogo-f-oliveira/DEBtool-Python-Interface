@@ -1,6 +1,7 @@
 """Generic estimation-file generation interfaces and helpers."""
 
 from .config import EstimationTemplates, FILE_KEYS, normalize_estimation_templates
+from .context import GenerationContext, SpeciesGenerationContext
 from .mydata import (
     MyDataSection,
     MyDataProgrammaticTemplate,
@@ -48,11 +49,15 @@ from .templates import (
     ProgrammaticTemplate,
     SubstitutionTemplate,
 )
+from .writer import write_estimation_files
 
 __all__ = [
     "EstimationFileSection",
     "FILE_KEYS",
     "EstimationTemplates",
+    "GenerationContext",
+    "SpeciesGenerationContext",
+    "write_estimation_files",
     "CopyFileTemplate",
     "EstimationFileTemplate",
     "ProgrammaticTemplate",

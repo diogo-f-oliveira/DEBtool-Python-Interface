@@ -1283,6 +1283,7 @@ def test_pars_init_template_renders_builtins_and_expansion():
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5, "kap_X": 0.25, "del_M": 0.15},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         get_file_sections=lambda file_key: (),
     )
 
@@ -1290,6 +1291,7 @@ def test_pars_init_template_renders_builtins_and_expansion():
         species_name=context.species_name,
         full_pars_dict=context.full_pars_dict,
         tier_pars=context.tier_pars,
+        free_pars=context.free_pars,
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -1414,6 +1416,7 @@ def test_pars_init_template_uses_only_user_provided_sections():
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -1429,6 +1432,7 @@ def test_pars_init_source_template_uses_source_path_independently():
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5, "kap_X": 0.25, "del_M": 0.15},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -1458,6 +1462,7 @@ def test_pars_init_source_template_allows_partial_placeholder_sets():
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -1472,7 +1477,7 @@ def test_registry_pars_init_programmatic_template_inserts_extra_sections_before_
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -1500,7 +1505,7 @@ def test_registry_pars_init_substitution_template_keeps_registry_behavior_when_e
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
-        tier_pars=[],
+        free_pars=[],
     )
     source = "\n".join(
         [
@@ -1532,6 +1537,7 @@ def test_registry_multitier_pars_init_programmatic_template_inserts_extra_sectio
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -1563,6 +1569,7 @@ def test_registry_multitier_pars_init_substitution_template_keeps_registry_behav
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -2078,7 +2085,7 @@ def test_registry_pars_init_template_defaults_to_std_model():
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"kap_X": 0.25},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -2092,7 +2099,7 @@ def test_registry_pars_init_template_uses_stx_registry_when_requested():
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"E_Hx": 2.5},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -2106,7 +2113,7 @@ def test_registry_pars_init_template_requires_explicit_registry_for_nat_model():
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"kap_X": 0.25},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -2157,7 +2164,7 @@ def test_pars_init_template_requires_explicit_registry_for_parameter_rendering()
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"unknown_par": 1.23},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -2169,7 +2176,7 @@ def test_pars_init_template_rejects_legacy_t_ref_in_full_pars_dict():
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"T_ref": 300.15},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -2183,7 +2190,7 @@ def test_pars_init_template_rejects_legacy_t_ref_in_parameter_registry():
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"kap_X": 0.25},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
 
@@ -2195,7 +2202,7 @@ def test_pars_init_template_accepts_custom_parameter_registry():
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"unknown_par": 1.23},
-        tier_pars=[],
+        free_pars=[],
         get_file_sections=lambda file_key: (),
     )
     parameter_registry = StdParameterRegistry()
@@ -2214,7 +2221,7 @@ def test_registry_pars_init_substitution_template_accepts_custom_parameter_regis
     context = SimpleNamespace(
         species_name="Test_species",
         full_pars_dict={"unknown_par": 1.23},
-        tier_pars=[],
+        free_pars=[],
     )
 
     contents = RegistryParsInitSubstitutionTemplate(
@@ -2234,6 +2241,7 @@ def test_registry_multitier_pars_init_substitution_template_accepts_custom_param
         species_name="Test_species",
         full_pars_dict={"unknown_par": 1.23},
         tier_pars=["unknown_par"],
+        free_pars=["unknown_par"],
         entity_list=["entity_1"],
         tier_par_init_values={"unknown_par": {"entity_1": 1.0}},
     )
@@ -2255,6 +2263,7 @@ def test_registry_multitier_pars_init_programmatic_template_accepts_custom_param
         species_name="Test_species",
         full_pars_dict={"unknown_par": 1.23},
         tier_pars=["unknown_par"],
+        free_pars=["unknown_par"],
         entity_list=["entity_1"],
         tier_par_init_values={"unknown_par": {"entity_1": 1.0}},
     )
@@ -3108,6 +3117,7 @@ def test_pars_init_source_template_does_not_depend_on_programmatic_template(monk
         species_name="Test_species",
         full_pars_dict={"p_Am": 12.5},
         tier_pars=["p_Am"],
+        free_pars=["p_Am"],
         tier_name="top",
         entity_list=["entity_1"],
         tier_par_init_values={"p_Am": {"entity_1": 1.0}},
@@ -3142,3 +3152,68 @@ def test_run_source_template_does_not_depend_on_programmatic_template(monkeypatc
     monkeypatch.setattr(RunProgrammaticTemplate, "render", fail)
 
     assert RunSubstitutionTemplate(source="$setup").render(context) == "clear;\nclose all;"
+
+
+def test_species_generation_context_renders_single_species_estimation_files(tmp_path):
+    from DEBtoolPyIF.estimation_files import (
+        MyDataProgrammaticTemplate,
+        NelderMead,
+        RegistryParsInitProgrammaticTemplate,
+        SpeciesGenerationContext,
+        write_estimation_files,
+    )
+    from DEBtoolPyIF.parameters import StdParameterRegistry
+
+    predict_source = tmp_path / "predict_source.m"
+    predict_source.write_text("function [prdData, info] = predict_Test_species(par, data, auxData)\nend\n")
+    context = SpeciesGenerationContext(
+        species_name="Test_species",
+        output_folder=tmp_path / "out",
+        full_pars_dict={"z": 2.0, "kap": 0.8},
+        free_pars=["z"],
+        estimation_settings={
+            "n_steps": 10,
+            "simplex_size": 0.1,
+            "tol_simplex": 1e-4,
+            "pars_init_method": 2,
+            "results_output_mode": 0,
+        },
+    )
+
+    written = write_estimation_files(
+        {
+            "mydata": MyDataProgrammaticTemplate(),
+            "pars_init": RegistryParsInitProgrammaticTemplate(parameter_registry=StdParameterRegistry()),
+            "predict": str(predict_source),
+            "run": NelderMead(n_evals=100),
+        },
+        context,
+    )
+
+    assert sorted(path.name for path in written.values()) == [
+        "mydata_Test_species.m",
+        "pars_init_Test_species.m",
+        "predict_Test_species.m",
+        "run_Test_species.m",
+    ]
+    pars_init = written["pars_init"].read_text()
+    assert "par.z = 2.0; free.z = 1;" in pars_init
+    assert "par.kap = 0.8; free.kap = 0;" in pars_init
+    run = written["run"].read_text()
+    assert "estim_options('max_step_number', 10);" in run
+    assert "estim_options('max_fun_evals', 100);" in run
+    assert "function [data, auxData, metaData, txtData, weights] = mydata_Test_species" in (
+        written["mydata"].read_text()
+    )
+
+
+def test_species_generation_context_requires_initial_values_for_free_parameters(tmp_path):
+    from DEBtoolPyIF.estimation_files import SpeciesGenerationContext
+
+    with pytest.raises(ValueError, match="kap"):
+        SpeciesGenerationContext(
+            species_name="Test_species",
+            output_folder=tmp_path,
+            full_pars_dict={"z": 2.0},
+            free_pars=("z", "kap"),
+        )

@@ -25,11 +25,17 @@ def write_estimation_file(file_key: str, template, context) -> Path:
     return output_path
 
 
-def write_tier_estimation_files(
-    estimation_files: EstimationTemplates,
+def write_estimation_files(
+    estimation_templates: EstimationTemplates,
     context,
 ) -> dict[str, Path]:
+    """Render and write the four species files of one estimation target into ``context.output_folder``."""
+    estimation_templates = EstimationTemplates.from_mapping(estimation_templates)
     return {
         file_key: write_estimation_file(file_key, template, context)
-        for file_key, template in estimation_files.items()
+        for file_key, template in estimation_templates.items()
     }
+
+
+# Multitier tier estimators write one target at a time with the same logic.
+write_tier_estimation_files = write_estimation_files

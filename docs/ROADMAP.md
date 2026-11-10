@@ -11,6 +11,21 @@ The package is still pre-1.0. The main goal is to make the multitier workflow re
 - Focus first on features that improve estimation quality and make multitier estimation easier to inspect and iterate on.
 - Treat more advanced statistical extensions as future work unless they directly support the core package workflow.
 
+## Release Plan
+
+Features planned for the next releases. A patch release only fixes bugs and changes internals or documentation; anything that adds public API goes into the next minor release. Details for each item are in the linked sections below.
+
+### 0.3.1
+
+- [ ] Make the examples self-contained: replace imports of the form `from examples.Bos_taurus_Angus.data import ...` with relative imports, so an example folder runs wherever it is copied (see "Project setup and downloadable examples"). No public API change.
+- [ ] Keep unit tests isolated from the example folders, as `AGENTS.md` requires. `test_angus_registry_adds_non_default_and_example_specific_definitions` in `tests/unit/test_estimation_files_unit.py` imports `build_angus_parameter_registry` from the Angus example. Either move it to `tests/integration/`, where tests check the examples, or rewrite it to build a registry with the same extra definitions inside the test. Do this together with the import change above, since that change touches the same import.
+
+### 0.4.0
+
+1. [ ] Project setup command, `create_project` (top priority; see "Project setup and downloadable examples").
+2. [ ] Example download command, `download_example` (see "Project setup and downloadable examples").
+3. [ ] Single-species (regular Add-my-Pet) estimation and the Danio rerio example (see "Single-species (regular Add-my-Pet) estimation" under "Future Minor Versions").
+
 ## Immediate Priorities
 
 These are the highest-priority items to add.
@@ -24,6 +39,27 @@ The package currently has some documentation and examples, but they are still li
 - [x] Writing a document explaining the multitier estimation methodology and the steps involved in the workflow, including how to define data sources, create tier structures, and run estimations. This document should also point to the relevant code and examples in the package to help users understand how to use the package effectively.
 - [x] Adding comments in the generic template files to explain the purpose of each section and how it relates to the multitier estimation process, making it easier for users to understand and modify the templates as needed.
 - [ ] Providing more examples that cover different types of data sources, tier structures, and estimation scenarios to help users see how the package can be applied to a variety of use cases.
+
+### 2. Project setup and downloadable examples
+
+Today the only easy way to run or modify an example is to clone the repository. Examples are not in the wheel, and GitHub cannot download a single folder. Two commands in the package API would fix this. They share the code that copies files into a folder, but they get their files from different places:
+
+- `create_project(species, tiers, dest)` writes a new multitier project skeleton from files shipped in the wheel. It works offline and always matches the installed version. This is the most useful of the two, also for our own work, and is planned first for 0.4.0.
+- `download_example(name, dest)` (with `list_examples()`) downloads a complete example from GitHub, such as `Bos_taurus_Angus`, so users can run and inspect it.
+
+`create_project`:
+
+- [ ] Writes the four example-style files (`data.py`, `tier_structure.py`, `templates.py`, `estimation.py`) with stubs for the given species and tier names.
+- [ ] Copies the bundled generic `mydata_template.m` and `predict_template.m` from `multitier/resources/generic/` into a templates folder for each tier.
+- [ ] Refuses to write into a folder that is not empty unless `overwrite=True`.
+- [ ] Optionally a thin command-line wrapper (`debtoolpyif new-project ...`) once the Python function is stable.
+
+`download_example`:
+
+- [ ] Downloads GitHub's automatic archive for the tag `v{__version__}` and extracts only `examples/<name>/`. Pinning to the installed version keeps the example in step with the API. The archive is a single request with no GitHub API rate limits and needs only the standard library (`urllib`, `zipfile`), not the `amp` extra. Release tagging is already part of the release workflow, so no extra release assets are needed.
+- [ ] Accepts an explicit `ref=` argument for development installs, whose version has no matching tag.
+- [ ] Refuses to write into a folder that is not empty unless `overwrite=True`, and prints the command to run the example when it finishes.
+- [ ] Prerequisite (0.3.1): the example must run outside the repository. The Angus files import each other as `examples.Bos_taurus_Angus.*`, which only works from the repository root. Use relative imports (`from .data import load_data`) and run the example as `python -m Bos_taurus_Angus.estimation` from the folder above it. Plain imports (`from data import load_data`) would also work outside the repository, but the integration tests load every example in one session, so modules with generic names such as `data` and `templates` from different examples would collide.
 
 ## Important Improvements To Existing Functionality
 
@@ -304,7 +340,7 @@ This is a long-term priority. It is harder to implement safely than several othe
 
 The current recommended order of work is:
 
-1. better documentation and examples for the multitier workflow,
+1. better documentation and examples for the multitier workflow, starting with project setup and downloadable examples,
 2. better control over dataset weights,
 3. richer pseudo-data and constraint handling,
 4. better data-source automation and generation,
